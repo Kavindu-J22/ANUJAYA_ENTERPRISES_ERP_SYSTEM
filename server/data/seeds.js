@@ -1,0 +1,198 @@
+const GLOBAL_MACHINES_BASELINE = [
+  { id: "M-01", brand: "JUKI", model: "DDL-8700-7/SC500/CP160", name: "High Speed 1-Needle Lockstitch with Trimmer", unit: "SETS", initialStock: 80, usdPrice: 140, taxLKR: 5000, wholesalePrice: 61200, retailPrice: 71200 },
+  { id: "M-02", brand: "JUKI", model: "DDL-8700-7/SC500/CP160/AK85", name: "Direct Drive Lockstitch with Auto Foot Lifter", unit: "SETS", initialStock: 50, usdPrice: 165, taxLKR: 5000, wholesalePrice: 69450, retailPrice: 81450 },
+  { id: "M-03", brand: "JUKI", model: "MS-1261", name: "Feed-off-the-arm 3-Needle Chainstitch", unit: "SETS", initialStock: 10, usdPrice: 752, taxLKR: 15000, wholesalePrice: 273160, retailPrice: 278160 },
+  { id: "M-04", brand: "KANSAI", model: "FBX1104", name: "Special 4-Needle Cylinder Bed Flatlock", unit: "SETS", initialStock: 7, usdPrice: 1020, taxLKR: 18000, wholesalePrice: 369600, retailPrice: 379600 },
+  { id: "M-05", brand: "KANSAI", model: "LBH 781", name: "Standard Industrial Buttonholing System", unit: "SETS", initialStock: 10, usdPrice: 378, taxLKR: 25000, wholesalePrice: 164740, retailPrice: 174740 },
+  { id: "M-06", brand: "KANSAI", model: "LBH 781DD", name: "Direct-Drive Advanced Buttonholing Workstation", unit: "SETS", initialStock: 5, usdPrice: 788, taxLKR: 7000, wholesalePrice: 277040, retailPrice: 280040 },
+  { id: "M-07", brand: "KANSAI", model: "China W500", name: "High-speed Interlock Coverstitch Industrial", unit: "SETS", initialStock: 15, usdPrice: 173, taxLKR: 7000, wholesalePrice: 74090, retailPrice: 88090 },
+  { id: "M-08", brand: "KANSAI", model: "China M700-4", name: "4-Thread High Speed Overlock Machine", unit: "SETS", initialStock: 40, usdPrice: 123, taxLKR: 7000, wholesalePrice: 57590, retailPrice: 70590 },
+  { id: "M-09", brand: "KANSAI", model: "China M700-5", name: "5-Thread Heavy Duty Safety Stitch Machine", unit: "SETS", initialStock: 40, usdPrice: 123, taxLKR: 5000, wholesalePrice: 55590, retailPrice: 70590 },
+  { id: "M-10", brand: "SIRUBA", model: "C007J Left Knife", name: "Interlock Stitch with Left Hand Trimming Knife", unit: "SETS", initialStock: 4, usdPrice: 542, taxLKR: 18000, wholesalePrice: 221860, retailPrice: 236860 },
+  { id: "M-11", brand: "SIRUBA", model: "NEW HMC MOTOR", name: "Energy Saving Servo HMC Industrial Motor", unit: "SETS", initialStock: 50, usdPrice: 27, taxLKR: 2000, wholesalePrice: 11910, retailPrice: 14910 },
+  { id: "M-12", brand: "JUKI", model: "3168-7/SC500/CP170", name: "Electronic 2-Needle Lockstitch Workstation", unit: "SETS", initialStock: 5, usdPrice: 436.8, taxLKR: 15000, wholesalePrice: 169144, retailPrice: 172144 },
+  { id: "M-13", brand: "JUKI", model: "RH981", name: "Electronic Eyelet Buttonholing Machine", unit: "SETS", initialStock: 5, usdPrice: 924, taxLKR: 25000, wholesalePrice: 454920, retailPrice: 489920 },
+  { id: "M-14", brand: "OTHER", model: "COPY PEGASUS W600-35 Left Knife", name: "Flatbed Interlock with Left Edge Trimmer", unit: "SETS", initialStock: 5, usdPrice: 455.52, taxLKR: 11500, wholesalePrice: 171821.6, retailPrice: 174821.6 },
+  { id: "M-15", brand: "OTHER", model: "NEW PUNCH SNAP BUTTON MACHINE", name: "Pneumatic Snap Button Attacher", unit: "SETS", initialStock: 5, usdPrice: 156, taxLKR: 11500, wholesalePrice: 72980, retailPrice: 75980 },
+  { id: "M-16", brand: "JUKI", model: "LK-1903", name: "Computer Controlled Lockstitch Button Sewing", unit: "SETS", initialStock: 3, usdPrice: 424.32, taxLKR: 11500, wholesalePrice: 161525.6, retailPrice: 181525.6 },
+  { id: "M-17", brand: "OTHER", model: "CHINE CHAIN DOUBLE NEEDLE", name: "Double Needle Chainstitch Hemmer", unit: "SETS", initialStock: 5, usdPrice: 0, taxLKR: 11500, wholesalePrice: 21500, retailPrice: 24500 },
+  { id: "M-18", brand: "SIRUBA", model: "CYLINDER 747S", name: "Cylinder Bed 4-Thread Super Overedger", unit: "SETS", initialStock: 5, usdPrice: 260, taxLKR: 11500, wholesalePrice: 107300, retailPrice: 110300 },
+  { id: "M-19", brand: "JUKI", model: "3568A-7/SC920/CP180", name: "Direct Drive 2-Needle Split Needle Bar Lockstitch", unit: "SETS", initialStock: 5, usdPrice: 1019.2, taxLKR: 20000, wholesalePrice: 376336, retailPrice: 369336 },
+  { id: "M-20", brand: "OTHER", model: "ISM SV250 Direct Belt", name: "Heavy Duty Direct Belt Motor Unit", unit: "SETS", initialStock: 50, usdPrice: 52, taxLKR: 5000, wholesalePrice: 32160, retailPrice: 35160 },
+  { id: "M-21", brand: "PEGASUS", model: "CW664-35 Left Knife", name: "Flatbed Interlock Machine with Left Hand Knife", unit: "SETS", initialStock: 10, usdPrice: 1560, taxLKR: 28000, wholesalePrice: 552800, retailPrice: 555800 },
+  { id: "M-22", brand: "PEGASUS", model: "CW664-01 Plus", name: "Interlock Machine for Hemming Bottoms", unit: "SETS", initialStock: 20, usdPrice: 1230, taxLKR: 28000, wholesalePrice: 443900, retailPrice: 446900 },
+  { id: "M-23", brand: "PEGASUS", model: "WT200-35 Left Knife", name: "Top and Bottom Coverstitch with Knife", unit: "SETS", initialStock: 10, usdPrice: 1800, taxLKR: 28000, wholesalePrice: 632000, retailPrice: 635000 },
+  { id: "M-24", brand: "PEGASUS", model: "W200-01", name: "Heavy Duty Cylinder Bed Interlock Machine", unit: "SETS", initialStock: 10, usdPrice: 1650, taxLKR: 28000, wholesalePrice: 582500, retailPrice: 585500 },
+  { id: "M-25", brand: "PEGASUS", model: "W3600-33 Right cutter", name: "Variable Top Feed Interlock with Right Cutter", unit: "SETS", initialStock: 30, usdPrice: 1680, taxLKR: 28000, wholesalePrice: 592400, retailPrice: 595400 },
+  { id: "M-26", brand: "PEGASUS", model: "W3600-35 Left Knife", name: "Oil-barrier Flatbed Coverstitch Workhorse", unit: "SETS", initialStock: 10, usdPrice: 1650, taxLKR: 28000, wholesalePrice: 582500, retailPrice: 585500 }
+];
+
+const LOCAL_MACHINES_BASELINE = [
+  { id: "LYM-01", machineCode: "JK-8700", brand: "JUKI", model: "DDL-8700 High-Speed Lockstitch", category: "Single Needle Lockstitch", serialNumbers: "SN-JK87-01 to SN-JK87-15", totalYardStock: 15, standardMonthlyRent: 4500, acquisitionCost: 38000, motorSpec: "550W Energy Saving Servo Motor", accessories: "Complete Stand, Table, Servo Motor", condition: "Operational", yardLocation: "Kosgama Central Bay 1", notes: "Standard rental workhorse for single needle lockstitch lines" },
+  { id: "LYM-02", machineCode: "JK-9000", brand: "JUKI", model: "DDL-9000 BMS Auto-Trimmer Lockstitch", category: "Single Needle Lockstitch", serialNumbers: "SN-JK90-01 to SN-JK90-12", totalYardStock: 12, standardMonthlyRent: 4500, acquisitionCost: 55000, motorSpec: "Direct Drive Integrated Servo System", accessories: "Complete Set with Auto Thread Trimmer", condition: "Excellent", yardLocation: "Kosgama Central Bay 1", notes: "High productivity electronic single needle" },
+  { id: "LYM-03", machineCode: "PEG-M700", brand: "PEGASUS", model: "M-700 4-Thread High Speed Overlock", category: "Overlock", serialNumbers: "SN-M700-01 to SN-M700-20", totalYardStock: 20, standardMonthlyRent: 4000, acquisitionCost: 42000, motorSpec: "550W External Energy Saver Servo", accessories: "Table, Stand, Motor, Thread Stand", condition: "Operational", yardLocation: "Kosgama Central Bay 2", notes: "Core apparel overlocking fleet unit" },
+  { id: "LYM-04", machineCode: "PEG-M900", brand: "PEGASUS", model: "M-900 5-Thread Safety Stitch Overlock", category: "Overlock", serialNumbers: "SN-M900-01 to SN-M900-08", totalYardStock: 8, standardMonthlyRent: 6000, acquisitionCost: 52000, motorSpec: "Direct Drive Servo System", accessories: "Complete Set", condition: "Operational", yardLocation: "Kosgama Central Bay 2", notes: "Heavy fabric & denim safety seamer" },
+  { id: "LYM-05", machineCode: "KAN-W500", brand: "KANSAI", model: "W-500 Flatbed Interlock Coverstitch", category: "Flatbed / Coverstitch", serialNumbers: "SN-W500-01 to SN-W500-10", totalYardStock: 10, standardMonthlyRent: 6000, acquisitionCost: 68000, motorSpec: "550W High-Torque Servo Motor", accessories: "Stand, Table, Motor, Hemmer Guides", condition: "Operational", yardLocation: "Kosgama Central Bay 3", notes: "Knitwear & t-shirt hemming coverstitch" },
+  { id: "LYM-06", machineCode: "SR-C007", brand: "SIRUBA", model: "C007JD / W812-356 Left Knife Hemmer", category: "Flatbed / Coverstitch", serialNumbers: "SN-SR-01 to SN-SR-06", totalYardStock: 6, standardMonthlyRent: 14000, acquisitionCost: 145000, motorSpec: "Direct Drive Electronic Servo", accessories: "Left hand trimmer, suction device, table", condition: "Excellent", yardLocation: "Kosgama Central Bay 3", notes: "Specialized bottom hem trim workstation" },
+  { id: "LYM-07", machineCode: "BRO-430D", brand: "BROTHER", model: "KE-430D Direct Drive Computer Bar Tack", category: "Buttonhole & Specialty", serialNumbers: "SN-BT430-01 to SN-BT430-05", totalYardStock: 5, standardMonthlyRent: 12000, acquisitionCost: 180000, motorSpec: "Direct Drive High-Precision Servo", accessories: "Programming panel, specialized clamps", condition: "Excellent", yardLocation: "Kosgama Central Bay 4", notes: "Heavy apparel reinforcement tacking" },
+  { id: "LYM-08", machineCode: "JK-1790S", brand: "JUKI", model: "LBH-1790S Computer Buttonholing System", category: "Buttonhole & Specialty", serialNumbers: "SN-LBH-01 to SN-LBH-04", totalYardStock: 4, standardMonthlyRent: 15000, acquisitionCost: 210000, motorSpec: "Integrated Digital Servo Motor", accessories: "Digital multi-pattern control panel", condition: "Excellent", yardLocation: "Kosgama Central Bay 4", notes: "Premium shirt and jacket buttonholes" },
+  { id: "LYM-09", machineCode: "JK-MH380", brand: "JUKI", model: "MH-380 & Brother DA-9270 Chainstitch", category: "Heavy Duty / Other", serialNumbers: "SN-MH-01 to SN-MH-03", totalYardStock: 3, standardMonthlyRent: 16000, acquisitionCost: 235000, motorSpec: "550W Heavy-Duty Servo Motor", accessories: "Feed-off-the-arm cylinder arm stand", condition: "Operational", yardLocation: "Kosgama Central Bay 5", notes: "Sleeve & pant inseam lap seaming" },
+  { id: "LYM-10", machineCode: "KAN-FBX", brand: "KANSAI", model: "FBX-1104 4-Needle Cylinder Bed Flatlock", category: "Heavy Duty / Other", serialNumbers: "SN-FBX-01 to SN-FBX-04", totalYardStock: 4, standardMonthlyRent: 18000, acquisitionCost: 290000, motorSpec: "Direct Drive Servo System", accessories: "Elastic metering puller & cylinder bed", condition: "Operational", yardLocation: "Kosgama Central Bay 5", notes: "Waistband attaching and elastic inserting" },
+  { id: "LYM-11", machineCode: "MOT-550W", brand: "SIRUBA", model: "550W Direct Drive Servo Motor Units", category: "Motors & Drives", serialNumbers: "SN-MOT-01 to SN-MOT-30", totalYardStock: 30, standardMonthlyRent: 2000, acquisitionCost: 16500, motorSpec: "550W 220V Energy Saver Inverter", accessories: "Control box, needle synchronizer, pitman rod", condition: "Brand New", yardLocation: "Kosgama Parts Yard", notes: "Energy saving replacement conversion kits" },
+  { id: "LYM-12", machineCode: "IRN-SYS", brand: "OTHER", model: "Vacuum Iron Board with Steam Boiler", category: "Heavy Duty / Other", serialNumbers: "SN-IRN-01 to SN-IRN-06", totalYardStock: 6, standardMonthlyRent: 5000, acquisitionCost: 48000, motorSpec: "Vacuum Exhaust Motor + 3.5kW Heating", accessories: "Steam iron, silicone pad, overhead bracket", condition: "Operational", yardLocation: "Kosgama Central Bay 6", notes: "Final garment pressing and finishing" }
+];
+
+const LOCAL_CUSTOMERS_BASELINE = [
+  { id: "c_1", code: "CUST-001", name: "DM Product", nic: "REG-001", phone: "071-0962669", email: "dmproductgarments@gmail.com", address: "DM Product Factory, Avissawella Road", baseOpeningBalance: 266000, isArchived: false, billingCycleDay: 5, rentals: [
+    { machineId: "m_1_1", machineCode: "M-700-14P", model: "Pegasus M-700 Overlock (Fleet of 14)", serialNumber: "SN-M700-01-14", rentRate: 56000, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null },
+    { machineId: "m_1_2", machineCode: "W-500-3P", model: "W-500 Flatlock Industrial (3 pcs)", serialNumber: "SN-W500-01-03", rentRate: 18000, status: "Active", accessories: "Stand, Table, Motor", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null },
+    { machineId: "m_1_3", machineCode: "C007JD-2P", model: "C007JD HEM Cutter Specialty (2 pcs)", serialNumber: "SN-C007-01-02", rentRate: 30000, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null }
+  ]},
+  { id: "c_2", code: "CUST-002", name: "Serandib Fashion", nic: "REG-002", phone: "077-5984571", email: "serandibfashion@gmail.com", address: "Serandib Fashion Factory, Kosgama", baseOpeningBalance: 0, isArchived: false, billingCycleDay: 5, rentals: [
+    { machineId: "m_2_1", machineCode: "OL-8P", model: "Overlock O/L 4-Thread (8 Units)", serialNumber: "SN-OL-SER-08", rentRate: 32000, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null },
+    { machineId: "m_2_2", machineCode: "FB-3P", model: "Flat Bed Industrial Units (3 Units)", serialNumber: "SN-FB-SER-03", rentRate: 21000, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null },
+    { machineId: "m_2_3", machineCode: "W812-2P", model: "Siruba M Cutter W812-356 (2 Units)", serialNumber: "SN-SR-SER-02", rentRate: 30000, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null }
+  ]},
+  { id: "c_3", code: "CUST-003", name: "Sumith Dabadeniya", nic: "REG-003", phone: "071-5327669", email: "sumithdabadeniya@gmail.com", address: "Sumith Dabadeniya Yard, Dabadeniya", baseOpeningBalance: 29000, isArchived: false, billingCycleDay: 5, rentals: [
+    { machineId: "m_3_1", machineCode: "JK-4TH", model: "Jack 4-Thread Overlock (4 Units)", serialNumber: "SN-JK-04", rentRate: 20000, status: "Active", accessories: "Table, Stand, Motor", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null },
+    { machineId: "m_3_2", machineCode: "PEG-M700", model: "Pegasus M700 Overlock (3 Units)", serialNumber: "SN-M700-03", rentRate: 15000, status: "Active", accessories: "Table, Stand, Motor", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null },
+    { machineId: "m_3_3", machineCode: "SPECIAL-MIX", model: "M900, Zole, W500, Juki BH, Dbl Needle (6 Units)", serialNumber: "SN-MIX-06", rentRate: 29800, status: "Active", accessories: "Complete Units", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null }
+  ]},
+  { id: "c_4", code: "CUST-004", name: "Sithagama Ranasinghe", nic: "REG-004", phone: "077-9757217", email: "sithagama.garments@gmail.com", address: "Sithagama Ranasinghe Site, Sithagama", baseOpeningBalance: 0, isArchived: false, billingCycleDay: 5, rentals: [
+    { machineId: "m_4_1", machineCode: "MH380-DA", model: "Juki MH380 & Brother DA 9270", serialNumber: "SN-MH380-DA", rentRate: 16000, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null },
+    { machineId: "m_4_2", machineCode: "SN-5P", model: "Juki Single Needle Lockstitch (5 Units)", serialNumber: "SN-JK-SN5", rentRate: 20000, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null },
+    { machineId: "m_4_3", machineCode: "BT-BH-IB", model: "Bar Tack LK-1900B, Buttonhole BH 1790, Iron Board", serialNumber: "SN-BT-BH-IB", rentRate: 10000, status: "Active", accessories: "Complete Special Units", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null }
+  ]},
+  { id: "c_5", code: "CUST-005", name: "Udith Ariyarathna", nic: "REG-005", phone: "071-4520688", email: "udithariyarathna@gmail.com", address: "Udith Ariyarathna Site, Pugoda", baseOpeningBalance: 0, isArchived: false, billingCycleDay: 5, rentals: [
+    { machineId: "m_5_1", machineCode: "SR-W812", model: "Siruba M Cutter W812-356", serialNumber: "SN-SR-W812", rentRate: 14000, status: "Active", accessories: "Complete Stand & Motor", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null },
+    { machineId: "m_5_2", machineCode: "W-600", model: "W-600 Flatbed Heavy Duty", serialNumber: "SN-W600-01", rentRate: 7000, status: "Active", accessories: "Complete Stand & Motor", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null },
+    { machineId: "m_5_3", machineCode: "JK-SPEC", model: "Juki Special Machine Unit", serialNumber: "SN-JK-SPEC-01", rentRate: 30000, status: "Active", accessories: "Complete Setup", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null }
+  ]},
+  { id: "c_6", code: "CUST-006", name: "One Way", nic: "REG-006", phone: "077-3254046", email: "onewayapparel.lk@gmail.com", address: "One Way Apparel, Hanwella", baseOpeningBalance: 128000, isArchived: false, billingCycleDay: 5, rentals: [
+    { machineId: "m_6_1", machineCode: "M700-4P", model: "Pegasus M-700 O/L (4 Units)", serialNumber: "SN-M700-4P", rentRate: 20000, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null },
+    { machineId: "m_6_2", machineCode: "FB-PIGA", model: "Flatbed PIGA55A5 + W-500 Flatbed", serialNumber: "SN-FB-PIGA-W500", rentRate: 16000, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null },
+    { machineId: "m_6_3", machineCode: "BT-430D", model: "Brother 430D Bar Tack + Juki 4th O/L", serialNumber: "SN-BT430-JK4", rentRate: 12000, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null }
+  ]},
+  { id: "c_7", code: "CUST-007", name: "Dinesh Madusanka", nic: "REG-007", phone: "077-9749548", email: "dineshmadusanka@gmail.com", address: "Dinesh Madusanka Factory, Ruwanwella", baseOpeningBalance: 37160, isArchived: false, billingCycleDay: 5, rentals: [
+    { machineId: "m_7_1", machineCode: "Z1752-2P", model: "Z1752-13H Specialty Units (2 Units)", serialNumber: "SN-Z1752-2P", rentRate: 16000, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null },
+    { machineId: "m_7_2", machineCode: "CW562-DDL", model: "CW562N0 Pegasus + Juki DDL 8700 A-7", serialNumber: "SN-CW562-DDL", rentRate: 16500, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null },
+    { machineId: "m_7_3", machineCode: "W644-BT", model: "W644 + W600 + Bar Tack Brother", serialNumber: "SN-W644-BT", rentRate: 15000, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null }
+  ]},
+  { id: "c_8", code: "CUST-008", name: "Chanaka Kumara", nic: "REG-008", phone: "077-0855726", email: "chanakakumara@gmail.com", address: "Chanaka Kumara Factory, Kosgama", baseOpeningBalance: 35580, isArchived: false, billingCycleDay: 5, rentals: [
+    { machineId: "m_8_1", machineCode: "M700-3P", model: "Pegasus M-700 4th O/L (3 Units)", serialNumber: "SN-M700-3P", rentRate: 12000, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null },
+    { machineId: "m_8_2", machineCode: "M900-5TH", model: "Pegasus M-900 5th Overlock", serialNumber: "SN-M900-5TH", rentRate: 6000, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null },
+    { machineId: "m_8_3", machineCode: "DDL9000-2P", model: "Juki DDL 9000 BMS High-Speed (2 Units)", serialNumber: "SN-DDL9000-2P", rentRate: 9000, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null }
+  ]},
+  { id: "c_9", code: "CUST-009", name: "Cozy (Eheliyagoda)", nic: "REG-009", phone: "077-7063803", email: "cozygarmentseheliyagoda@gmail.com", address: "Cozy Garments Eheliyagoda", baseOpeningBalance: 55000, isArchived: false, billingCycleDay: 5, rentals: [
+    { machineId: "m_9_1", machineCode: "M700-2P", model: "Pegasus M-700 Overlock (2 Units)", serialNumber: "SN-M700-2P", rentRate: 9000, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null },
+    { machineId: "m_9_2", machineCode: "DDL9000-4P", model: "Juki DDL 9000 BMS Auto-Trimmer (4 Units)", serialNumber: "SN-DDL9000-4P", rentRate: 18000, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null }
+  ]},
+  { id: "c_10", code: "CUST-010", name: "Thinuli's Fashion", nic: "REG-010", phone: "077-3741479", email: "thinulisfashion@gmail.com", address: "Thinuli's Fashion Site, Kaluaggala", baseOpeningBalance: 0, isArchived: false, billingCycleDay: 5, rentals: [
+    { machineId: "m_10_1", machineCode: "JK-SN-3P", model: "Juki Single Needle Lockstitch (3 Units)", serialNumber: "SN-JKSN-3P", rentRate: 13500, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null },
+    { machineId: "m_10_2", machineCode: "M700-2P", model: "Pegasus M-700 Overlock (2 Units)", serialNumber: "SN-THIN-M700", rentRate: 9000, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null }
+  ]},
+  { id: "c_11", code: "CUST-011", name: "Tharushika Jayasekara", nic: "REG-011", phone: "074-1560924", email: "tharushikajayasekara@gmail.com", address: "Tharushika Factory, Waga", baseOpeningBalance: 0, isArchived: false, billingCycleDay: 5, rentals: [
+    { machineId: "m_11_1", machineCode: "OL-1P", model: "Industrial 4-Thread Overlock (1 Unit)", serialNumber: "SN-THAR-OL1", rentRate: 4500, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null },
+    { machineId: "m_11_2", machineCode: "JK-SN-4P", model: "Juki Single Needle Lockstitch (4 Units)", serialNumber: "SN-THAR-SN4", rentRate: 18000, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null }
+  ]},
+  { id: "c_12", code: "CUST-012", name: "Susantha (Homagama)", nic: "REG-012", phone: "077-2963138", email: "susanthahomagama@gmail.com", address: "Susantha Homagama Unit", baseOpeningBalance: 0, isArchived: false, billingCycleDay: 5, rentals: [
+    { machineId: "m_12_1", machineCode: "DDL9000-3P", model: "Juki DDL 9000 BMS Single Needle (3 Units)", serialNumber: "SN-SUS-DDL3", rentRate: 13500, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null }
+  ]},
+  { id: "c_13", code: "CUST-013", name: "Layanal (Eheliyagoda)", nic: "REG-013", phone: "077-5671813", email: "layanaleheliyagoda@gmail.com", address: "Layanal Eheliyagoda Site", baseOpeningBalance: 0, isArchived: false, billingCycleDay: 5, rentals: [
+    { machineId: "m_13_1", machineCode: "M900-PEG", model: "Pegasus M-900 High-Speed Overlock", serialNumber: "SN-LAY-M900", rentRate: 3500, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null },
+    { machineId: "m_13_2", machineCode: "SPECIAL-DAYS", model: "Brother KE-430D + Juki LBH 1790S", serialNumber: "SN-LAY-SPECIAL", rentRate: 2340, status: "Active", accessories: "Short-Term Units", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null }
+  ]},
+  { id: "c_14", code: "CUST-014", name: "Iranga Lakmali", nic: "REG-014", phone: "071-6809100", email: "irangalakmali@gmail.com", address: "Iranga Lakmali Site, Dehiowita", baseOpeningBalance: 0, isArchived: false, billingCycleDay: 5, rentals: [
+    { machineId: "m_14_1", machineCode: "MCH-PKG-2P", model: "Industrial Sewing Machinery Fleet (2 Units)", serialNumber: "SN-IRN-2P", rentRate: 11500, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null }
+  ]},
+  { id: "c_15", code: "CUST-015", name: "Lahiru Madusanka", nic: "REG-015", phone: "074-3206240", email: "lahiruapparel@gmail.com", address: "Lahiru Madusanka Site, Avissawella", baseOpeningBalance: 0, isArchived: false, billingCycleDay: 5, rentals: [
+    { machineId: "m_15_1", machineCode: "MCH-PKG-2P", model: "Industrial Sewing Machinery Fleet (2 Units)", serialNumber: "SN-LHR-2P", rentRate: 11500, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null }
+  ]},
+  { id: "c_16", code: "CUST-016", name: "Nimanthi", nic: "REG-016", phone: "071-2607375", email: "nimanthigarments@gmail.com", address: "Nimanthi Site, Labugama", baseOpeningBalance: 0, isArchived: false, billingCycleDay: 5, rentals: [
+    { machineId: "m_16_1", machineCode: "MCH-PKG-2P", model: "Industrial Lockstitch & Overlock Set (2 Units)", serialNumber: "SN-NIM-2P", rentRate: 9000, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null }
+  ]},
+  { id: "c_17", code: "CUST-017", name: "Kumara (Kosgama)", nic: "REG-017", phone: "072-9300000", email: "kumaracos@gmail.com", address: "Kumara Kosgama", baseOpeningBalance: 0, isArchived: false, billingCycleDay: 5, rentals: [
+    { machineId: "m_17_1", machineCode: "MCH-PKG-2P", model: "Industrial Sewing Machine Package (2 Units)", serialNumber: "SN-KUM-2P", rentRate: 9000, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null }
+  ]},
+  { id: "c_18", code: "CUST-018", name: "Jayamadu Kosgama", nic: "REG-018", phone: "071-6313043", email: "jayamadukos@gmail.com", address: "Jayamadu Kosgama Site", baseOpeningBalance: 0, isArchived: false, billingCycleDay: 5, rentals: [
+    { machineId: "m_18_1", machineCode: "SETTLE-2P", model: "Settlement Fleet Package (2 Units)", serialNumber: "SN-JAY-2P", rentRate: 0, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null }
+  ]},
+  { id: "c_19", code: "CUST-019", name: "Miriswattha", nic: "REG-019", phone: "075-9115775", email: "miriswatthagarm@gmail.com", address: "Miriswattha Garments", baseOpeningBalance: 0, isArchived: false, billingCycleDay: 5, rentals: [
+    { machineId: "m_19_1", machineCode: "FB-SPEC-1P", model: "Heavy Duty Flatbed Specialty Unit (1 Unit)", serialNumber: "SN-MIR-FB1", rentRate: 7000, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null }
+  ]},
+  { id: "c_20", code: "CUST-020", name: "Wajira Perera", nic: "REG-020", phone: "074-3654646", email: "wajiraperera@gmail.com", address: "Wajira Perera Unit, Thummodara", baseOpeningBalance: 0, isArchived: false, billingCycleDay: 5, rentals: [
+    { machineId: "m_20_1", machineCode: "SN-1P", model: "Single Needle Lockstitch Unit (1 Unit)", serialNumber: "SN-WAJ-01", rentRate: 5000, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null }
+  ]},
+  { id: "c_21", code: "CUST-021", name: "Suresh Sanjeewa", nic: "REG-021", phone: "076-0489603", email: "sureshsanjeewa@gmail.com", address: "Suresh Sanjeewa Unit, Kosgama", baseOpeningBalance: 0, isArchived: false, billingCycleDay: 5, rentals: [
+    { machineId: "m_21_1", machineCode: "SN-1P", model: "Single Needle Lockstitch Unit (1 Unit)", serialNumber: "SN-SUR-01", rentRate: 4500, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null }
+  ]},
+  { id: "c_22", code: "CUST-022", name: "Kamani Lakmali (Thummodara)", nic: "REG-022", phone: "074-0085055", email: "kamanithummodara@gmail.com", address: "Kamani Thummodara", baseOpeningBalance: 0, isArchived: false, billingCycleDay: 5, rentals: [
+    { machineId: "m_22_1", machineCode: "SN-1P", model: "Single Needle Lockstitch Unit (1 Unit)", serialNumber: "SN-KAM-01", rentRate: 4500, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null }
+  ]},
+  { id: "c_23", code: "CUST-023", name: "Neha Saloon", nic: "REG-023", phone: "070-6630067", email: "nehasaloonkos@gmail.com", address: "Neha Saloon Site, Kosgama", baseOpeningBalance: 1500, isArchived: false, billingCycleDay: 5, rentals: [
+    { machineId: "m_23_1", machineCode: "SEW-1P", model: "Industrial Lockstitch Sewing Machine (1 Unit)", serialNumber: "SN-NEH-01", rentRate: 2500, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null }
+  ]}
+];
+
+const LOCAL_PARTNERS_BASELINE = [
+  {
+    id: "part_1",
+    code: "PTR-001",
+    name: "Lanka Sewing Machinery Ltd",
+    contactPerson: "Mr. Bandara (Director)",
+    phone: "011-2856942 / 071-4567890",
+    address: "Pettah Commercial Zone, Colombo 11",
+    baseOpeningBalance: 45000,
+    isArchived: false,
+    purchases: [
+      { id: "pur_1", invoiceNo: "INV-LSM-8841", date: "2026-08-10", itemDescription: "Juki DDL 8700 Full Machines (2 Units)", category: "Machine", qty: 2, unitPrice: 38000, total: 76000, remarks: "Acquired for urgent DM Product client requirement" },
+      { id: "pur_2", invoiceNo: "INV-LSM-8902", date: "2026-08-18", itemDescription: "Pegasus Loopers, Needle Clamps & Belts", category: "Parts", qty: 15, unitPrice: 1800, total: 27000, remarks: "Yard replacement batch" }
+    ],
+    returns: [
+      { id: "pret_1", slipNo: "RET-LSM-01", date: "2026-08-22", itemDescription: "Defective Servo Motor 550W Unit", qty: 1, unitPrice: 16500, total: 16500, reason: "Defective winding coil returned for warranty relief" }
+    ],
+    payments: [
+      { id: "ppay_1", date: "2026-08-20", amount: 60000, method: "BOC Bank Transfer", refNo: "BOC-TXN-PART-991" }
+    ]
+  },
+  {
+    id: "part_2",
+    code: "PTR-002",
+    name: "Asian Garment Machinery & Spares Co.",
+    contactPerson: "Nihal Jayawardena",
+    phone: "077-3344556",
+    address: "Katunayake Industrial Access Road",
+    baseOpeningBalance: 0,
+    isArchived: false,
+    purchases: [
+      { id: "pur_3", invoiceNo: "AGM-9912", date: "2026-08-15", itemDescription: "Direct Drive Servo Motors 550W (4 pcs)", category: "Parts", qty: 4, unitPrice: 16500, total: 66000, remarks: "Upgraded client tables" }
+    ],
+    returns: [],
+    payments: [
+      { id: "ppay_2", date: "2026-08-24", amount: 40000, method: "Direct Cash Payment", refNo: "CASH-PTR-002" }
+    ]
+  }
+];
+
+const LOCAL_EXPENSES_BASELINE = [
+  { id: "e1", title: "Fleet Mechanical Technician Wages", amount: 95000, type: "Salary" },
+  { id: "e2", title: "Kosgama Yard Operations & Power", amount: 42000, type: "Operations" }
+];
+
+const LOCAL_PAYMENTS_BASELINE = [
+  { id: "pay_1", month: "August 2026", customerId: "c_8", customerName: "Chanaka Kumara", amount: 50000, date: "2026-08-25", method: "BOC Ruwanwella Transfer", refNo: "TXN-88421" },
+  { id: "pay_2", month: "August 2026", customerId: "c_10", customerName: "Thinuli's Fashion", amount: 22500, date: "2026-08-25", method: "BOC Ruwanwella Transfer", refNo: "TXN-88422" },
+  { id: "pay_3", month: "August 2026", customerId: "c_11", customerName: "Tharushika Jayasekara", amount: 13500, date: "2026-08-25", method: "Direct Cash Payment", refNo: "CASH-001" },
+  { id: "pay_4", month: "August 2026", customerId: "c_14", customerName: "Iranga Lakmali", amount: 11200, date: "2026-08-25", method: "Direct Cash Payment", refNo: "CASH-002" },
+  { id: "pay_5", month: "August 2026", customerId: "c_16", customerName: "Nimanthi", amount: 9000, date: "2026-08-25", method: "Direct Cash Payment", refNo: "CASH-003" },
+  { id: "pay_6", month: "August 2026", customerId: "c_22", customerName: "Kamani (Thummodara)", amount: 4500, date: "2026-08-25", method: "Direct Cash Payment", refNo: "CASH-004" }
+];
+
+module.exports = {
+  GLOBAL_MACHINES_BASELINE,
+  LOCAL_MACHINES_BASELINE,
+  LOCAL_CUSTOMERS_BASELINE,
+  LOCAL_PARTNERS_BASELINE,
+  LOCAL_EXPENSES_BASELINE,
+  LOCAL_PAYMENTS_BASELINE
+};

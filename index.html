@@ -1,0 +1,2528 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ANUJAYA ENTERPRISES | Industrial Apparel Machinery Enterprise ERP</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800;900&family=Noto+Sans+Sinhala:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- FontAwesome 6 Pro CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', '"Noto Sans Sinhala"', 'sans-serif'],
+            display: ['Plus Jakarta Sans', '"Noto Sans Sinhala"', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            carbon: {
+              950: '#06090e',
+              900: '#0a0e17',
+              850: '#101623',
+              800: '#161f31',
+              750: '#1e2b44',
+              700: '#283858',
+              600: '#384b70'
+            },
+            anujaya: {
+              DEFAULT: '#0ea5e9',
+              glow: '#0284c7',
+              bg: 'rgba(14, 165, 233, 0.12)'
+            },
+            global: {
+              DEFAULT: '#10b981',
+              glow: '#059669',
+              bg: 'rgba(16, 185, 129, 0.12)'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #06090e; }
+    ::-webkit-scrollbar-thumb { background: #1e2b44; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #384b70; }
+
+    .glass-card {
+      background: rgba(16, 22, 35, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glass-header {
+      background: rgba(10, 14, 23, 0.94);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .editable-cell {
+      cursor: pointer;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+    }
+    .editable-cell:hover {
+      background: rgba(14, 165, 233, 0.14);
+      outline: 1px dashed rgba(14, 165, 233, 0.6);
+    }
+    .editable-cell:focus {
+      background: rgba(10, 14, 23, 0.98);
+      outline: 2px solid #0ea5e9;
+      color: #fff;
+    }
+
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 10mm;
+      }
+      body * {
+        visibility: hidden !important;
+      }
+      #printableInvoiceModal, #printableInvoiceModal * {
+        visibility: visible !important;
+      }
+      #printableInvoiceModal {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        background: white !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: block !important;
+      }
+      #printableInvoiceWrapper {
+        width: 100% !important;
+        max-width: 100% !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 4mm !important;
+        color: black !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+<body class="bg-carbon-950 text-slate-100 font-sans min-h-screen flex flex-col selection:bg-sky-500 selection:text-black">
+
+  <!-- ================= LOGIN SCREEN GUARD MODAL ================= -->
+  <div id="loginGateModal" class="fixed inset-0 z-50 bg-black/95 backdrop-blur-xl flex items-center justify-center p-4">
+    <div class="glass-card max-w-sm w-full p-8 rounded-3xl border border-carbon-700/80 text-center space-y-5 shadow-2xl relative">
+      <div class="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-tr from-sky-600 via-indigo-600 to-emerald-500 p-[2px] shadow-lg shadow-sky-950/60">
+        <div class="w-full h-full bg-carbon-900 rounded-[14px] flex items-center justify-center">
+          <i class="fa-solid fa-shield-halved text-xl text-sky-400"></i>
+        </div>
+      </div>
+      <div>
+        <h3 class="font-display font-black text-lg text-white">ANUJAYA & GLOBAL ERP</h3>
+        <p class="text-xs text-slate-400 mt-1 font-mono">Consortium Role Authentication</p>
+      </div>
+
+      <div class="space-y-4 font-mono">
+        <div class="flex gap-2">
+          <button type="button" id="roleBtnAdmin" onclick="selectLoginRole('ADMIN')" class="flex-1 py-2.5 rounded-xl text-xs font-bold border border-sky-500 bg-sky-600/30 text-sky-300 transition">
+            Consortium Admin
+          </button>
+          <button type="button" id="roleBtnPartner" onclick="selectLoginRole('PARTNER')" class="flex-1 py-2.5 rounded-xl text-xs font-bold border border-carbon-700 bg-carbon-850 text-slate-400 transition">
+            Partner View
+          </button>
+        </div>
+
+        <input type="password" id="loginPinInput" maxlength="6" placeholder="••••" 
+               class="w-full text-center tracking-[0.5em] text-2xl py-3 rounded-xl bg-carbon-950 border border-carbon-700 text-sky-400 font-mono focus:outline-none focus:border-sky-400 font-bold"
+               onkeydown="if(event.key === 'Enter') handleLoginSubmit()">
+
+        <button onclick="handleLoginSubmit()" class="w-full py-3 bg-gradient-to-r from-sky-600 to-emerald-600 hover:from-sky-500 hover:to-emerald-500 font-bold text-xs uppercase tracking-wider rounded-xl text-white shadow-lg transition">
+          Unlock System
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOP APP NAV -->
+  <header class="glass-header sticky top-0 z-40">
+    <div class="max-w-[1900px] mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-20 gap-4">
+        
+        <!-- Conglomerate Brand Identity -->
+        <div class="flex items-center gap-4">
+          <div class="relative flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-600 via-indigo-600 to-emerald-500 p-[2px] shadow-lg shadow-sky-950/50">
+            <div class="w-full h-full bg-carbon-900 rounded-[14px] flex items-center justify-center">
+              <i class="fa-solid fa-industry text-xl text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-emerald-400"></i>
+            </div>
+            <span class="absolute -bottom-1 -right-1 flex h-3.5 w-3.5">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500 border-2 border-carbon-900"></span>
+            </span>
+          </div>
+
+          <div>
+            <div class="flex items-center gap-2.5">
+              <span id="headerBrandTitle" class="font-display font-black text-xl tracking-tight text-white uppercase">ANUJAYA ENTERPRISES</span>
+              <span class="text-[10px] font-mono font-bold tracking-widest px-2 py-0.5 rounded-md bg-sky-950 text-sky-300 border border-sky-800">EQUITY CONSORTIUM</span>
+              <span id="userRoleBadge" class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-emerald-950 text-emerald-300 border border-emerald-800 uppercase">ADMIN</span>
+            </div>
+            <div class="text-xs text-slate-400 flex items-center gap-2 font-medium">
+              <span class="text-sky-400 font-bold" id="navCompXName">Anujaya Enterprises</span>
+              <span class="text-slate-600">•</span>
+              <span class="text-emerald-400 font-bold" id="navCompYName">Global Enterprises</span>
+              <span class="text-slate-600">•</span>
+              <span class="text-slate-400 font-mono">Apparel Machinery Logistics & Distribution</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <nav class="hidden xl:flex items-center gap-1.5 bg-carbon-900/90 p-1.5 rounded-2xl border border-carbon-700/60 shadow-inner">
+          <button onclick="switchTab('dashboard')" id="nav-dashboard" class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold text-white bg-sky-600/25 border border-sky-500/40 transition flex items-center gap-2">
+            <i class="fa-solid fa-chart-pie text-sky-400"></i>
+            <span data-i18n="nav_dashboard">Executive Dashboard</span>
+          </button>
+          <button onclick="switchTab('inventory')" id="nav-inventory" class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-carbon-800 transition flex items-center gap-2">
+            <i class="fa-solid fa-boxes-stacked text-amber-400"></i>
+            <span data-i18n="nav_inventory">Machinery Master</span>
+            <span id="badgeStockCount" class="ml-1 px-1.5 py-0.5 rounded-md text-[10px] font-mono bg-carbon-700 text-slate-300">26</span>
+          </button>
+          <button onclick="switchTab('ledger')" id="nav-ledger" class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-carbon-800 transition flex items-center gap-2">
+            <i class="fa-solid fa-receipt text-blue-400"></i>
+            <span data-i18n="nav_ledger">Sales & Audit Ledger</span>
+            <span id="badgeSalesCount" class="ml-1 px-1.5 py-0.5 rounded-md text-[10px] font-mono bg-blue-950 text-blue-300 border border-blue-800">0</span>
+          </button>
+          <button onclick="switchTab('customers')" id="nav-customers" class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-carbon-800 transition flex items-center gap-2">
+            <i class="fa-solid fa-users text-purple-400"></i>
+            <span data-i18n="nav_customers">Apparel Clients</span>
+          </button>
+          <button onclick="switchTab('settlement')" id="nav-settlement" class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-carbon-800 transition flex items-center gap-2">
+            <i class="fa-solid fa-scale-balanced text-emerald-400"></i>
+            <span data-i18n="nav_settlement">Partner Accounts</span>
+          </button>
+        </nav>
+
+        <!-- Right Controls -->
+        <div class="flex items-center gap-2.5">
+          <!-- Auto-Save Status -->
+          <div class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-carbon-900 border border-carbon-700/80 text-[11px] font-mono text-slate-400">
+            <i class="fa-solid fa-database text-emerald-400 text-xs"></i>
+            <span id="autoSaveIndicator">Database Active</span>
+          </div>
+
+          <!-- USD Exchange Rate Anchor -->
+          <div class="glass-card px-3 py-1.5 rounded-xl border border-carbon-700 flex items-center gap-2 text-xs">
+            <span class="text-slate-400 font-medium">1 USD ($) =</span>
+            <div class="flex items-center gap-1 font-mono font-bold text-amber-400">
+              <span class="text-[11px] text-slate-400">LKR</span>
+              <input type="number" id="globalUsdInput" value="330" step="any" min="1" class="w-16 bg-carbon-900 border-b border-amber-500/50 text-center font-mono text-amber-400 font-bold focus:outline-none focus:border-amber-400 py-0.5 rounded" onchange="updateGlobalUsdRate(this.value)">
+            </div>
+            <button onclick="applyExchangeRateRecalculation()" title="Recalculate Current Stock Valuation" class="admin-only p-1 text-slate-400 hover:text-amber-400 transition">
+              <i class="fa-solid fa-rotate text-xs"></i>
+            </button>
+          </div>
+
+          <!-- Bilingual Switcher Toggle -->
+          <button onclick="toggleLanguage()" id="langSwitchBtn" class="flex items-center gap-2 px-3 py-2 rounded-xl bg-carbon-850 hover:bg-carbon-800 border border-carbon-700 text-xs font-bold transition shadow-sm">
+            <i class="fa-solid fa-language text-sky-400 text-sm"></i>
+            <span id="currentLangLabel" class="font-mono text-sky-300">සිංහල</span>
+          </button>
+
+          <!-- Backups (Admin Only) -->
+          <button onclick="exportFullAuditJson()" title="Download Complete Backup JSON" class="admin-only p-2 rounded-xl bg-carbon-850 hover:bg-carbon-800 border border-carbon-700 text-slate-300 hover:text-white transition">
+            <i class="fa-solid fa-download text-sm"></i>
+          </button>
+          <button onclick="triggerJsonImport()" title="Restore Backup JSON" class="admin-only p-2 rounded-xl bg-carbon-850 hover:bg-carbon-800 border border-carbon-700 text-slate-300 hover:text-white transition">
+            <i class="fa-solid fa-upload text-sm"></i>
+          </button>
+          <input type="file" id="jsonFileInput" accept=".json" class="hidden" onchange="handleJsonFileRestore(event)">
+
+          <!-- Record Sale Trigger -->
+          <button onclick="openSaleModal()" class="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 hover:from-emerald-500 hover:to-teal-400 text-white text-xs font-bold px-3.5 py-2 rounded-xl shadow-lg transition flex items-center gap-2">
+            <i class="fa-solid fa-cart-shopping"></i>
+            <span data-i18n="btn_record_sale">New Dispatch</span>
+          </button>
+
+          <!-- Add SKU Button (Admin Only) -->
+          <button onclick="openAddMachineModal()" class="admin-only bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white text-xs font-bold px-3.5 py-2 rounded-xl shadow-lg transition flex items-center gap-2">
+            <i class="fa-solid fa-plus-circle"></i>
+            <span data-i18n="btn_add_machine">Add SKU</span>
+          </button>
+
+          <!-- Logout Button -->
+          <button onclick="handleLogout()" title="Logout User" class="p-2 rounded-xl bg-rose-950/50 hover:bg-rose-900 border border-rose-800 text-rose-300 transition">
+            <i class="fa-solid fa-right-from-bracket"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN VIEW CONTAINER -->
+  <main class="flex-1 max-w-[1900px] w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
+
+    <!-- VIEW 1: EXECUTIVE DASHBOARD -->
+    <section id="view-dashboard" class="space-y-8">
+      <div class="glass-card p-6 sm:p-8 rounded-3xl border border-carbon-700/80 relative overflow-hidden">
+        <div class="relative z-10 flex flex-col lg:flex-row justify-between lg:items-center gap-6 pb-6 border-b border-carbon-700/60">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <h2 class="font-display font-black text-2xl sm:text-3xl text-white tracking-tight" data-i18n="game_title">
+                Consortium Executive Financial & Capital Summary
+              </h2>
+            </div>
+            <p class="text-xs text-slate-400 mt-1 font-mono">Consortium Fleet: 26 Models • 489 Sets Baseline • Spot Rate: 1 USD = <span id="arenaUsdRate">330.00</span> LKR</p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2.5">
+            <button onclick="resetToInitialBaseline()" class="admin-only text-xs bg-carbon-800/90 hover:bg-rose-950/60 text-slate-300 hover:text-rose-300 border border-carbon-700 hover:border-rose-800 px-3.5 py-2 rounded-xl transition flex items-center gap-2">
+              <i class="fa-solid fa-rotate-left text-xs"></i>
+              <span data-i18n="btn_reset_defaults">Reset Baseline</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Partnership Capital & Equity Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6">
+          <div class="p-6 rounded-2xl bg-gradient-to-br from-carbon-900 to-carbon-850 border border-sky-500/40 relative">
+            <div class="flex justify-between items-start">
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-md bg-sky-400 inline-block"></span>
+                  <span class="font-display font-extrabold text-xl text-white tracking-wide">Anujaya Enterprises</span>
+                  <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-sky-950 text-sky-300 border border-sky-800 font-bold">EQUITY ACCOUNT</span>
+                </div>
+                <p class="text-xs text-slate-400 mt-1 font-mono">Partner Net Realized Earnings & Advance Audit</p>
+              </div>
+              <div class="text-right">
+                <span class="text-xs text-slate-400 font-medium" data-i18n="lbl_realized_share">Total Realized Net Profit</span>
+                <div class="text-2xl sm:text-3xl font-black font-mono text-sky-300" id="cardXProfit">Rs. 0.00</div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 mt-6 pt-4 border-t border-carbon-700/60 text-xs font-mono">
+              <div>
+                <span class="text-slate-500">Capital Draws:</span>
+                <span class="text-slate-300 font-bold ml-1" id="cardXWithdrawn">Rs. 0.00</span>
+              </div>
+              <div class="text-right">
+                <span class="text-slate-500">Unsettled Balance:</span>
+                <span class="text-sky-400 font-bold ml-1" id="cardXBalance">Rs. 0.00</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-6 rounded-2xl bg-gradient-to-br from-carbon-900 to-carbon-850 border border-emerald-500/40 relative">
+            <div class="flex justify-between items-start">
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-md bg-emerald-400 inline-block"></span>
+                  <span class="font-display font-extrabold text-xl text-white tracking-wide">Global Enterprises</span>
+                  <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800 font-bold">EQUITY ACCOUNT</span>
+                </div>
+                <p class="text-xs text-slate-400 mt-1 font-mono">Partner Net Realized Earnings & Advance Audit</p>
+              </div>
+              <div class="text-right">
+                <span class="text-xs text-slate-400 font-medium" data-i18n="lbl_realized_share">Total Realized Net Profit</span>
+                <div class="text-2xl sm:text-3xl font-black font-mono text-emerald-400" id="cardYProfit">Rs. 0.00</div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 mt-6 pt-4 border-t border-carbon-700/60 text-xs font-mono">
+              <div>
+                <span class="text-slate-500">Capital Draws:</span>
+                <span class="text-slate-300 font-bold ml-1" id="cardYWithdrawn">Rs. 0.00</span>
+              </div>
+              <div class="text-right">
+                <span class="text-slate-500">Unsettled Balance:</span>
+                <span class="text-emerald-400 font-bold ml-1" id="cardYBalance">Rs. 0.00</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-6 pt-2 space-y-2">
+          <div class="flex justify-between text-xs font-mono">
+            <span class="text-sky-400 flex items-center gap-1 font-bold">Anujaya Balance: <span id="barXVal">Rs. 0.00</span></span>
+            <span class="text-slate-400 font-semibold" data-i18n="lbl_balance_gauge">Consortium Equity Balance Indicator</span>
+            <span class="text-emerald-400 flex items-center gap-1 font-bold">Global Balance: <span id="barYVal">Rs. 0.00</span></span>
+          </div>
+          <div class="h-2.5 w-full bg-carbon-900 rounded-full overflow-hidden p-0.5 border border-carbon-700 flex">
+            <div id="progBarX" class="h-full bg-sky-500 rounded-l-full transition-all duration-500" style="width: 50%;"></div>
+            <div id="progBarY" class="h-full bg-emerald-500 rounded-r-full transition-all duration-500" style="width: 50%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI Metrics -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+        <div class="glass-card p-5 rounded-2xl border border-carbon-700/70">
+          <div class="flex justify-between items-center text-slate-400 mb-2">
+            <span class="text-xs uppercase font-bold tracking-wider" data-i18n="kpi_gross_rev">Gross Revenue</span>
+            <i class="fa-solid fa-coins text-sky-400"></i>
+          </div>
+          <div class="text-xl sm:text-2xl font-black font-mono text-white" id="kpiGrossRevenue">Rs. 0.00</div>
+          <div class="text-[11px] text-slate-400 mt-2 flex items-center justify-between">
+            <span data-i18n="lbl_dispatches">Completed Dispatches</span>
+            <span class="font-mono text-sky-300 font-bold" id="kpiSalesCount">0</span>
+          </div>
+        </div>
+
+        <div class="glass-card p-5 rounded-2xl border border-carbon-700/70">
+          <div class="flex justify-between items-center text-slate-400 mb-2">
+            <span class="text-xs uppercase font-bold tracking-wider" data-i18n="kpi_total_cogs">Total Cost of Goods</span>
+            <i class="fa-solid fa-boxes-packing text-amber-400"></i>
+          </div>
+          <div class="text-xl sm:text-2xl font-black font-mono text-amber-300" id="kpiTotalCost">Rs. 0.00</div>
+          <div class="text-[11px] text-slate-400 mt-2 flex items-center justify-between">
+            <span data-i18n="lbl_customs_taxes">Port & Customs Duty</span>
+            <span class="font-mono text-slate-300" id="kpiTotalTaxes">Rs. 0.00</span>
+          </div>
+        </div>
+
+        <div class="glass-card p-5 rounded-2xl border border-carbon-700/70">
+          <div class="flex justify-between items-center text-slate-400 mb-2">
+            <span class="text-xs uppercase font-bold tracking-wider" data-i18n="kpi_net_profit">Consortium Net Profit</span>
+            <i class="fa-solid fa-sack-dollar text-emerald-400"></i>
+          </div>
+          <div class="text-xl sm:text-2xl font-black font-mono text-emerald-400" id="kpiNetProfit">Rs. 0.00</div>
+          <div class="text-[11px] text-slate-400 mt-2 flex items-center justify-between">
+            <span data-i18n="lbl_margin">Net Margin</span>
+            <span class="font-mono text-emerald-300 font-bold" id="kpiMarginPct">0.0%</span>
+          </div>
+        </div>
+
+        <div class="glass-card p-5 rounded-2xl border border-carbon-700/70">
+          <div class="flex justify-between items-center text-slate-400 mb-2">
+            <span class="text-xs uppercase font-bold tracking-wider" data-i18n="kpi_fleet_volume">Dispatched / Total Fleet</span>
+            <i class="fa-solid fa-dolly text-blue-400"></i>
+          </div>
+          <div class="text-xl sm:text-2xl font-black font-mono text-white">
+            <span id="kpiSoldUnits">0</span> <span class="text-slate-500 font-normal text-sm">/</span> <span id="kpiTotalUnits">489</span>
+          </div>
+          <div class="text-[11px] text-slate-400 mt-2 flex items-center justify-between">
+            <span data-i18n="lbl_stock_rate">Fleet Turnover</span>
+            <span class="font-mono text-blue-300 font-bold" id="kpiSoldPct">0.0%</span>
+          </div>
+        </div>
+
+        <div class="glass-card p-5 rounded-2xl border border-carbon-700/70">
+          <div class="flex justify-between items-center text-slate-400 mb-2">
+            <span class="text-xs uppercase font-bold tracking-wider" data-i18n="kpi_inventory_value">Current Stock Valuation</span>
+            <i class="fa-solid fa-warehouse text-purple-400"></i>
+          </div>
+          <div class="text-xl sm:text-2xl font-black font-mono text-purple-300" id="kpiStockValuation">Rs. 0.00</div>
+          <div class="text-[11px] text-slate-400 mt-2 flex items-center justify-between">
+            <span data-i18n="lbl_remaining_units">In Port & Warehouses</span>
+            <span class="font-mono text-purple-200 font-bold" id="kpiAvailableUnits">489 Sets</span>
+          </div>
+        </div>
+
+        <div class="glass-card p-5 rounded-2xl border border-carbon-700/70">
+          <div class="flex justify-between items-center text-slate-400 mb-2">
+            <span class="text-xs uppercase font-bold tracking-wider" data-i18n="kpi_receivables">Total Receivables</span>
+            <i class="fa-solid fa-file-invoice-dollar text-rose-400"></i>
+          </div>
+          <div class="text-xl sm:text-2xl font-black font-mono text-rose-400" id="kpiTotalReceivables">Rs. 0.00</div>
+          <div class="text-[11px] text-slate-400 mt-2 flex items-center justify-between">
+            <span>Outstanding Credit</span>
+            <span class="font-mono text-rose-300 font-bold" id="kpiPendingCount">0 Invoices</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dashboard Visual Hub -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="glass-card p-6 rounded-3xl border border-carbon-700/70 lg:col-span-2 space-y-4">
+          <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b border-carbon-700/60 pb-4">
+            <h3 class="font-display font-bold text-lg text-white flex items-center gap-2">
+              <i class="fa-solid fa-bolt text-amber-400"></i>
+              <span data-i18n="sec_recent_activity">Recent Dispatches & Invoicing Log</span>
+            </h3>
+            <button onclick="openSaleModal()" class="text-xs font-semibold text-emerald-400 hover:text-emerald-300 flex items-center gap-1.5 transition">
+              <i class="fa-solid fa-plus"></i> <span data-i18n="btn_record_sale">New Dispatch</span>
+            </button>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs whitespace-nowrap">
+              <thead class="text-slate-400 uppercase bg-carbon-900/80 font-bold border-b border-carbon-700 font-mono">
+                <tr>
+                  <th class="px-3.5 py-3" data-i18n="th_invoice_id">Invoice #</th>
+                  <th class="px-3.5 py-3" data-i18n="th_date">Date</th>
+                  <th class="px-3.5 py-3" data-i18n="th_customer_details">Apparel Client</th>
+                  <th class="px-3.5 py-3" data-i18n="th_machine_model">Machinery Model</th>
+                  <th class="px-3.5 py-3 text-center" data-i18n="th_qty">Qty</th>
+                  <th class="px-3.5 py-3 text-right" data-i18n="th_revenue">Total Amount</th>
+                  <th class="px-3.5 py-3 text-center">Status</th>
+                  <th class="px-3.5 py-3 text-center" data-i18n="th_actions">Action</th>
+                </tr>
+              </thead>
+              <tbody id="dashRecentSalesTbody" class="divide-y divide-carbon-700/50 font-mono"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="glass-card p-6 rounded-3xl border border-carbon-700/70 space-y-5 flex flex-col justify-between">
+          <div>
+            <div class="border-b border-carbon-700/60 pb-3">
+              <h3 class="font-display font-bold text-lg text-white flex items-center gap-2">
+                <i class="fa-solid fa-layer-group text-sky-400"></i>
+                <span data-i18n="sec_brand_allocation">Consortium Fleet Breakdown</span>
+              </h3>
+            </div>
+            <div class="space-y-3.5 mt-4" id="brandBreakdownList"></div>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-carbon-900 border border-carbon-700/80 text-xs space-y-2">
+            <div class="flex items-center gap-2 text-sky-400 font-bold">
+              <i class="fa-solid fa-shield-check"></i>
+              <span>Consortium Auditing Active</span>
+            </div>
+            <p class="text-slate-400 text-[11px] leading-relaxed">
+              All import costs, customs charges, and realized net earnings are distributed equally to Consortium partner ledgers upon invoice settlement.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 2: MACHINERY MASTER INVENTORY -->
+    <section id="view-inventory" class="hidden space-y-6">
+      <div class="flex flex-col lg:flex-row justify-between lg:items-center gap-4">
+        <div>
+          <h2 class="font-display font-bold text-2xl sm:text-3xl text-white flex items-center gap-3">
+            <i class="fa-solid fa-boxes-stacked text-amber-400"></i>
+            <span data-i18n="sec_inventory_title">Machinery Master Fleet (Landed Costing & Benchmarks)</span>
+          </h2>
+          <p class="text-xs text-slate-400 font-mono mt-1">26 Total Models • 489 Sets Baseline • In-line cell edits auto-save to master storage</p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2.5">
+          <div class="relative">
+            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-500 text-xs"></i>
+            <input type="text" id="invSearchInput" oninput="applyInventoryFilters()" placeholder="Search Model, Brand, SKU..." class="bg-carbon-900 border border-carbon-700 rounded-xl pl-9 pr-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-400 w-56 sm:w-64">
+          </div>
+
+          <select id="invBrandFilter" onchange="applyInventoryFilters()" class="bg-carbon-900 border border-carbon-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-400 font-mono">
+            <option value="ALL">All Brands</option>
+            <option value="JUKI">JUKI</option>
+            <option value="PEGASUS">PEGASUS</option>
+            <option value="KANSAI">KANSAI</option>
+            <option value="SIRUBA">SIRUBA</option>
+            <option value="OTHER">OTHER</option>
+          </select>
+
+          <button onclick="exportInventoryToCSV()" class="admin-only bg-carbon-800 hover:bg-carbon-700 text-slate-200 border border-carbon-700 px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition">
+            <i class="fa-solid fa-file-csv text-emerald-400 text-sm"></i>
+            <span>Export CSV</span>
+          </button>
+
+          <button onclick="openAddMachineModal()" class="admin-only bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-lg transition">
+            <i class="fa-solid fa-plus"></i>
+            <span>Add Machinery SKU</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="glass-card rounded-3xl border border-carbon-700/80 overflow-hidden shadow-2xl">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs whitespace-nowrap">
+            <thead class="text-slate-400 uppercase bg-carbon-900/90 font-bold border-b border-carbon-700 font-mono tracking-wider">
+              <tr>
+                <th class="px-4 py-4">SKU</th>
+                <th class="px-4 py-4">Brand</th>
+                <th class="px-4 py-4">Model / Technical Specs</th>
+                <th class="px-4 py-4 text-center">Batch Sets</th>
+                <th class="px-4 py-4 text-center">Dispatched</th>
+                <th class="px-4 py-4 text-center">In Warehouse</th>
+                <th class="px-4 py-4 text-right text-amber-400">USD FOB</th>
+                <th class="px-4 py-4 text-right">Base LKR</th>
+                <th class="px-4 py-4 text-right">Duty/Taxes</th>
+                <th class="px-4 py-4 text-right text-amber-300 font-bold">Landed Cost</th>
+                <th class="px-4 py-4 text-right text-sky-300">Wholesale Benchmark</th>
+                <th class="px-4 py-4 text-right text-emerald-300">Retail Benchmark</th>
+                <th class="px-4 py-4 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="inventoryTableTbody" class="divide-y divide-carbon-700/50 font-mono"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 3: SALES TRANSACTION LEDGER -->
+    <section id="view-ledger" class="hidden space-y-6">
+      <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+        <div>
+          <h2 class="font-display font-bold text-2xl sm:text-3xl text-white flex items-center gap-3">
+            <i class="fa-solid fa-receipt text-blue-400"></i>
+            <span data-i18n="sec_ledger_title">Sales Ledger & Asset Audit Log</span>
+          </h2>
+          <p class="text-xs text-slate-400 font-mono mt-1">Official dispatch records with locked historical rates, serial numbers, and payment status</p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3">
+          <div class="relative">
+            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-500 text-xs"></i>
+            <input type="text" id="salesSearchInput" oninput="applySalesFilters()" placeholder="Search Invoice, Customer, Serial #..." class="bg-carbon-900 border border-carbon-700 rounded-xl pl-9 pr-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-400 w-56">
+          </div>
+
+          <button onclick="exportSalesToCSV()" class="admin-only bg-carbon-800 hover:bg-carbon-700 text-slate-200 border border-carbon-700 px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition">
+            <i class="fa-solid fa-file-csv text-blue-400 text-sm"></i>
+            <span>Export Ledger (CSV)</span>
+          </button>
+          <button onclick="openSaleModal()" class="bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg transition">
+            <i class="fa-solid fa-plus"></i>
+            <span>Record New Dispatch</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="glass-card rounded-3xl border border-carbon-700/80 overflow-hidden shadow-2xl">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs whitespace-nowrap">
+            <thead class="text-slate-400 uppercase bg-carbon-900/90 font-bold border-b border-carbon-700 font-mono tracking-wider">
+              <tr>
+                <th class="px-4 py-4">Invoice #</th>
+                <th class="px-4 py-4">Date</th>
+                <th class="px-4 py-4">SKU & Model</th>
+                <th class="px-4 py-4">Serials Tracked</th>
+                <th class="px-4 py-4">Apparel Client</th>
+                <th class="px-4 py-4 text-center">Qty</th>
+                <th class="px-4 py-4 text-right">Unit Price</th>
+                <th class="px-4 py-4 text-right text-white font-bold">Total Revenue</th>
+                <th class="px-4 py-4 text-right text-amber-400">Total Cost (COGS)</th>
+                <th class="px-4 py-4 text-right text-emerald-400 font-bold">Realized Net</th>
+                <th class="px-4 py-4 text-center">Payment Status</th>
+                <th class="px-4 py-4 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="salesLedgerTbody" class="divide-y divide-carbon-700/50 font-mono"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 4: CUSTOMER DIRECTORY -->
+    <section id="view-customers" class="hidden space-y-6">
+      <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+        <div>
+          <h2 class="font-display font-bold text-2xl sm:text-3xl text-white flex items-center gap-3">
+            <i class="fa-solid fa-users text-purple-400"></i>
+            <span data-i18n="sec_customer_title">Apparel Manufacturing Clients</span>
+          </h2>
+          <p class="text-xs text-slate-400 font-mono mt-1">Consortium commercial accounts with volume turnover and outstanding balances</p>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <div class="relative">
+            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-500 text-xs"></i>
+            <input type="text" id="customerSearchInput" oninput="applyCustomerFilters()" placeholder="Search Client, City, Phone..." class="bg-carbon-900 border border-carbon-700 rounded-xl pl-9 pr-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-400 w-64">
+          </div>
+        </div>
+      </div>
+
+      <div id="customerGridContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+    </section>
+
+    <!-- VIEW 5: CONSORTIUM RECONCILIATION -->
+    <section id="view-settlement" class="hidden space-y-6">
+      <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+        <div>
+          <h2 class="font-display font-bold text-2xl sm:text-3xl text-white flex items-center gap-3">
+            <i class="fa-solid fa-scale-balanced text-emerald-400"></i>
+            <span data-i18n="sec_settlement_title">Consortium Capital & Retained Earnings Reconciliation</span>
+          </h2>
+          <p class="text-xs text-slate-400 font-mono mt-1">Official financial settlement between Anujaya Enterprises and Global Enterprises</p>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <button onclick="openDisbursementModal()" class="admin-only bg-carbon-800 hover:bg-carbon-700 text-slate-200 border border-carbon-700 px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition">
+            <i class="fa-solid fa-hand-holding-dollar text-emerald-400"></i>
+            <span>Log Partner Capital Draw</span>
+          </button>
+          <button onclick="window.print()" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg transition">
+            <i class="fa-solid fa-print"></i>
+            <span>Print Financial Statement</span>
+          </button>
+        </div>
+      </div>
+
+      <div id="printableSettlement" class="glass-card p-6 sm:p-10 rounded-3xl border border-carbon-700/80 space-y-8">
+        <div class="flex flex-col sm:flex-row justify-between sm:items-start gap-4 pb-6 border-b border-carbon-700">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-display font-black text-2xl text-white">ANUJAYA ENTERPRISES</span>
+              <span class="text-xs px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800 font-mono">FINANCIAL AUDIT</span>
+            </div>
+            <p class="text-xs text-slate-400 mt-1 font-mono">Consortium Partners: Anujaya Enterprises & Global Enterprises</p>
+            <p class="text-xs text-slate-400 font-mono mt-0.5">Audit Timestamp: <span id="settleAuditDate" class="text-slate-200 font-bold"></span></p>
+          </div>
+
+          <div class="text-left sm:text-right font-mono text-xs">
+            <div class="text-slate-400">Spot Exchange Anchor:</div>
+            <div class="text-amber-400 font-bold text-sm">1 USD ($) = <span id="settleExchangeRate">330.00</span> LKR</div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="p-5 rounded-2xl bg-carbon-900 border border-sky-500/40 space-y-2">
+            <div class="text-xs uppercase font-bold text-sky-400">Anujaya Enterprises - Partner Account</div>
+            <div class="text-2xl sm:text-3xl font-black font-mono text-white" id="settleBoxX">Rs. 0.00</div>
+            <div class="flex justify-between text-[11px] text-slate-400 border-t border-carbon-800 pt-2 font-mono">
+              <span>Capital Draws:</span>
+              <span id="settleBoxXPaid" class="text-sky-300">Rs. 0.00</span>
+            </div>
+            <div class="flex justify-between text-[11px] text-slate-300 font-mono">
+              <span>Unsettled Credit:</span>
+              <span id="settleBoxXNet" class="text-sky-400 font-bold">Rs. 0.00</span>
+            </div>
+          </div>
+
+          <div class="p-5 rounded-2xl bg-carbon-900 border border-emerald-500/40 space-y-2">
+            <div class="text-xs uppercase font-bold text-emerald-400">Global Enterprises - Partner Account</div>
+            <div class="text-2xl sm:text-3xl font-black font-mono text-white" id="settleBoxY">Rs. 0.00</div>
+            <div class="flex justify-between text-[11px] text-slate-400 border-t border-carbon-800 pt-2 font-mono">
+              <span>Capital Draws:</span>
+              <span id="settleBoxYPaid" class="text-emerald-300">Rs. 0.00</span>
+            </div>
+            <div class="flex justify-between text-[11px] text-slate-300 font-mono">
+              <span>Unsettled Credit:</span>
+              <span id="settleBoxYNet" class="text-emerald-400 font-bold">Rs. 0.00</span>
+            </div>
+          </div>
+
+          <div class="p-5 rounded-2xl bg-carbon-900 border border-purple-500/40 space-y-2 flex flex-col justify-between">
+            <div>
+              <div class="text-xs uppercase font-bold text-purple-400">Consortium Balance Variance</div>
+              <div class="text-xl sm:text-2xl font-black font-mono text-purple-300" id="settleBoxDelta">Rs. 0.00</div>
+            </div>
+            <div class="text-[11px] text-slate-400 border-t border-carbon-800 pt-2 font-mono" id="settleAdvice">
+              Equitable capital allocation maintained in consortium books.
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-8 border-t border-carbon-700 grid grid-cols-2 gap-8 text-xs font-mono">
+          <div class="space-y-8">
+            <div class="text-slate-400">Authorized: Anujaya Enterprises Managing Director</div>
+            <div class="border-b border-carbon-600 w-3/4"></div>
+            <div class="text-[11px] text-slate-500">Signature & Official Seal • Date: _________________</div>
+          </div>
+          <div class="space-y-8 text-right">
+            <div class="text-slate-400">Authorized: Global Enterprises Managing Director</div>
+            <div class="border-b border-carbon-600 w-3/4 ml-auto"></div>
+            <div class="text-[11px] text-slate-500">Signature & Official Seal • Date: _________________</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL 1: POS SALES DISPATCH TERMINAL -->
+  <div id="saleModal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-4 overflow-y-auto">
+    <div class="glass-card bg-carbon-900 max-w-2xl w-full rounded-3xl border border-carbon-700 p-6 sm:p-8 space-y-6 shadow-2xl relative my-8">
+      
+      <div class="flex justify-between items-center border-b border-carbon-700/80 pb-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-950 border border-emerald-700/60 flex items-center justify-center text-emerald-400 text-lg">
+            <i class="fa-solid fa-file-invoice"></i>
+          </div>
+          <div>
+            <h3 class="font-display font-bold text-lg text-white" id="saleModalTitle">Process Machinery Dispatch & Invoice</h3>
+            <p class="text-xs text-slate-400 font-mono">Automated Landed Cost Calculation & Asset Freezing</p>
+          </div>
+        </div>
+        <button onclick="closeModal('saleModal')" class="text-slate-400 hover:text-white p-2 rounded-lg hover:bg-carbon-800 transition">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <form id="saleTerminalForm" onsubmit="submitSaleTransaction(event)" class="space-y-4">
+        <input type="hidden" id="saleFormMode" value="ADD">
+        <input type="hidden" id="editingSaleId" value="">
+
+        <div>
+          <div class="flex justify-between items-center mb-1.5">
+            <label class="text-xs uppercase font-bold text-slate-400">Select Machinery SKU</label>
+            <button type="button" onclick="clearSelectedSaleMachine()" class="text-[11px] font-mono text-rose-400 hover:text-rose-300 flex items-center gap-1">
+              <i class="fa-solid fa-circle-xmark"></i>
+              <span>Clear Machine Selection</span>
+            </button>
+          </div>
+          <select id="modalSaleMachine" onchange="onModalSaleMachineChange(this.value)" required class="w-full bg-carbon-950 border border-carbon-700 rounded-xl px-4 py-3 text-xs sm:text-sm text-white font-mono focus:outline-none focus:border-sky-400"></select>
+        </div>
+
+        <div id="modalMachineMetaCard" class="hidden bg-carbon-950/80 border border-carbon-700 rounded-2xl p-4 space-y-3">
+          <div class="flex justify-between items-start">
+            <div>
+              <span id="modalMetaBrand" class="px-2 py-0.5 rounded text-[10px] font-bold bg-sky-950 text-sky-300 border border-sky-800">BRAND</span>
+              <span id="modalMetaModel" class="font-bold text-white text-sm ml-2">MODEL</span>
+            </div>
+            <div class="text-right font-mono">
+              <span class="text-[11px] text-slate-400">In Warehouse:</span>
+              <div class="text-base font-bold text-emerald-400" id="modalMetaAvailable">0 SETS</div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2 pt-2 border-t border-carbon-800 text-center font-mono text-xs">
+            <div class="bg-carbon-900 p-2 rounded-xl border border-carbon-800">
+              <div class="text-[10px] text-slate-500 uppercase">Calculated Landed Cost</div>
+              <div class="font-bold text-amber-400" id="modalMetaCost">Rs. 0</div>
+            </div>
+            <div onclick="applyModalPresetPrice('ws')" class="bg-carbon-900 p-2 rounded-xl border border-carbon-800 cursor-pointer hover:border-sky-500/50 transition">
+              <div class="text-[10px] text-slate-500 uppercase">Wholesale Benchmark (Apply)</div>
+              <div class="font-bold text-sky-400" id="modalMetaWs">Rs. 0</div>
+            </div>
+            <div onclick="applyModalPresetPrice('rt')" class="bg-carbon-900 p-2 rounded-xl border border-carbon-800 cursor-pointer hover:border-emerald-500/50 transition">
+              <div class="text-[10px] text-slate-500 uppercase">Retail Benchmark (Apply)</div>
+              <div class="font-bold text-emerald-400" id="modalMetaRt">Rs. 0</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs uppercase font-bold text-slate-400 mb-1.5">Quantity (Sets)</label>
+            <input type="number" id="modalSaleQty" min="1" value="1" oninput="calculateModalSaleLive()" required class="w-full bg-carbon-950 border border-carbon-700 rounded-xl px-4 py-2.5 text-sm text-white font-mono focus:outline-none focus:border-sky-400">
+          </div>
+
+          <div>
+            <label class="block text-xs uppercase font-bold text-slate-400 mb-1.5">Unit Selling Price (LKR)</label>
+            <input type="number" id="modalSalePrice" step="any" min="0" required oninput="calculateModalSaleLive()" placeholder="Enter selling price" class="w-full bg-carbon-950 border border-carbon-700 rounded-xl px-4 py-2.5 text-sm text-emerald-400 font-mono font-bold focus:outline-none focus:border-sky-400">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs uppercase font-bold text-slate-400 mb-1.5">Machine Serial Numbers (Asset Tracking)</label>
+          <input type="text" id="modalSaleSerials" placeholder="e.g. SN-8700-1002, SN-8700-1003 (Comma-separated)" class="w-full bg-carbon-950 border border-carbon-700 rounded-xl px-4 py-2 text-xs text-white font-mono focus:outline-none focus:border-sky-400">
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs uppercase font-bold text-slate-400 mb-1.5">Client / Apparel Factory Name</label>
+            <input type="text" id="modalSaleCustomer" required placeholder="e.g. MAS Active, Brandix, Nilwala Tailors" class="w-full bg-carbon-950 border border-carbon-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-sky-400">
+          </div>
+
+          <div>
+            <label class="block text-xs uppercase font-bold text-slate-400 mb-1.5">Contact Phone Number</label>
+            <input type="text" id="modalSalePhone" placeholder="077-xxxxxxx" class="w-full bg-carbon-950 border border-carbon-700 rounded-xl px-4 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-sky-400">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-xs uppercase font-bold text-slate-400 mb-1.5">Region / City</label>
+            <input type="text" id="modalSaleRegion" value="Colombo / Western Province" class="w-full bg-carbon-950 border border-carbon-700 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-sky-400 font-mono">
+          </div>
+
+          <div>
+            <label class="block text-xs uppercase font-bold text-slate-400 mb-1.5">Payment Terms</label>
+            <select id="modalSalePayment" class="w-full bg-carbon-950 border border-carbon-700 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-sky-400 font-mono">
+              <option value="Bank Wire / SLIPS">Bank Wire / SLIPS</option>
+              <option value="Corporate Cheque">Corporate Cheque</option>
+              <option value="Cash on Delivery">Cash on Delivery</option>
+              <option value="Letter of Credit (LC)">Letter of Credit (LC)</option>
+              <option value="30-Day Credit">30-Day Credit</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs uppercase font-bold text-slate-400 mb-1.5">Settlement Status</label>
+            <select id="modalSalePaymentStatus" onchange="togglePaidAmountField()" class="w-full bg-carbon-950 border border-carbon-700 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-sky-400 font-mono">
+              <option value="PAID">Fully Paid</option>
+              <option value="PARTIAL">Partial Payment</option>
+              <option value="PENDING">Credit / Pending</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="modalPaidAmountWrapper" class="hidden">
+          <label class="block text-xs uppercase font-bold text-slate-400 mb-1.5">Amount Paid (LKR)</label>
+          <input type="number" id="modalSalePaidAmount" step="any" min="0" placeholder="Enter amount collected so far" class="w-full bg-carbon-950 border border-carbon-700 rounded-xl px-4 py-2 text-xs text-emerald-400 font-mono font-bold focus:outline-none focus:border-sky-400">
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs uppercase font-bold text-slate-400 mb-1.5">Dispatch Date</label>
+            <input type="date" id="modalSaleDate" class="w-full bg-carbon-950 border border-carbon-700 rounded-xl px-4 py-2 text-xs text-white font-mono focus:outline-none focus:border-sky-400">
+          </div>
+          <div>
+            <label class="block text-xs uppercase font-bold text-slate-400 mb-1.5">Warranty Certificate Terms</label>
+            <input type="text" id="modalSaleWarranty" value="1-Year Comprehensive Warranty (Motor & PCB)" class="w-full bg-carbon-950 border border-carbon-700 rounded-xl px-4 py-2 text-xs text-white font-mono focus:outline-none focus:border-sky-400">
+          </div>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-carbon-950 border border-carbon-800 space-y-2 font-mono text-xs">
+          <div class="flex justify-between text-slate-400">
+            <span>Gross Revenue:</span>
+            <span id="previewModalRevenue" class="text-white font-bold">Rs. 0.00</span>
+          </div>
+          <div class="flex justify-between text-slate-400">
+            <span>Total Landed Cost:</span>
+            <span id="previewModalCost" class="text-amber-400">Rs. 0.00</span>
+          </div>
+          <div class="flex justify-between font-bold text-emerald-400 pt-1 border-t border-carbon-800">
+            <span>Consortium Net Profit:</span>
+            <span id="previewModalProfit">Rs. 0.00</span>
+          </div>
+        </div>
+
+        <button type="submit" id="saleModalSubmitBtn" class="w-full py-3.5 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 hover:from-emerald-500 hover:to-teal-400 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-check"></i>
+          <span id="saleModalSubmitText">Confirm & Generate Official Tax Invoice</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 2: ADD / EDIT MACHINE SKU -->
+  <div id="machineModal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-4 overflow-y-auto">
+    <div class="glass-card bg-carbon-900 max-w-2xl w-full rounded-3xl border border-carbon-700 p-6 sm:p-8 space-y-6 shadow-2xl relative my-8">
+      <div class="flex justify-between items-center border-b border-carbon-700/80 pb-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-sky-950 border border-sky-700/60 flex items-center justify-center text-sky-400 text-lg">
+            <i class="fa-solid fa-gears"></i>
+          </div>
+          <div>
+            <h3 class="font-display font-bold text-lg text-white" id="machineModalTitle">Add Machinery SKU</h3>
+            <p class="text-xs text-slate-400 font-mono">USD FOB Pricing & Port Duty Parameters</p>
+          </div>
+        </div>
+        <button onclick="closeModal('machineModal')" class="text-slate-400 hover:text-white p-2 rounded-lg hover:bg-carbon-800 transition">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <form id="machineMasterForm" onsubmit="submitMachineMaster(event)" class="space-y-4">
+        <input type="hidden" id="machineFormMode" value="ADD">
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-xs uppercase font-bold text-slate-400 mb-1.5">SKU Code</label>
+            <input type="text" id="mfSku" required placeholder="M-27" class="w-full bg-carbon-950 border border-carbon-700 rounded-xl px-4 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-sky-400 font-bold uppercase">
+          </div>
+
+          <div>
+            <label class="block text-xs uppercase font-bold text-slate-400 mb-1.5">Brand / Make</label>
+            <input type="text" id="mfBrand" required placeholder="JUKI / PEGASUS" class="w-full bg-carbon-950 border border-carbon-700 rounded-xl px-4 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-sky-400 uppercase font-bold">
+          </div>
+
+          <div>
+            <label class="block text-xs uppercase font-bold text-slate-400 mb-1.5">Model / Specifications</label>
+            <input type="text" id="mfModel" required placeholder="e.g. DDL-8700-7" class="w-full bg-carbon-950 border border-carbon-700 rounded-xl px-4 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-sky-400 font-bold">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs uppercase font-bold text-slate-400 mb-1.5">Initial Batch Sets</label>
+            <input type="number" id="mfStock" min="1" value="10" required class="w-full bg-carbon-950 border border-carbon-700 rounded-xl px-4 py-2 text-xs text-white font-mono focus:outline-none focus:border-sky-400 font-bold">
+          </div>
+
+          <div>
+            <label class="block text-xs uppercase font-bold text-slate-400 mb-1.5">Unit</label>
+            <input type="text" id="mfUnit" value="SETS" class="w-full bg-carbon-950 border border-carbon-700 rounded-xl px-4 py-2 text-xs text-white font-mono focus:outline-none focus:border-sky-400">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs uppercase font-bold text-slate-400 mb-1.5">Factory FOB Cost (USD $)</label>
+            <input type="number" id="mfUsd" min="0" step="any" value="140" oninput="calculateMachineFormCosts()" required class="w-full bg-carbon-950 border border-carbon-700 rounded-xl px-4 py-2 text-xs text-amber-400 font-mono font-bold focus:outline-none focus:border-sky-400">
+          </div>
+
+          <div>
+            <label class="block text-xs uppercase font-bold text-slate-400 mb-1.5">Customs Duty & Port Surcharges (LKR)</label>
+            <input type="number" id="mfTax" min="0" step="any" value="5000" oninput="calculateMachineFormCosts()" required class="w-full bg-carbon-950 border border-carbon-700 rounded-xl px-4 py-2 text-xs text-slate-200 font-mono focus:outline-none focus:border-sky-400">
+          </div>
+        </div>
+
+        <div class="p-3 bg-carbon-950 rounded-xl border border-carbon-800 flex justify-between items-center text-xs font-mono">
+          <span class="text-slate-400">Calculated Landed Unit Cost (USD*Spot + Duty):</span>
+          <span id="mfComputedCost" class="text-amber-400 font-bold text-sm">Rs. 0.00</span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs uppercase font-bold text-slate-400 mb-1.5">Wholesale Benchmark (LKR)</label>
+            <input type="number" id="mfWholesale" min="0" step="any" value="61200" required class="w-full bg-carbon-950 border border-carbon-700 rounded-xl px-4 py-2 text-xs text-sky-400 font-mono font-bold focus:outline-none focus:border-sky-400">
+          </div>
+
+          <div>
+            <label class="block text-xs uppercase font-bold text-slate-400 mb-1.5">Retail Benchmark (LKR)</label>
+            <input type="number" id="mfRetail" min="0" step="any" value="71200" required class="w-full bg-carbon-950 border border-carbon-700 rounded-xl px-4 py-2 text-xs text-emerald-400 font-mono font-bold focus:outline-none focus:border-sky-400">
+          </div>
+        </div>
+
+        <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-floppy-disk"></i>
+          <span>Save Machinery SKU</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 3: COMMERCIAL TAX INVOICE & PRINT PREVIEW -->
+  <div id="printableInvoiceModal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md hidden flex items-center justify-center p-4 overflow-y-auto">
+    <div class="max-w-3xl w-full my-6 relative">
+      
+      <!-- Top Action Bar -->
+      <div class="flex justify-between items-center mb-3 no-print">
+        <div class="flex items-center gap-2 text-xs font-mono text-sky-400">
+          <i class="fa-solid fa-file-invoice-dollar text-base"></i>
+          <span>ANUJAYA ENTERPRISES • TAX INVOICE</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="window.print()" class="bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg transition">
+            <i class="fa-solid fa-print"></i>
+            <span>Print / Save PDF</span>
+          </button>
+          <button onclick="closeModal('printableInvoiceModal')" class="bg-carbon-800 hover:bg-carbon-700 text-slate-300 p-2 rounded-xl transition">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Printable Sheet -->
+      <div id="printableInvoiceWrapper" class="bg-white text-slate-900 p-8 sm:p-12 rounded-3xl shadow-2xl border border-slate-200 space-y-8 font-sans">
+        
+        <div class="flex flex-col sm:flex-row justify-between items-start gap-6 border-b-2 border-slate-900 pb-6">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-display font-black text-2xl tracking-tight text-slate-900">ANUJAYA ENTERPRISES</span>
+              <span class="text-[10px] font-mono font-bold tracking-widest px-2 py-0.5 rounded bg-slate-900 text-white">EQUITY CONSORTIUM</span>
+            </div>
+            <p class="text-xs text-slate-700 mt-1 font-semibold">Overseas Apparel Machinery Import & Logistics Consortium</p>
+            <p class="text-xs text-slate-500 font-mono mt-0.5">Commercial Logistics Hub: Colombo Port / Biyagama EPZ Corridor</p>
+            <p class="text-xs text-slate-500 font-mono">VAT/SVAT: LK-99283741-001 • TIN: 102938475 • Hotline: +94 11 289 4400</p>
+          </div>
+
+          <div class="text-left sm:text-right font-mono">
+            <div class="text-2xl font-black text-sky-800 tracking-tight" id="invDocNumber">INV-1001</div>
+            <div class="text-xs text-slate-600 mt-1">Date: <strong id="invDocDate" class="text-slate-900">2026-09-25</strong></div>
+            <div class="text-xs text-slate-600">Payment: <strong id="invDocPayment" class="text-slate-900">Bank Wire</strong></div>
+            <div class="mt-2 text-[11px] inline-block px-3 py-0.5 rounded-full font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+              COMMERCIAL TAX INVOICE
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-6 text-xs">
+          <div class="space-y-1">
+            <span class="text-slate-400 font-bold uppercase tracking-wider font-mono text-[10px]">Client / Consignee:</span>
+            <div class="font-bold text-slate-900 text-sm" id="invDocCustomer">MAS Active Leisureline</div>
+            <div class="text-slate-600" id="invDocPhone">Contact: 077-xxxxxxx</div>
+            <div class="text-slate-600" id="invDocRegion">Western Province, Sri Lanka</div>
+          </div>
+
+          <div class="space-y-1 text-right">
+            <span class="text-slate-400 font-bold uppercase tracking-wider font-mono text-[10px]">Asset & Warranty Documentation:</span>
+            <div class="font-bold text-slate-800" id="invDocWarranty">Warranty: 1-Year Comprehensive</div>
+            <div class="text-slate-600 font-mono" id="invDocSerials">Serials: SN-Pending</div>
+          </div>
+        </div>
+
+        <!-- Line Item Table -->
+        <div class="border border-slate-300 rounded-2xl overflow-hidden">
+          <table class="w-full text-left text-xs table-auto">
+            <thead class="bg-slate-100 font-mono font-bold text-slate-700 uppercase border-b border-slate-300">
+              <tr>
+                <th class="px-4 py-3 w-16">SKU</th>
+                <th class="px-4 py-3">Description / Model</th>
+                <th class="px-4 py-3 text-center w-20">Qty</th>
+                <th class="px-4 py-3 text-right w-32">Unit Price (LKR)</th>
+                <th class="px-4 py-3 text-right w-36">Amount (LKR)</th>
+              </tr>
+            </thead>
+            <tbody id="invDocItemsTbody" class="divide-y divide-slate-200 font-mono text-slate-800"></tbody>
+          </table>
+        </div>
+
+        <div class="flex justify-between items-start pt-2">
+          <div class="text-xs text-slate-500 font-mono max-w-sm">
+            <span class="font-bold text-slate-700 uppercase block mb-1">Amount in Words:</span>
+            <span id="invAmountInWords" class="italic text-slate-800 font-semibold">---</span>
+          </div>
+
+          <div class="w-72 space-y-2 font-mono text-xs">
+            <div class="flex justify-between text-slate-600">
+              <span>Subtotal:</span>
+              <span id="invDocSubtotal">Rs. 0.00</span>
+            </div>
+            <div class="flex justify-between text-slate-600">
+              <span>Customs Duty & Clearance:</span>
+              <span>Included</span>
+            </div>
+            <div class="flex justify-between text-base font-bold text-slate-900 border-t-2 border-slate-900 pt-2">
+              <span>Grand Total:</span>
+              <span id="invDocGrandTotal" class="text-sky-900">Rs. 0.00</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="border-t border-slate-200 pt-4 text-[11px] text-slate-500 space-y-1">
+          <p>1. Warranty covers servo motor and PC control boards for 12 months from delivery date.</p>
+          <p>2. Consignment title legally issued under ANUJAYA ENTERPRISES Consortium.</p>
+        </div>
+
+        <div class="pt-8 border-t border-slate-200 grid grid-cols-2 gap-8 text-xs font-mono text-slate-700">
+          <div class="space-y-6">
+            <div>Authorized: Anujaya Enterprises</div>
+            <div class="border-b border-slate-300 w-3/4"></div>
+            <div class="text-[10px] text-slate-400">Signature & Official Seal</div>
+          </div>
+          <div class="space-y-6 text-right">
+            <div>Authorized: Global Enterprises</div>
+            <div class="border-b border-slate-300 w-3/4 ml-auto"></div>
+            <div class="text-[10px] text-slate-400">Signature & Official Seal</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 4: PARTNER CAPITAL ADVANCE / DRAW MODAL -->
+  <div id="disbursementModal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-4 overflow-y-auto">
+    <div class="glass-card bg-carbon-900 max-w-md w-full rounded-3xl border border-carbon-700 p-6 space-y-6 shadow-2xl relative">
+      <div class="flex justify-between items-center border-b border-carbon-700/80 pb-3">
+        <h3 class="font-display font-bold text-white text-base flex items-center gap-2">
+          <i class="fa-solid fa-hand-holding-dollar text-emerald-400"></i>
+          <span>Record Partner Capital Draw</span>
+        </h3>
+        <button onclick="closeModal('disbursementModal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <form onsubmit="submitDisbursement(event)" class="space-y-4 text-xs font-mono">
+        <div>
+          <label class="block text-slate-400 mb-1">Beneficiary Partner</label>
+          <select id="disbursePartner" class="w-full bg-carbon-950 border border-carbon-700 rounded-xl px-3 py-2 text-white">
+            <option value="X">Anujaya Enterprises</option>
+            <option value="Y">Global Enterprises</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-slate-400 mb-1">Draw Amount (LKR)</label>
+          <input type="number" id="disburseAmount" min="1" step="any" required class="w-full bg-carbon-950 border border-carbon-700 rounded-xl px-3 py-2 text-emerald-400 font-bold">
+        </div>
+
+        <div>
+          <label class="block text-slate-400 mb-1">Transfer Date</label>
+          <input type="date" id="disburseDate" required class="w-full bg-carbon-950 border border-carbon-700 rounded-xl px-3 py-2 text-white">
+        </div>
+
+        <div>
+          <label class="block text-slate-400 mb-1">Payment Reference / Bank Memo</label>
+          <input type="text" id="disburseMemo" placeholder="Cheque # / Direct SLIPS Reference" class="w-full bg-carbon-950 border border-carbon-700 rounded-xl px-3 py-2 text-white font-sans">
+        </div>
+
+        <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 font-bold uppercase tracking-wider text-white rounded-xl transition">
+          Record Capital Draw
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Notification Toast Container -->
+  <div id="toastContainer" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2.5 pointer-events-none"></div>
+
+  <script>
+    const GOOGLE_SHEET_API_URL = "https://script.google.com/macros/s/AKfycbz0WIKArW8L_No3jxxrQCUibC1O_PIDJq3Dr27yjIWLNjuZaZc3YplHGJCKgL3GFv5E/exec";
+
+    // Authentication Setup
+    const AUTH_ROLES = {
+      ADMIN: { pin: "9900", role: "ADMIN", title: "Consortium Admin" },
+      PARTNER: { pin: "1234", role: "PARTNER", title: "Consortium Partner" }
+    };
+    let selectedLoginRole = 'ADMIN';
+    let currentUser = JSON.parse(sessionStorage.getItem('ag_erp_auth_user')) || null;
+
+    const I18N = {
+      en: {
+        nav_dashboard: "Executive Dashboard",
+        nav_inventory: "Machinery Master",
+        nav_ledger: "Sales & Audit Ledger",
+        nav_customers: "Apparel Clients",
+        nav_settlement: "Partner Accounts",
+        btn_record_sale: "New Dispatch",
+        btn_add_machine: "Add SKU",
+        game_title: "Consortium Executive Financial & Capital Summary",
+        btn_reset_defaults: "Reset Baseline",
+        lbl_realized_share: "Total Realized Net Profit",
+        lbl_balance_gauge: "Consortium Equity Balance Indicator",
+        kpi_gross_rev: "Gross Revenue",
+        lbl_dispatches: "Completed Dispatches",
+        kpi_total_cogs: "Total Cost of Goods",
+        lbl_customs_taxes: "Port & Customs Duty",
+        kpi_net_profit: "Consortium Net Profit",
+        lbl_margin: "Net Margin",
+        kpi_fleet_volume: "Dispatched / Total Fleet",
+        lbl_stock_rate: "Fleet Turnover",
+        kpi_inventory_value: "Current Stock Valuation",
+        lbl_remaining_units: "In Port & Warehouses",
+        kpi_receivables: "Total Receivables",
+        sec_recent_activity: "Recent Dispatches & Invoicing Log",
+        sec_brand_allocation: "Consortium Fleet Breakdown",
+        sec_inventory_title: "Machinery Master Fleet (Landed Costing & Benchmarks)",
+        sec_ledger_title: "Sales Ledger & Asset Audit Log",
+        sec_customer_title: "Apparel Manufacturing Clients",
+        sec_settlement_title: "Consortium Capital & Retained Earnings Reconciliation",
+        th_sku_id: "SKU",
+        th_brand: "Brand",
+        th_model: "Model / Specifications",
+        th_actions: "Action",
+        th_invoice_id: "Invoice #",
+        th_date: "Date",
+        th_customer_details: "Apparel Client",
+        th_machine_model: "Machinery Model",
+        th_qty: "Qty",
+        th_revenue: "Total Amount"
+      },
+      si: {
+        nav_dashboard: "ප්‍රධාන පුවරුව",
+        nav_inventory: "මැෂින් තොගය",
+        nav_ledger: "අලෙවි සහ විගණන ලෙජරය",
+        nav_customers: "පාරිභෝගිකයින්",
+        nav_settlement: "හවුල්කාර ගිණුම්",
+        btn_record_sale: "නව නිකුතුවක්",
+        btn_add_machine: "නව SKU එක් කරන්න",
+        game_title: "හවුල්කාර ව්‍යාපාරික මූල්‍ය හා ප්‍රාග්ධන සාරාංශය",
+        btn_reset_defaults: "මුල් තත්වයට පත් කරන්න",
+        lbl_realized_share: "උපයාගත් මුළු ශුද්ධ ලාභය",
+        lbl_balance_gauge: "හවුල්කාර ගිණුම් ශේෂ සමතුලිතතාව",
+        kpi_gross_rev: "මුළු ආදායම",
+        lbl_dispatches: "නිකුත් කළ වාර ගණන",
+        kpi_total_cogs: "මුළු පිරිවැය (COGS)",
+        lbl_customs_taxes: "රේගු සහ වරාය ගාස්තු",
+        kpi_net_profit: "ශුද්ධ ලාභය",
+        lbl_margin: "ලාභ ප්‍රතිශතය",
+        kpi_fleet_volume: "නිකුත් කළ / මුළු මැෂින්",
+        lbl_stock_rate: "තොග පිරිවැටුම",
+        kpi_inventory_value: "ඉතිරි තොගයේ වටිනාකම",
+        lbl_remaining_units: "ගබඩාවේ ඇති ප්‍රමාණය",
+        kpi_receivables: "ලැබිය යුතු මුදල්",
+        sec_recent_activity: "නවතම නිකුතු සහ බිල්පත් වාර්තාව",
+        sec_brand_allocation: "යන්ත්‍ර සන්නාම ව්‍යාප්තිය",
+        sec_inventory_title: "මැෂින් තොග කළමනාකරණය (වියදම් සහ මිල තීරණය)",
+        sec_ledger_title: "අලෙවි ලෙජරය සහ වත්කම් විගණන වාර්තාව",
+        sec_customer_title: "ඇඟලුම් පාරිභෝගික නාමාවලිය",
+        sec_settlement_title: "හවුල්කාර ප්‍රාග්ධන සහ ලාභ ගිණුම් බේරුම්කරණය",
+        th_sku_id: "අංකය",
+        th_brand: "සන්නාමය",
+        th_model: "මාදිලිය සහ විස්තරය",
+        th_actions: "ක්‍රියාමාර්ග",
+        th_invoice_id: "බිල්පත් අංකය",
+        th_date: "දිනය",
+        th_customer_details: "පාරිභෝගිකයා",
+        th_machine_model: "මැෂිම",
+        th_qty: "ප්‍රමාණය",
+        th_revenue: "මුළු මුදල"
+      }
+    };
+
+    const MASTER_FLEET_EXCEL_BASELINE = [
+      { id: "M-01", brand: "JUKI", model: "DDL-8700-7/SC500/CP160", name: "High Speed 1-Needle Lockstitch with Trimmer", unit: "SETS", initialStock: 80, usdPrice: 140, taxLKR: 5000, wholesalePrice: 61200, retailPrice: 71200 },
+      { id: "M-02", brand: "JUKI", model: "DDL-8700-7/SC500/CP160/AK85", name: "Direct Drive Lockstitch with Auto Foot Lifter", unit: "SETS", initialStock: 50, usdPrice: 165, taxLKR: 5000, wholesalePrice: 69450, retailPrice: 81450 },
+      { id: "M-03", brand: "JUKI", model: "MS-1261", name: "Feed-off-the-arm 3-Needle Chainstitch", unit: "SETS", initialStock: 10, usdPrice: 752, taxLKR: 15000, wholesalePrice: 273160, retailPrice: 278160 },
+      { id: "M-04", brand: "KANSAI", model: "FBX1104", name: "Special 4-Needle Cylinder Bed Flatlock", unit: "SETS", initialStock: 7, usdPrice: 1020, taxLKR: 18000, wholesalePrice: 369600, retailPrice: 379600 },
+      { id: "M-05", brand: "KANSAI", model: "LBH 781", name: "Standard Industrial Buttonholing System", unit: "SETS", initialStock: 10, usdPrice: 378, taxLKR: 25000, wholesalePrice: 164740, retailPrice: 174740 },
+      { id: "M-06", brand: "KANSAI", model: "LBH 781DD", name: "Direct-Drive Advanced Buttonholing Workstation", unit: "SETS", initialStock: 5, usdPrice: 788, taxLKR: 7000, wholesalePrice: 277040, retailPrice: 280040 },
+      { id: "M-07", brand: "KANSAI", model: "China W500", name: "High-speed Interlock Coverstitch Industrial", unit: "SETS", initialStock: 15, usdPrice: 173, taxLKR: 7000, wholesalePrice: 74090, retailPrice: 88090 },
+      { id: "M-08", brand: "KANSAI", model: "China M700-4", name: "4-Thread High Speed Overlock Machine", unit: "SETS", initialStock: 40, usdPrice: 123, taxLKR: 7000, wholesalePrice: 57590, retailPrice: 70590 },
+      { id: "M-09", brand: "KANSAI", model: "China M700-5", name: "5-Thread Heavy Duty Safety Stitch Machine", unit: "SETS", initialStock: 40, usdPrice: 123, taxLKR: 5000, wholesalePrice: 55590, retailPrice: 70590 },
+      { id: "M-10", brand: "SIRUBA", model: "C007J Left Knife", name: "Interlock Stitch with Left Hand Trimming Knife", unit: "SETS", initialStock: 4, usdPrice: 542, taxLKR: 18000, wholesalePrice: 221860, retailPrice: 236860 },
+      { id: "M-11", brand: "SIRUBA", model: "NEW HMC MOTOR", name: "Energy Saving Servo HMC Industrial Motor", unit: "SETS", initialStock: 50, usdPrice: 27, taxLKR: 2000, wholesalePrice: 11910, retailPrice: 14910 },
+      { id: "M-12", brand: "JUKI", model: "3168-7/SC500/CP170", name: "Electronic 2-Needle Lockstitch Workstation", unit: "SETS", initialStock: 5, usdPrice: 436.8, taxLKR: 15000, wholesalePrice: 169144, retailPrice: 172144 },
+      { id: "M-13", brand: "JUKI", model: "RH981", name: "Electronic Eyelet Buttonholing Machine", unit: "SETS", initialStock: 5, usdPrice: 924, taxLKR: 25000, wholesalePrice: 454920, retailPrice: 489920 },
+      { id: "M-14", brand: "OTHER", model: "COPY PEGASUS W600-35 Left Knife", name: "Flatbed Interlock with Left Edge Trimmer", unit: "SETS", initialStock: 5, usdPrice: 455.52, taxLKR: 11500, wholesalePrice: 171821.6, retailPrice: 174821.6 },
+      { id: "M-15", brand: "OTHER", model: "NEW PUNCH SNAP BUTTON MACHINE", name: "Pneumatic Snap Button Attacher", unit: "SETS", initialStock: 5, usdPrice: 156, taxLKR: 11500, wholesalePrice: 72980, retailPrice: 75980 },
+      { id: "M-16", brand: "JUKI", model: "LK-1903", name: "Computer Controlled Lockstitch Button Sewing", unit: "SETS", initialStock: 3, usdPrice: 424.32, taxLKR: 11500, wholesalePrice: 161525.6, retailPrice: 181525.6 },
+      { id: "M-17", brand: "OTHER", model: "CHINE CHAIN DOUBLE NEEDLE", name: "Double Needle Chainstitch Hemmer", unit: "SETS", initialStock: 5, usdPrice: 0, taxLKR: 11500, wholesalePrice: 21500, retailPrice: 24500 },
+      { id: "M-18", brand: "SIRUBA", model: "CYLINDER 747S", name: "Cylinder Bed 4-Thread Super Overedger", unit: "SETS", initialStock: 5, usdPrice: 260, taxLKR: 11500, wholesalePrice: 107300, retailPrice: 110300 },
+      { id: "M-19", brand: "JUKI", model: "3568A-7/SC920/CP180", name: "Direct Drive 2-Needle Split Needle Bar Lockstitch", unit: "SETS", initialStock: 5, usdPrice: 1019.2, taxLKR: 20000, wholesalePrice: 376336, retailPrice: 369336 },
+      { id: "M-20", brand: "OTHER", model: "ISM SV250 Direct Belt", name: "Heavy Duty Direct Belt Motor Unit", unit: "SETS", initialStock: 50, usdPrice: 52, taxLKR: 5000, wholesalePrice: 32160, retailPrice: 35160 },
+      { id: "M-21", brand: "PEGASUS", model: "CW664-35 Left Knife", name: "Flatbed Interlock Machine with Left Hand Knife", unit: "SETS", initialStock: 10, usdPrice: 1560, taxLKR: 28000, wholesalePrice: 552800, retailPrice: 555800 },
+      { id: "M-22", brand: "PEGASUS", model: "CW664-01 Plus", name: "Interlock Machine for Hemming Bottoms", unit: "SETS", initialStock: 20, usdPrice: 1230, taxLKR: 28000, wholesalePrice: 443900, retailPrice: 446900 },
+      { id: "M-23", brand: "PEGASUS", model: "WT200-35 Left Knife", name: "Top and Bottom Coverstitch with Knife", unit: "SETS", initialStock: 10, usdPrice: 1800, taxLKR: 28000, wholesalePrice: 632000, retailPrice: 635000 },
+      { id: "M-24", brand: "PEGASUS", model: "W200-01", name: "Heavy Duty Cylinder Bed Interlock Machine", unit: "SETS", initialStock: 10, usdPrice: 1650, taxLKR: 28000, wholesalePrice: 582500, retailPrice: 585500 },
+      { id: "M-25", brand: "PEGASUS", model: "W3600-33 Right cutter", name: "Variable Top Feed Interlock with Right Cutter", unit: "SETS", initialStock: 30, usdPrice: 1680, taxLKR: 28000, wholesalePrice: 592400, retailPrice: 595400 },
+      { id: "M-26", brand: "PEGASUS", model: "W3600-35 Left Knife", name: "Oil-barrier Flatbed Coverstitch Workhorse", unit: "SETS", initialStock: 10, usdPrice: 1650, taxLKR: 28000, wholesalePrice: 582500, retailPrice: 585500 }
+    ];
+
+    let currentLang = localStorage.getItem('ag_erp_lang') || 'en';
+    let globalUsdRate = parseFloat(localStorage.getItem('ag_erp_usd')) || 330.00;
+    let machines = JSON.parse(localStorage.getItem('ag_erp_machines')) || MASTER_FLEET_EXCEL_BASELINE;
+    let sales = JSON.parse(localStorage.getItem('ag_erp_sales')) || [];
+    let disbursements = JSON.parse(localStorage.getItem('ag_erp_disb')) || [];
+
+    function selectLoginRole(role) {
+      selectedLoginRole = role;
+      const bAdmin = document.getElementById('roleBtnAdmin');
+      const bPartner = document.getElementById('roleBtnPartner');
+      if (role === 'ADMIN') {
+        bAdmin.className = "flex-1 py-2.5 rounded-xl text-xs font-bold border border-sky-500 bg-sky-600/30 text-sky-300 transition";
+        bPartner.className = "flex-1 py-2.5 rounded-xl text-xs font-bold border border-carbon-700 bg-carbon-850 text-slate-400 transition";
+      } else {
+        bPartner.className = "flex-1 py-2.5 rounded-xl text-xs font-bold border border-emerald-500 bg-emerald-600/30 text-emerald-300 transition";
+        bAdmin.className = "flex-1 py-2.5 rounded-xl text-xs font-bold border border-carbon-700 bg-carbon-850 text-slate-400 transition";
+      }
+    }
+
+    function handleLoginSubmit() {
+      const pin = document.getElementById('loginPinInput').value.trim();
+      const targetRole = AUTH_ROLES[selectedLoginRole];
+
+      if (pin === targetRole.pin) {
+        currentUser = { role: targetRole.role, title: targetRole.title };
+        sessionStorage.setItem('ag_erp_auth_user', JSON.stringify(currentUser));
+        document.getElementById('loginGateModal').classList.add('hidden');
+        document.getElementById('loginPinInput').value = '';
+        applyRolePermissions();
+        showToast(`Access granted: ${currentUser.title}`);
+      } else {
+        showToast("Invalid Access PIN!", "error");
+        document.getElementById('loginPinInput').value = '';
+      }
+    }
+
+    function handleLogout() {
+      sessionStorage.removeItem('ag_erp_auth_user');
+      currentUser = null;
+      document.getElementById('loginGateModal').classList.remove('hidden');
+    }
+
+    function applyRolePermissions() {
+      const badge = document.getElementById('userRoleBadge');
+      if (!currentUser) {
+        document.getElementById('loginGateModal').classList.remove('hidden');
+        return;
+      }
+
+      document.getElementById('loginGateModal').classList.add('hidden');
+      badge.textContent = currentUser.role;
+
+      if (currentUser.role === 'PARTNER') {
+        badge.className = "text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-amber-950 text-amber-300 border border-amber-800 uppercase";
+        document.querySelectorAll('.admin-only').forEach(el => el.classList.add('hidden'));
+        document.getElementById('globalUsdInput').disabled = true;
+      } else {
+        badge.className = "text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-emerald-950 text-emerald-300 border border-emerald-800 uppercase";
+        document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
+        document.getElementById('globalUsdInput').disabled = false;
+      }
+      renderApp();
+    }
+
+    async function saveDatabase() {
+      localStorage.setItem('ag_erp_lang', currentLang);
+      localStorage.setItem('ag_erp_usd', globalUsdRate.toString());
+      localStorage.setItem('ag_erp_machines', JSON.stringify(machines));
+      localStorage.setItem('ag_erp_sales', JSON.stringify(sales));
+      localStorage.setItem('ag_erp_disb', JSON.stringify(disbursements));
+
+      const ind = document.getElementById('autoSaveIndicator');
+      if (ind) ind.textContent = "Syncing Cloud...";
+
+      try {
+        if (GOOGLE_SHEET_API_URL) {
+          const payload = {
+            currentLang,
+            globalUsdRate,
+            machines,
+            sales,
+            disbursements,
+            lastUpdated: new Date().toISOString()
+          };
+
+          await fetch(GOOGLE_SHEET_API_URL, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+
+          if (ind) ind.textContent = "Cloud Synced";
+        }
+      } catch (err) {
+        console.warn("Cloud sync offline fallback:", err);
+        if (ind) ind.textContent = "Saved Locally";
+      }
+    }
+
+    async function loadDatabaseFromSheet() {
+      const ind = document.getElementById('autoSaveIndicator');
+      if (!GOOGLE_SHEET_API_URL) return;
+
+      try {
+        if (ind) ind.textContent = "Connecting...";
+        const res = await fetch(GOOGLE_SHEET_API_URL);
+        const data = await res.json();
+
+        if (data && data.machines && data.machines.length > 0) {
+          machines = data.machines;
+          sales = data.sales || [];
+          disbursements = data.disbursements || [];
+          if (data.globalUsdRate) {
+            globalUsdRate = Number(data.globalUsdRate);
+            document.getElementById('globalUsdInput').value = globalUsdRate;
+          }
+          if (data.currentLang) {
+            currentLang = data.currentLang;
+          }
+          saveDatabase();
+          applyLanguage();
+          renderApp();
+          if (ind) ind.textContent = "Sheets Live";
+          showToast("Cloud Database Active & Synced");
+        } else {
+          saveDatabase();
+        }
+      } catch (err) {
+        if (ind) ind.textContent = "Offline Ready";
+      }
+    }
+
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `p-4 rounded-2xl text-xs font-semibold flex items-center gap-3 shadow-2xl transition-all duration-300 pointer-events-auto border ${
+        type === 'success' ? 'bg-emerald-950/95 text-emerald-200 border-emerald-700/80' : 'bg-rose-950/95 text-rose-200 border-rose-700/80'
+      }`;
+      toast.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-circle-check text-emerald-400' : 'fa-circle-exclamation text-rose-400'} text-base"></i><span>${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(10px)';
+        setTimeout(() => toast.remove(), 350);
+      }, 3000);
+    }
+
+    function formatLKR(val) {
+      return "Rs. " + Number(val || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function numberToWordsLKR(amount) {
+      const num = Math.round(amount || 0);
+      if (num === 0) return "Zero Rupees Only";
+
+      const a = ['', 'One ', 'Two ', 'Three ', 'Four ', 'Five ', 'Six ', 'Seven ', 'Eight ', 'Nine ', 'Ten ', 'Eleven ', 'Twelve ', 'Thirteen ', 'Fourteen ', 'Fifteen ', 'Sixteen ', 'Seventeen ', 'Eighteen ', 'Nineteen '];
+      const b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+      function inWords(n) {
+        if ((n = n.toString()).length > 9) return 'overflow';
+        let n_array = ('000000000' + n).substr(-9).match(/^(\d{2})(\d{2})(\d{2})(\d{1})(\d{2})$/);
+        if (!n_array) return '';
+        let str = '';
+        str += (n_array[1] != 0) ? (a[Number(n_array[1])] || b[n_array[1][0]] + ' ' + a[n_array[1][1]]) + 'Crore ' : '';
+        str += (n_array[2] != 0) ? (a[Number(n_array[2])] || b[n_array[2][0]] + ' ' + a[n_array[2][1]]) + 'Lakh ' : '';
+        str += (n_array[3] != 0) ? (a[Number(n_array[3])] || b[n_array[3][0]] + ' ' + a[n_array[3][1]]) + 'Thousand ' : '';
+        str += (n_array[4] != 0) ? (a[Number(n_array[4])] || b[n_array[4][0]] + ' ' + a[n_array[4][1]]) + 'Hundred ' : '';
+        str += (n_array[5] != 0) ? ((str != '') ? 'and ' : '') + (a[Number(n_array[5])] || b[n_array[5][0]] + ' ' + a[n_array[5][1]]) : '';
+        return str.trim();
+      }
+
+      return inWords(num) + " Rupees Only";
+    }
+
+    function toggleLanguage() {
+      currentLang = (currentLang === 'en') ? 'si' : 'en';
+      saveDatabase();
+      applyLanguage();
+    }
+
+    function applyLanguage() {
+      const dict = I18N[currentLang];
+      const langLabel = document.getElementById('currentLangLabel');
+      langLabel.textContent = currentLang === 'en' ? 'සිංහල' : 'English';
+
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (dict[key]) {
+          el.textContent = dict[key];
+        }
+      });
+      renderApp();
+    }
+
+    function computeMachineMetrics(m, customRate = globalUsdRate) {
+      const baseCostLKR = (parseFloat(m.usdPrice) || 0) * customRate;
+      const totalCostLKR = baseCostLKR + (parseFloat(m.taxLKR) || 0);
+      const wholesaleProfit = (parseFloat(m.wholesalePrice) || 0) - totalCostLKR;
+      const retailProfit = (parseFloat(m.retailPrice) || 0) - totalCostLKR;
+
+      const totalSold = sales
+        .filter(s => !s.cancelled && s.machineId === m.id)
+        .reduce((sum, item) => sum + (parseInt(item.qty) || 0), 0);
+
+      const availableStock = Math.max(0, (parseInt(m.initialStock) || 0) - totalSold);
+
+      return {
+        baseCostLKR,
+        totalCostLKR,
+        wholesaleProfit,
+        retailProfit,
+        totalSold,
+        availableStock
+      };
+    }
+
+    function computeSaleMetrics(s) {
+      const machine = machines.find(m => m.id === s.machineId) || {};
+      
+      // Use frozen historical cost if present to avoid skewing financials during USD fluctuations
+      let unitCost = s.frozenUnitCost;
+      if (unitCost === undefined || unitCost === null) {
+        const fallback = computeMachineMetrics(machine, s.frozenExchangeRate || globalUsdRate);
+        unitCost = fallback.totalCostLKR;
+      }
+
+      const qty = parseInt(s.qty) || 1;
+      const unitPrice = parseFloat(s.unitPrice) || 0;
+      const totalRevenue = qty * unitPrice;
+      const totalCost = qty * unitCost;
+      const netProfit = totalRevenue - totalCost;
+
+      const paidAmount = s.paymentStatus === 'PAID' ? totalRevenue : (parseFloat(s.paidAmount) || 0);
+      const receivable = Math.max(0, totalRevenue - paidAmount);
+
+      return {
+        machine,
+        qty,
+        unitPrice,
+        unitCost,
+        totalRevenue,
+        totalCost,
+        netProfit,
+        paidAmount,
+        receivable
+      };
+    }
+
+    function switchTab(tabId) {
+      const tabs = ['dashboard', 'inventory', 'ledger', 'customers', 'settlement'];
+      tabs.forEach(t => {
+        const viewEl = document.getElementById(`view-${t}`);
+        const navEl = document.getElementById(`nav-${t}`);
+        if (t === tabId) {
+          viewEl.classList.remove('hidden');
+          if (navEl) {
+            navEl.classList.add('bg-sky-600/25', 'text-white', 'border-sky-500/40');
+            navEl.classList.remove('text-slate-400');
+          }
+        } else {
+          viewEl.classList.add('hidden');
+          if (navEl) {
+            navEl.classList.remove('bg-sky-600/25', 'text-white', 'border-sky-500/40');
+            navEl.classList.add('text-slate-400');
+          }
+        }
+      });
+      renderApp();
+    }
+
+    function togglePaidAmountField() {
+      const status = document.getElementById('modalSalePaymentStatus').value;
+      const wrapper = document.getElementById('modalPaidAmountWrapper');
+      if (status === 'PARTIAL') {
+        wrapper.classList.remove('hidden');
+      } else {
+        wrapper.classList.add('hidden');
+      }
+    }
+
+    function renderApp() {
+      document.getElementById('arenaUsdRate').textContent = globalUsdRate.toFixed(2);
+      document.getElementById('settleExchangeRate').textContent = globalUsdRate.toFixed(2);
+
+      let grossRevenue = 0;
+      let totalCOGS = 0;
+      let netProfit = 0;
+      let totalUnitsSold = 0;
+      let totalFleetCapacity = 0;
+      let remainingInventoryValue = 0;
+      let totalAvailableUnits = 0;
+      let totalTaxesPaid = 0;
+      let totalReceivables = 0;
+      let pendingInvoices = 0;
+
+      const activeSales = sales.filter(s => !s.cancelled);
+
+      activeSales.forEach(s => {
+        const c = computeSaleMetrics(s);
+        grossRevenue += c.totalRevenue;
+        totalCOGS += c.totalCost;
+        netProfit += c.netProfit;
+        totalUnitsSold += c.qty;
+        totalReceivables += c.receivable;
+        if (c.receivable > 0) pendingInvoices++;
+      });
+
+      machines.forEach(m => {
+        const init = parseInt(m.initialStock) || 0;
+        totalFleetCapacity += init;
+        totalTaxesPaid += init * (parseFloat(m.taxLKR) || 0);
+        const metrics = computeMachineMetrics(m);
+        remainingInventoryValue += (metrics.availableStock * metrics.totalCostLKR);
+        totalAvailableUnits += metrics.availableStock;
+      });
+
+      const partnerShare = netProfit * 0.5;
+
+      let drawAnujaya = 0;
+      let drawGlobal = 0;
+      disbursements.forEach(d => {
+        if (d.partner === 'X') drawAnujaya += d.amount;
+        if (d.partner === 'Y') drawGlobal += d.amount;
+      });
+
+      const balAnujaya = partnerShare - drawAnujaya;
+      const balGlobal = partnerShare - drawGlobal;
+
+      document.getElementById('kpiGrossRevenue').textContent = formatLKR(grossRevenue);
+      document.getElementById('kpiTotalCost').textContent = formatLKR(totalCOGS);
+      document.getElementById('kpiNetProfit').textContent = formatLKR(netProfit);
+      document.getElementById('kpiSalesCount').textContent = activeSales.length;
+      document.getElementById('badgeSalesCount').textContent = activeSales.length;
+      document.getElementById('kpiSoldUnits').textContent = totalUnitsSold;
+      document.getElementById('kpiTotalUnits').textContent = totalFleetCapacity;
+      document.getElementById('kpiStockValuation').textContent = formatLKR(remainingInventoryValue);
+      document.getElementById('kpiAvailableUnits').textContent = `${totalAvailableUnits} Sets`;
+      document.getElementById('badgeStockCount').textContent = machines.length;
+      document.getElementById('kpiTotalTaxes').textContent = formatLKR(totalTaxesPaid);
+      document.getElementById('kpiTotalReceivables').textContent = formatLKR(totalReceivables);
+      document.getElementById('kpiPendingCount').textContent = `${pendingInvoices} Pending Accounts`;
+
+      const marginPct = grossRevenue > 0 ? ((netProfit / grossRevenue) * 100).toFixed(1) : "0.0";
+      document.getElementById('kpiMarginPct').textContent = `${marginPct}%`;
+
+      const soldPct = totalFleetCapacity > 0 ? ((totalUnitsSold / totalFleetCapacity) * 100).toFixed(1) : "0.0";
+      document.getElementById('kpiSoldPct').textContent = `${soldPct}%`;
+
+      document.getElementById('cardXProfit').textContent = formatLKR(partnerShare);
+      document.getElementById('cardYProfit').textContent = formatLKR(partnerShare);
+      document.getElementById('cardXWithdrawn').textContent = formatLKR(drawAnujaya);
+      document.getElementById('cardYWithdrawn').textContent = formatLKR(drawGlobal);
+      document.getElementById('cardXBalance').textContent = formatLKR(balAnujaya);
+      document.getElementById('cardYBalance').textContent = formatLKR(balGlobal);
+
+      document.getElementById('barXVal').textContent = formatLKR(balAnujaya);
+      document.getElementById('barYVal').textContent = formatLKR(balGlobal);
+
+      document.getElementById('settleBoxX').textContent = formatLKR(partnerShare);
+      document.getElementById('settleBoxY').textContent = formatLKR(partnerShare);
+      document.getElementById('settleBoxXPaid').textContent = formatLKR(drawAnujaya);
+      document.getElementById('settleBoxYPaid').textContent = formatLKR(drawGlobal);
+      document.getElementById('settleBoxXNet').textContent = formatLKR(balAnujaya);
+      document.getElementById('settleBoxYNet').textContent = formatLKR(balGlobal);
+
+      const delta = Math.abs(balAnujaya - balGlobal);
+      document.getElementById('settleBoxDelta').textContent = formatLKR(delta);
+      document.getElementById('settleAuditDate').textContent = new Date().toLocaleDateString('en-US', {
+        year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+      });
+
+      renderDashboardRecentSales();
+      renderBrandBreakdown();
+      renderInventoryTable();
+      renderSalesLedger();
+      renderCustomerDirectory();
+    }
+
+    function renderDashboardRecentSales() {
+      const tbody = document.getElementById('dashRecentSalesTbody');
+      tbody.innerHTML = '';
+      const recent = [...sales.filter(s => !s.cancelled)].reverse().slice(0, 5);
+
+      if (recent.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="text-center py-10 text-slate-500 font-mono">No commercial dispatches logged. All machinery in stock.</td></tr>`;
+        return;
+      }
+
+      recent.forEach(s => {
+        const c = computeSaleMetrics(s);
+        const row = document.createElement('tr');
+        row.className = "hover:bg-carbon-800/40 transition";
+        row.innerHTML = `
+          <td class="px-3.5 py-3 font-bold text-sky-400 cursor-pointer hover:underline" onclick="generateAndShowInvoice('${s.id}')">${s.id}</td>
+          <td class="px-3.5 py-3 text-slate-400">${s.date}</td>
+          <td class="px-3.5 py-3 text-slate-200 font-semibold max-w-[140px] truncate" title="${s.customer}">${s.customer}</td>
+          <td class="px-3.5 py-3 text-white">
+            <span class="px-1.5 py-0.5 rounded bg-carbon-700 text-[10px] text-sky-300 mr-1">${c.machine.brand || '---'}</span>
+            ${c.machine.model || s.machineId}
+          </td>
+          <td class="px-3.5 py-3 text-center font-bold text-slate-200">${c.qty}</td>
+          <td class="px-3.5 py-3 text-right font-bold text-slate-100">${formatLKR(c.totalRevenue)}</td>
+          <td class="px-3.5 py-3 text-center">
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${
+              s.paymentStatus === 'PAID' ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' :
+              s.paymentStatus === 'PARTIAL' ? 'bg-amber-950 text-amber-400 border border-amber-800' :
+              'bg-rose-950 text-rose-400 border border-rose-800'
+            }">${s.paymentStatus || 'PAID'}</span>
+          </td>
+          <td class="px-3.5 py-3 text-center">
+            <div class="flex items-center justify-center gap-1.5">
+              <button onclick="generateAndShowInvoice('${s.id}')" class="p-1.5 rounded-lg bg-carbon-800 hover:bg-sky-600 text-sky-300 hover:text-white transition" title="Print Invoice">
+                <i class="fa-solid fa-file-invoice"></i>
+              </button>
+              <button onclick="openEditSaleModal('${s.id}')" class="p-1.5 rounded-lg bg-carbon-800 hover:bg-amber-600 text-slate-300 hover:text-white transition" title="Edit Dispatch">
+                <i class="fa-solid fa-pen-to-square"></i>
+              </button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    function renderBrandBreakdown() {
+      const container = document.getElementById('brandBreakdownList');
+      container.innerHTML = '';
+      const brandMap = {};
+      let totalUnits = 0;
+
+      machines.forEach(m => {
+        const b = (m.brand || 'OTHER').toUpperCase();
+        brandMap[b] = (brandMap[b] || 0) + (parseInt(m.initialStock) || 0);
+        totalUnits += (parseInt(m.initialStock) || 0);
+      });
+
+      const brands = Object.keys(brandMap).sort((a,b) => brandMap[b] - brandMap[a]);
+      brands.forEach(b => {
+        const count = brandMap[b];
+        const pct = totalUnits > 0 ? Math.round((count / totalUnits) * 100) : 0;
+        const item = document.createElement('div');
+        item.className = "space-y-1";
+        item.innerHTML = `
+          <div class="flex justify-between text-xs font-mono">
+            <span class="text-white font-bold">${b}</span>
+            <span class="text-slate-400">${count} Sets (${pct}%)</span>
+          </div>
+          <div class="h-2 w-full bg-carbon-900 rounded-full overflow-hidden border border-carbon-800">
+            <div class="h-full bg-sky-500" style="width: ${pct}%"></div>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function renderInventoryTable(items = machines) {
+      const tbody = document.getElementById('inventoryTableTbody');
+      tbody.innerHTML = '';
+
+      const isPartner = currentUser && currentUser.role === 'PARTNER';
+
+      items.forEach(m => {
+        const calc = computeMachineMetrics(m);
+        const row = document.createElement('tr');
+        row.className = "hover:bg-carbon-800/40 transition group";
+
+        row.innerHTML = `
+          <td class="px-4 py-3.5 font-bold text-sky-400">${m.id}</td>
+          <td class="px-4 py-3.5">
+            <span ${!isPartner ? `contenteditable="true" onblur="saveInlineCell('${m.id}', 'brand', this.textContent)"` : ''} class="${!isPartner ? 'editable-cell' : ''} px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">${m.brand}</span>
+          </td>
+          <td class="px-4 py-3.5 font-bold text-white max-w-xs">
+            <span ${!isPartner ? `contenteditable="true" onblur="saveInlineCell('${m.id}', 'model', this.textContent)"` : ''} class="${!isPartner ? 'editable-cell' : ''} block px-1.5 py-0.5 truncate">${m.model}</span>
+          </td>
+          <td class="px-4 py-3.5 text-center text-slate-200 font-bold">
+            <span ${!isPartner ? `contenteditable="true" onblur="saveInlineCell('${m.id}', 'initialStock', this.textContent)"` : ''} class="${!isPartner ? 'editable-cell text-amber-300' : ''}">${m.initialStock}</span>
+          </td>
+          <td class="px-4 py-3.5 text-center font-bold text-slate-400">${calc.totalSold}</td>
+          <td class="px-4 py-3.5 text-center">
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold ${calc.availableStock === 0 ? 'bg-rose-950 text-rose-400 border border-rose-800' : 'bg-emerald-950 text-emerald-400 border border-emerald-800'}">
+              ${calc.availableStock} ${m.unit || 'SETS'}
+            </span>
+          </td>
+          <td class="px-4 py-3.5 text-right font-mono font-bold text-amber-400">
+            $<span ${!isPartner ? `contenteditable="true" onblur="saveInlineCell('${m.id}', 'usdPrice', this.textContent)"` : ''} class="${!isPartner ? 'editable-cell px-1.5 py-0.5' : ''}">${m.usdPrice}</span>
+          </td>
+          <td class="px-4 py-3.5 text-right text-slate-400">${formatLKR(calc.baseCostLKR)}</td>
+          <td class="px-4 py-3.5 text-right font-mono text-slate-300">
+            <span ${!isPartner ? `contenteditable="true" onblur="saveInlineCell('${m.id}', 'taxLKR', this.textContent)"` : ''} class="${!isPartner ? 'editable-cell px-1.5 py-0.5' : ''}">${m.taxLKR}</span>
+          </td>
+          <td class="px-4 py-3.5 text-right font-bold text-amber-400">${formatLKR(calc.totalCostLKR)}</td>
+          <td class="px-4 py-3.5 text-right font-mono text-sky-300">
+            <span ${!isPartner ? `contenteditable="true" onblur="saveInlineCell('${m.id}', 'wholesalePrice', this.textContent)"` : ''} class="${!isPartner ? 'editable-cell px-1.5 py-0.5' : ''}">${m.wholesalePrice}</span>
+          </td>
+          <td class="px-4 py-3.5 text-right font-mono text-emerald-300">
+            <span ${!isPartner ? `contenteditable="true" onblur="saveInlineCell('${m.id}', 'retailPrice', this.textContent)"` : ''} class="${!isPartner ? 'editable-cell px-1.5 py-0.5' : ''}">${m.retailPrice}</span>
+          </td>
+          <td class="px-4 py-3.5 text-center">
+            <div class="flex items-center justify-center gap-1.5">
+              <button onclick="prefillSale('${m.id}')" class="p-1.5 rounded-lg bg-emerald-950/60 hover:bg-emerald-800 text-emerald-400 hover:text-white transition" title="Dispatch Sale">
+                <i class="fa-solid fa-cart-plus"></i>
+              </button>
+              ${!isPartner ? `
+                <button onclick="openEditMachineModal('${m.id}')" class="p-1.5 rounded-lg bg-carbon-800 hover:bg-sky-600 text-slate-300 hover:text-white transition" title="Edit Full Specs">
+                  <i class="fa-solid fa-pen-to-square"></i>
+                </button>
+                <button onclick="deleteMachine('${m.id}')" class="p-1.5 rounded-lg bg-carbon-800 hover:bg-rose-900 text-slate-400 hover:text-rose-200 transition" title="Delete Machine">
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
+              ` : ''}
+            </div>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    function saveInlineCell(machineId, field, rawValue) {
+      if (currentUser && currentUser.role === 'PARTNER') return;
+      const m = machines.find(x => x.id === machineId);
+      if (!m) return;
+
+      let val = rawValue.trim();
+      if (['initialStock', 'usdPrice', 'taxLKR', 'wholesalePrice', 'retailPrice'].includes(field)) {
+        val = parseFloat(val.replace(/[^0-9.]/g, '')) || 0;
+      }
+
+      m[field] = val;
+      saveDatabase();
+      renderApp();
+      showToast(`Updated ${m.id} ${field}`);
+    }
+
+    function applyInventoryFilters() {
+      const q = document.getElementById('invSearchInput').value.toLowerCase();
+      const b = document.getElementById('invBrandFilter').value;
+
+      const filtered = machines.filter(m => {
+        const matchesQ = m.id.toLowerCase().includes(q) ||
+                         (m.brand && m.brand.toLowerCase().includes(q)) ||
+                         (m.model && m.model.toLowerCase().includes(q));
+        const matchesB = (b === 'ALL') || ((m.brand || '').toUpperCase() === b);
+        return matchesQ && matchesB;
+      });
+
+      renderInventoryTable(filtered);
+    }
+
+    function renderSalesLedger(items = sales) {
+      const tbody = document.getElementById('salesLedgerTbody');
+      tbody.innerHTML = '';
+
+      if (items.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="12" class="text-center py-12 text-slate-500 font-mono">No transaction records in ledger. Click "Record New Dispatch".</td></tr>`;
+        return;
+      }
+
+      const isPartner = currentUser && currentUser.role === 'PARTNER';
+
+      items.forEach(s => {
+        const c = computeSaleMetrics(s);
+        const row = document.createElement('tr');
+        row.className = `hover:bg-carbon-800/40 transition ${s.cancelled ? 'opacity-40 line-through' : ''}`;
+        row.innerHTML = `
+          <td class="px-4 py-3.5 font-bold text-sky-400 cursor-pointer hover:underline" onclick="generateAndShowInvoice('${s.id}')">${s.id}</td>
+          <td class="px-4 py-3.5 text-slate-400">${s.date}</td>
+          <td class="px-4 py-3.5 text-slate-200">
+            <span class="font-bold text-sky-300 mr-1">${c.machine.brand || s.machineId}</span> ${c.machine.model || ''}
+          </td>
+          <td class="px-4 py-3.5 text-slate-400 font-mono text-[11px] max-w-[130px] truncate" title="${s.serialNumbers || 'N/A'}">
+            ${s.serialNumbers || '<span class="text-slate-600">Unspecified</span>'}
+          </td>
+          <td class="px-4 py-3.5 text-slate-300">
+            <div class="font-semibold text-white">${s.customer || 'Direct Client'}</div>
+            <div class="text-[11px] text-slate-400">${s.phone || ''} • ${s.region || ''} • <span class="text-sky-400">${s.payment || 'SLIPS'}</span></div>
+          </td>
+          <td class="px-4 py-3.5 text-center font-bold text-white">${c.qty}</td>
+          <td class="px-4 py-3.5 text-right text-slate-300">${formatLKR(c.unitPrice)}</td>
+          <td class="px-4 py-3.5 text-right font-bold text-white">${formatLKR(c.totalRevenue)}</td>
+          <td class="px-4 py-3.5 text-right text-amber-400">${formatLKR(c.totalCost)}</td>
+          <td class="px-4 py-3.5 text-right font-bold text-emerald-400">${formatLKR(c.netProfit)}</td>
+          <td class="px-4 py-3.5 text-center">
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${
+              s.paymentStatus === 'PAID' ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' :
+              s.paymentStatus === 'PARTIAL' ? 'bg-amber-950 text-amber-400 border border-amber-800' :
+              'bg-rose-950 text-rose-400 border border-rose-800'
+            }">${s.paymentStatus || 'PAID'}</span>
+          </td>
+          <td class="px-4 py-3.5 text-center">
+            <div class="flex items-center justify-center gap-1.5">
+              <button onclick="generateAndShowInvoice('${s.id}')" class="p-1.5 rounded-lg bg-sky-950/60 hover:bg-sky-700 text-sky-400 hover:text-white transition" title="Print Invoice">
+                <i class="fa-solid fa-file-invoice"></i>
+              </button>
+              <button onclick="openEditSaleModal('${s.id}')" class="p-1.5 rounded-lg bg-carbon-800 hover:bg-amber-600 text-slate-300 hover:text-white transition" title="Edit Record">
+                <i class="fa-solid fa-pen-to-square"></i>
+              </button>
+              ${(!isPartner && !s.cancelled) ? `
+                <button onclick="deleteSale('${s.id}')" class="p-1.5 rounded-lg bg-carbon-800 hover:bg-rose-900 text-slate-400 hover:text-rose-200 transition" title="Cancel & Soft-Delete">
+                  <i class="fa-solid fa-ban"></i>
+                </button>
+              ` : ''}
+            </div>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    function applySalesFilters() {
+      const q = document.getElementById('salesSearchInput').value.toLowerCase();
+      const filtered = sales.filter(s => {
+        const m = machines.find(x => x.id === s.machineId) || {};
+        return s.id.toLowerCase().includes(q) ||
+               (s.customer && s.customer.toLowerCase().includes(q)) ||
+               (s.serialNumbers && s.serialNumbers.toLowerCase().includes(q)) ||
+               (m.model && m.model.toLowerCase().includes(q)) ||
+               (m.brand && m.brand.toLowerCase().includes(q));
+      });
+      renderSalesLedger(filtered);
+    }
+
+    function renderCustomerDirectory() {
+      const container = document.getElementById('customerGridContainer');
+      container.innerHTML = '';
+      const custMap = {};
+
+      sales.filter(s => !s.cancelled).forEach(s => {
+        const name = (s.customer || "Direct Buyer").trim();
+        if (!custMap[name]) {
+          custMap[name] = {
+            name,
+            phone: s.phone || "N/A",
+            region: s.region || "Sri Lanka",
+            salesCount: 0,
+            unitsPurchased: 0,
+            totalSpend: 0,
+            totalReceivable: 0,
+            lastDate: s.date,
+            invoices: []
+          };
+        }
+        const c = computeSaleMetrics(s);
+        custMap[name].salesCount += 1;
+        custMap[name].unitsPurchased += c.qty;
+        custMap[name].totalSpend += c.totalRevenue;
+        custMap[name].totalReceivable += c.receivable;
+        custMap[name].invoices.push(s.id);
+        if (s.date > custMap[name].lastDate) {
+          custMap[name].lastDate = s.date;
+        }
+      });
+
+      const clients = Object.values(custMap).sort((a,b) => b.totalSpend - a.totalSpend);
+
+      if (clients.length === 0) {
+        container.innerHTML = `<div class="col-span-full text-center py-12 glass-card rounded-3xl border border-carbon-700/60 p-8 font-mono text-slate-400">Customer directory empty. New clients record automatically upon commercial dispatch.</div>`;
+        return;
+      }
+
+      clients.forEach(cl => {
+        const card = document.createElement('div');
+        card.className = "glass-card p-6 rounded-2xl border border-carbon-700/80 space-y-4 hover:border-purple-500/50 transition";
+        card.innerHTML = `
+          <div class="flex justify-between items-start">
+            <div class="flex items-center gap-3">
+              <span class="w-10 h-10 rounded-xl bg-purple-950 border border-purple-700/60 flex items-center justify-center text-purple-400 font-bold text-sm">
+                <i class="fa-solid fa-building"></i>
+              </span>
+              <div>
+                <h4 class="font-bold text-white text-sm">${cl.name}</h4>
+                <div class="text-[11px] text-slate-400">${cl.phone} • ${cl.region}</div>
+              </div>
+            </div>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800 font-bold">
+              ${cl.salesCount} Orders
+            </span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3 pt-3 border-t border-carbon-800 font-mono text-xs">
+            <div>
+              <span class="text-slate-500 block text-[10px]">TOTAL DISPATCH VOLUME</span>
+              <span class="text-white font-bold text-sm">${formatLKR(cl.totalSpend)}</span>
+            </div>
+            <div class="text-right">
+              <span class="text-slate-500 block text-[10px]">OUTSTANDING RECEIVABLE</span>
+              <span class="font-bold text-sm ${cl.totalReceivable > 0 ? 'text-rose-400' : 'text-emerald-400'}">${formatLKR(cl.totalReceivable)}</span>
+            </div>
+          </div>
+
+          <div class="flex justify-between items-center text-[11px] font-mono text-slate-400 pt-2 border-t border-carbon-800">
+            <span>Last Dispatch: <strong>${cl.lastDate}</strong></span>
+            <button onclick="generateAndShowInvoice('${cl.invoices[cl.invoices.length - 1]}')" class="text-sky-400 hover:text-sky-300 flex items-center gap-1 font-bold">
+              <span>Latest Tax Invoice</span> <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+            </button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function applyCustomerFilters() {
+      const q = document.getElementById('customerSearchInput').value.toLowerCase();
+      const cards = document.querySelectorAll('#customerGridContainer > div');
+      cards.forEach(c => {
+        const text = c.textContent.toLowerCase();
+        c.style.display = text.includes(q) ? 'block' : 'none';
+      });
+    }
+
+    function updateGlobalUsdRate(rate) {
+      if (currentUser && currentUser.role === 'PARTNER') return;
+      const val = parseFloat(rate);
+      if (isNaN(val) || val <= 0) return;
+      globalUsdRate = val;
+      saveDatabase();
+      renderApp();
+      showToast(`Spot Exchange Anchor: 1 USD = Rs. ${globalUsdRate.toFixed(2)}`);
+    }
+
+    function applyExchangeRateRecalculation() {
+      if (currentUser && currentUser.role === 'PARTNER') return;
+      renderApp();
+      showToast("Current warehouse inventory revalued using spot USD rate!");
+    }
+
+    function openSaleModal() {
+      document.getElementById('saleFormMode').value = "ADD";
+      document.getElementById('editingSaleId').value = "";
+      document.getElementById('saleModalTitle').textContent = "Process Machinery Dispatch & Invoice";
+      document.getElementById('saleModalSubmitText').textContent = "Confirm & Generate Official Tax Invoice";
+      document.getElementById('saleTerminalForm').reset();
+      populateSaleMachineDropdown();
+      document.getElementById('modalSaleDate').value = new Date().toISOString().split('T')[0];
+      togglePaidAmountField();
+      resetModalSalePreview();
+      document.getElementById('saleModal').classList.remove('hidden');
+    }
+
+    function openEditSaleModal(saleId) {
+      const s = sales.find(x => x.id === saleId);
+      if (!s) return;
+
+      document.getElementById('saleFormMode').value = "EDIT";
+      document.getElementById('editingSaleId').value = saleId;
+      document.getElementById('saleModalTitle').textContent = "Edit Dispatch Record: " + s.id;
+      document.getElementById('saleModalSubmitText').textContent = "Update Transaction & Reconcile";
+
+      populateSaleMachineDropdown(s.machineId);
+      document.getElementById('modalSaleMachine').value = s.machineId;
+      onModalSaleMachineChange(s.machineId);
+
+      document.getElementById('modalSaleQty').value = s.qty;
+      document.getElementById('modalSalePrice').value = s.unitPrice;
+      document.getElementById('modalSaleSerials').value = s.serialNumbers || '';
+      document.getElementById('modalSaleCustomer').value = s.customer || '';
+      document.getElementById('modalSalePhone').value = s.phone || '';
+      document.getElementById('modalSaleRegion').value = s.region || 'Colombo / Western Province';
+      document.getElementById('modalSalePayment').value = s.payment || 'Bank Wire / SLIPS';
+      document.getElementById('modalSalePaymentStatus').value = s.paymentStatus || 'PAID';
+      document.getElementById('modalSalePaidAmount').value = s.paidAmount || s.qty * s.unitPrice;
+      document.getElementById('modalSaleDate').value = s.date || new Date().toISOString().split('T')[0];
+      document.getElementById('modalSaleWarranty').value = s.warranty || '1-Year Comprehensive Warranty (Motor & PCB)';
+
+      togglePaidAmountField();
+      calculateModalSaleLive();
+      document.getElementById('saleModal').classList.remove('hidden');
+    }
+
+    function prefillSale(machineId) {
+      openSaleModal();
+      const select = document.getElementById('modalSaleMachine');
+      select.value = machineId;
+      onModalSaleMachineChange(machineId);
+    }
+
+    function clearSelectedSaleMachine() {
+      document.getElementById('modalSaleMachine').value = "";
+      onModalSaleMachineChange("");
+    }
+
+    function populateSaleMachineDropdown(selectedId = null) {
+      const select = document.getElementById('modalSaleMachine');
+      select.innerHTML = `<option value="">-- Choose Machinery Model (SKU) --</option>`;
+
+      machines.forEach(m => {
+        const calc = computeMachineMetrics(m);
+        const opt = document.createElement('option');
+        opt.value = m.id;
+        opt.textContent = `${m.id} | ${m.brand} ${m.model} (Available: ${calc.availableStock} | FOB: $${m.usdPrice})`;
+        if (selectedId && m.id === selectedId) {
+          opt.selected = true;
+        }
+        select.appendChild(opt);
+      });
+    }
+
+    function onModalSaleMachineChange(machineId) {
+      const card = document.getElementById('modalMachineMetaCard');
+      if (!machineId) {
+        card.classList.add('hidden');
+        resetModalSalePreview();
+        return;
+      }
+
+      const m = machines.find(x => x.id === machineId);
+      if (!m) return;
+
+      const calc = computeMachineMetrics(m);
+      card.classList.remove('hidden');
+      document.getElementById('modalMetaBrand').textContent = m.brand;
+      document.getElementById('modalMetaModel').textContent = m.model;
+      document.getElementById('modalMetaAvailable').textContent = `${calc.availableStock} ${m.unit || 'SETS'}`;
+      document.getElementById('modalMetaCost').textContent = formatLKR(calc.totalCostLKR);
+      document.getElementById('modalMetaWs').textContent = formatLKR(m.wholesalePrice);
+      document.getElementById('modalMetaRt').textContent = formatLKR(m.retailPrice);
+
+      const priceInput = document.getElementById('modalSalePrice');
+      if (!priceInput.value || parseFloat(priceInput.value) <= 0) {
+        priceInput.value = m.wholesalePrice;
+      }
+
+      calculateModalSaleLive();
+    }
+
+    function applyModalPresetPrice(type) {
+      const mId = document.getElementById('modalSaleMachine').value;
+      if (!mId) return;
+      const m = machines.find(x => x.id === mId);
+      if (!m) return;
+      document.getElementById('modalSalePrice').value = type === 'ws' ? m.wholesalePrice : m.retailPrice;
+      calculateModalSaleLive();
+    }
+
+    function calculateModalSaleLive() {
+      const mId = document.getElementById('modalSaleMachine').value;
+      if (!mId) {
+        resetModalSalePreview();
+        return;
+      }
+
+      const m = machines.find(x => x.id === mId);
+      const calc = computeMachineMetrics(m);
+
+      const qty = parseInt(document.getElementById('modalSaleQty').value) || 0;
+      const unitPrice = parseFloat(document.getElementById('modalSalePrice').value) || 0;
+
+      const totalCost = qty * calc.totalCostLKR;
+      const totalRev = qty * unitPrice;
+      const netProfit = totalRev - totalCost;
+
+      document.getElementById('previewModalRevenue').textContent = formatLKR(totalRev);
+      document.getElementById('previewModalCost').textContent = formatLKR(totalCost);
+      document.getElementById('previewModalProfit').textContent = formatLKR(netProfit);
+    }
+
+    function resetModalSalePreview() {
+      document.getElementById('previewModalRevenue').textContent = "Rs. 0.00";
+      document.getElementById('previewModalCost').textContent = "Rs. 0.00";
+      document.getElementById('previewModalProfit').textContent = "Rs. 0.00";
+    }
+
+    function submitSaleTransaction(e) {
+      e.preventDefault();
+
+      const mode = document.getElementById('saleFormMode').value;
+      const saleId = document.getElementById('editingSaleId').value;
+      const machineId = document.getElementById('modalSaleMachine').value;
+      const qty = parseInt(document.getElementById('modalSaleQty').value) || 1;
+      const unitPrice = parseFloat(document.getElementById('modalSalePrice').value) || 0;
+      const serialNumbers = document.getElementById('modalSaleSerials').value.trim();
+      const customer = document.getElementById('modalSaleCustomer').value || "Apparel Manufacturer";
+      const phone = document.getElementById('modalSalePhone').value || "";
+      const region = document.getElementById('modalSaleRegion').value || "Colombo / Western Province";
+      const payment = document.getElementById('modalSalePayment').value || "Bank Wire / SLIPS";
+      const paymentStatus = document.getElementById('modalSalePaymentStatus').value;
+      const paidAmount = paymentStatus === 'PAID' ? (qty * unitPrice) : (parseFloat(document.getElementById('modalSalePaidAmount').value) || 0);
+      const date = document.getElementById('modalSaleDate').value || new Date().toISOString().split('T')[0];
+      const warranty = document.getElementById('modalSaleWarranty').value || "1-Year Comprehensive Warranty";
+
+      if (!machineId) {
+        showToast("Please choose a valid machine SKU", "error");
+        return;
+      }
+
+      const m = machines.find(x => x.id === machineId);
+      const metrics = computeMachineMetrics(m);
+
+      if (mode === "ADD") {
+        if (metrics.availableStock < qty) {
+          showToast(`Insufficient warehouse stock! Only ${metrics.availableStock} sets available.`, "error");
+          return;
+        }
+
+        const nextId = "INV-" + (sales.length + 1001);
+        const newSale = {
+          id: nextId,
+          date,
+          machineId,
+          qty,
+          unitPrice,
+          frozenExchangeRate: globalUsdRate,
+          frozenUnitCost: metrics.totalCostLKR,
+          serialNumbers,
+          customer,
+          phone,
+          region,
+          payment,
+          paymentStatus,
+          paidAmount,
+          warranty,
+          cancelled: false
+        };
+
+        sales.push(newSale);
+        saveDatabase();
+        closeModal('saleModal');
+        renderApp();
+        showToast(`Invoice #${nextId} generated!`);
+
+        setTimeout(() => {
+          generateAndShowInvoice(nextId);
+        }, 150);
+
+      } else {
+        const existingIdx = sales.findIndex(x => x.id === saleId);
+        if (existingIdx !== -1) {
+          const oldSale = sales[existingIdx];
+          let allowedStock = metrics.availableStock;
+          if (oldSale.machineId === machineId && !oldSale.cancelled) {
+            allowedStock += oldSale.qty;
+          }
+
+          if (allowedStock < qty) {
+            showToast(`Insufficient warehouse stock! Max ${allowedStock} sets available.`, "error");
+            return;
+          }
+
+          sales[existingIdx] = {
+            ...oldSale,
+            date,
+            machineId,
+            qty,
+            unitPrice,
+            serialNumbers,
+            customer,
+            phone,
+            region,
+            payment,
+            paymentStatus,
+            paidAmount,
+            warranty
+          };
+
+          saveDatabase();
+          closeModal('saleModal');
+          renderApp();
+          showToast(`Invoice #${saleId} revised!`);
+
+          setTimeout(() => {
+            generateAndShowInvoice(saleId);
+          }, 150);
+        }
+      }
+    }
+
+    function deleteSale(saleId) {
+      if (currentUser && currentUser.role === 'PARTNER') return;
+      if (confirm(`Cancel dispatch ${saleId}? The record will be soft-deleted and units returned to warehouse.`)) {
+        const item = sales.find(s => s.id === saleId);
+        if (item) {
+          item.cancelled = true;
+          saveDatabase();
+          showToast(`Dispatch ${saleId} marked as cancelled.`);
+          renderApp();
+        }
+      }
+    }
+
+    function generateAndShowInvoice(saleId) {
+      const s = sales.find(x => x.id === saleId);
+      if (!s) return;
+
+      const c = computeSaleMetrics(s);
+      const m = c.machine;
+
+      document.getElementById('invDocNumber').textContent = s.id;
+      document.getElementById('invDocDate').textContent = s.date;
+      document.getElementById('invDocPayment').textContent = s.payment || "Bank Wire / SLIPS";
+      document.getElementById('invDocCustomer').textContent = s.customer || "Apparel Manufacturer";
+      document.getElementById('invDocPhone').textContent = s.phone ? `Contact: ${s.phone}` : "Verified Apparel Client";
+      document.getElementById('invDocRegion').textContent = s.region || "Western Province, Sri Lanka";
+      document.getElementById('invDocWarranty').textContent = `Warranty: ${s.warranty || "1-Year Motor & PCB"}`;
+      document.getElementById('invDocSerials').textContent = s.serialNumbers ? `Asset Serials: ${s.serialNumbers}` : "Serials: Tracked in Batch";
+
+      const tbody = document.getElementById('invDocItemsTbody');
+      tbody.innerHTML = `
+        <tr>
+          <td class="px-4 py-3.5 font-bold text-slate-900">${m.id || s.machineId}</td>
+          <td class="px-4 py-3.5">
+            <div class="font-bold text-slate-900">${m.brand} ${m.model}</div>
+            <div class="text-[11px] text-slate-500">${m.name || "Industrial Apparel Sewing Workstation"}</div>
+            ${s.serialNumbers ? `<div class="text-[10px] text-sky-800 font-mono mt-0.5">Asset SN: ${s.serialNumbers}</div>` : ''}
+          </td>
+          <td class="px-4 py-3.5 text-center font-bold">${c.qty} ${m.unit || 'SETS'}</td>
+          <td class="px-4 py-3.5 text-right font-mono">${formatLKR(c.unitPrice)}</td>
+          <td class="px-4 py-3.5 text-right font-bold text-slate-900 font-mono">${formatLKR(c.totalRevenue)}</td>
+        </tr>
+      `;
+
+      document.getElementById('invDocSubtotal').textContent = formatLKR(c.totalRevenue);
+      document.getElementById('invDocGrandTotal').textContent = formatLKR(c.totalRevenue);
+      document.getElementById('invAmountInWords').textContent = numberToWordsLKR(c.totalRevenue);
+
+      document.getElementById('printableInvoiceModal').classList.remove('hidden');
+    }
+
+    function openAddMachineModal() {
+      if (currentUser && currentUser.role === 'PARTNER') return;
+      document.getElementById('machineMasterForm').reset();
+      document.getElementById('machineFormMode').value = "ADD";
+      document.getElementById('machineModalTitle').textContent = "Add Machinery SKU";
+      document.getElementById('mfSku').disabled = false;
+      document.getElementById('mfSku').value = "M-" + String(machines.length + 1).padStart(2, '0');
+      calculateMachineFormCosts();
+      document.getElementById('machineModal').classList.remove('hidden');
+    }
+
+    function openEditMachineModal(machineId) {
+      if (currentUser && currentUser.role === 'PARTNER') return;
+      const m = machines.find(x => x.id === machineId);
+      if (!m) return;
+
+      document.getElementById('machineFormMode').value = "EDIT";
+      document.getElementById('machineModalTitle').textContent = "Edit SKU Specs: " + m.id;
+      
+      document.getElementById('mfSku').value = m.id;
+      document.getElementById('mfSku').disabled = true;
+      document.getElementById('mfBrand').value = m.brand;
+      document.getElementById('mfModel').value = m.model;
+      document.getElementById('mfUnit').value = m.unit || "SETS";
+      document.getElementById('mfStock').value = m.initialStock;
+      document.getElementById('mfUsd').value = m.usdPrice;
+      document.getElementById('mfTax').value = m.taxLKR;
+      document.getElementById('mfWholesale').value = m.wholesalePrice;
+      document.getElementById('mfRetail').value = m.retailPrice;
+
+      calculateMachineFormCosts();
+      document.getElementById('machineModal').classList.remove('hidden');
+    }
+
+    function calculateMachineFormCosts() {
+      const usd = parseFloat(document.getElementById('mfUsd').value) || 0;
+      const tax = parseFloat(document.getElementById('mfTax').value) || 0;
+      const baseCost = usd * globalUsdRate;
+      const totalCost = baseCost + tax;
+      document.getElementById('mfComputedCost').textContent = formatLKR(totalCost);
+    }
+
+    function submitMachineMaster(e) {
+      e.preventDefault();
+      if (currentUser && currentUser.role === 'PARTNER') return;
+
+      const mode = document.getElementById('machineFormMode').value;
+      const sku = document.getElementById('mfSku').value.trim().toUpperCase();
+      const brand = document.getElementById('mfBrand').value.trim().toUpperCase();
+      const model = document.getElementById('mfModel').value.trim();
+      const unit = document.getElementById('mfUnit').value.trim() || "SETS";
+      const initialStock = parseInt(document.getElementById('mfStock').value) || 1;
+      const usdPrice = parseFloat(document.getElementById('mfUsd').value) || 0;
+      const taxLKR = parseFloat(document.getElementById('mfTax').value) || 0;
+      const wholesalePrice = parseFloat(document.getElementById('mfWholesale').value) || 0;
+      const retailPrice = parseFloat(document.getElementById('mfRetail').value) || 0;
+
+      if (mode === "ADD") {
+        if (machines.some(x => x.id === sku)) {
+          showToast("SKU Code already exists!", "error");
+          return;
+        }
+
+        machines.push({
+          id: sku, brand, model, name: `${brand} ${model}`,
+          unit, initialStock, usdPrice, taxLKR, wholesalePrice, retailPrice
+        });
+        showToast(`Machinery SKU ${sku} added!`);
+      } else {
+        const idx = machines.findIndex(x => x.id === sku);
+        if (idx !== -1) {
+          machines[idx] = {
+            ...machines[idx], brand, model, unit, initialStock,
+            usdPrice, taxLKR, wholesalePrice, retailPrice
+          };
+          showToast(`Machinery SKU ${sku} updated!`);
+        }
+      }
+
+      saveDatabase();
+      closeModal('machineModal');
+      renderApp();
+    }
+
+    function deleteMachine(machineId) {
+      if (currentUser && currentUser.role === 'PARTNER') return;
+      if (confirm(`Remove SKU ${machineId}? This cannot be undone.`)) {
+        machines = machines.filter(x => x.id !== machineId);
+        saveDatabase();
+        showToast(`SKU ${machineId} removed.`);
+        renderApp();
+      }
+    }
+
+    function openDisbursementModal() {
+      if (currentUser && currentUser.role === 'PARTNER') return;
+      document.getElementById('disburseDate').value = new Date().toISOString().split('T')[0];
+      document.getElementById('disbursementModal').classList.remove('hidden');
+    }
+
+    function submitDisbursement(e) {
+      e.preventDefault();
+      if (currentUser && currentUser.role === 'PARTNER') return;
+
+      const partner = document.getElementById('disbursePartner').value;
+      const amount = parseFloat(document.getElementById('disburseAmount').value) || 0;
+      const date = document.getElementById('disburseDate').value;
+      const memo = document.getElementById('disburseMemo').value || "Capital Draw";
+
+      disbursements.push({
+        id: "DIS-" + (disbursements.length + 1),
+        date, partner, amount, memo
+      });
+
+      saveDatabase();
+      closeModal('disbursementModal');
+      showToast(`Logged capital draw of ${formatLKR(amount)}`);
+      renderApp();
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+    }
+
+    function exportFullAuditJson() {
+      if (currentUser && currentUser.role === 'PARTNER') return;
+      const payload = {
+        app: "ANUJAYA_GLOBAL_ERP",
+        version: "7.0-ENTERPRISE",
+        timestamp: new Date().toISOString(),
+        globalUsdRate,
+        machines,
+        sales,
+        disbursements
+      };
+      const jsonStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(payload, null, 2));
+      downloadFile(jsonStr, `Consortium_ERP_MasterAudit_${new Date().toISOString().split('T')[0]}.json`);
+    }
+
+    function triggerJsonImport() {
+      if (currentUser && currentUser.role === 'PARTNER') return;
+      document.getElementById('jsonFileInput').click();
+    }
+
+    function handleJsonFileRestore(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        try {
+          const data = JSON.parse(evt.target.result);
+          if (data.machines) {
+            machines = data.machines;
+            sales = data.sales || [];
+            disbursements = data.disbursements || [];
+            if (data.globalUsdRate) {
+              globalUsdRate = data.globalUsdRate;
+              document.getElementById('globalUsdInput').value = globalUsdRate;
+            }
+            saveDatabase();
+            showToast("Database restored successfully!");
+            renderApp();
+          } else {
+            throw new Error("Invalid structure");
+          }
+        } catch (err) {
+          showToast("Corrupt or invalid backup file!", "error");
+        }
+      };
+      reader.readAsText(file);
+      e.target.value = '';
+    }
+
+    function resetToInitialBaseline() {
+      if (currentUser && currentUser.role === 'PARTNER') return;
+      if (confirm("Restore to standard 26-model baseline fleet (489 sets)?")) {
+        machines = JSON.parse(JSON.stringify(MASTER_FLEET_EXCEL_BASELINE));
+        sales = [];
+        disbursements = [];
+        globalUsdRate = 330.00;
+        document.getElementById('globalUsdInput').value = globalUsdRate;
+        saveDatabase();
+        showToast("System reset to consortium baseline!");
+        renderApp();
+      }
+    }
+
+    function exportInventoryToCSV() {
+      let csv = "data:text/csv;charset=utf-8,";
+      csv += "SKU,Brand,Model,Batch Sets,Sold,In Stock,USD FOB,Base LKR,Duty LKR,Landed Cost LKR,Wholesale LKR,Retail LKR\r\n";
+
+      machines.forEach(m => {
+        const c = computeMachineMetrics(m);
+        const row = [
+          m.id, m.brand, `"${m.model}"`, m.initialStock, c.totalSold, c.availableStock,
+          m.usdPrice, c.baseCostLKR, m.taxLKR, c.totalCostLKR, m.wholesalePrice, m.retailPrice
+        ].join(",");
+        csv += row + "\r\n";
+      });
+
+      downloadFile(csv, "Consortium_Machinery_Fleet_Audit.csv");
+    }
+
+    function exportSalesToCSV() {
+      let csv = "data:text/csv;charset=utf-8,";
+      csv += "Invoice ID,Date,SKU,Brand,Model,Serials,Customer,Phone,Region,Payment,Status,Quantity,Unit Price,Gross Revenue,Cost LKR,Net Profit\r\n";
+
+      sales.forEach(s => {
+        const c = computeSaleMetrics(s);
+        const row = [
+          s.id, s.date, s.machineId, c.machine.brand || '', `"${c.machine.model || ''}"`,
+          `"${(s.serialNumbers || '').replace(/"/g, '""')}"`,
+          `"${(s.customer || '').replace(/"/g, '""')}"`, `"${s.phone || ''}"`, `"${s.region || ''}"`,
+          `"${s.payment || ''}"`, `"${s.paymentStatus || 'PAID'}"`, c.qty, c.unitPrice, c.totalRevenue, c.totalCost, c.netProfit
+        ].join(",");
+        csv += row + "\r\n";
+      });
+
+      downloadFile(csv, "Consortium_Sales_Audit_Ledger.csv");
+    }
+
+    function downloadFile(content, fileName) {
+      const link = document.createElement("a");
+      link.setAttribute("href", encodeURI(content));
+      link.setAttribute("download", fileName);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast(`Exported: ${fileName}`);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('globalUsdInput').value = globalUsdRate;
+      applyLanguage();
+      applyRolePermissions();
+      loadDatabaseFromSheet();
+    });
+  </script>
+</body>
+</html>

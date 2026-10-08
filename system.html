@@ -1,0 +1,2785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Anujaya Enterprises — Industrial Sewing Machinery Management ERP</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=Noto+Sans+Sinhala:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', '"Noto Sans Sinhala"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace']
+          },
+          colors: {
+            eyesafe: {
+              950: '#0A0F1D',
+              900: '#0F172A',
+              850: '#15203B',
+              800: '#1E293B',
+              750: '#283853',
+              700: '#334155'
+            },
+            brand: {
+              400: '#38bdf8',
+              500: '#0284c7',
+              600: '#0369a1'
+            },
+            accent: {
+              300: '#67e8f9',
+              400: '#22d3ee',
+              500: '#06b6d4',
+              600: '#0891b2'
+            },
+            leaf: {
+              400: '#34d399',
+              500: '#10b981',
+              600: '#059669'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #0A0F1D;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(2, 132, 199, 0.08) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.06) 0px, transparent 50%);
+      background-attachment: fixed;
+    }
+    @media print {
+      body { background: #ffffff !important; color: #000000 !important; }
+      body * { visibility: hidden; }
+      #printable-document, #printable-document * { visibility: visible; }
+      #printable-document {
+        position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 12mm 15mm;
+        background: #ffffff !important; color: #0f172a !important; box-shadow: none !important; border: none !important;
+      }
+      .no-print { display: none !important; }
+    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0A0F1D; }
+    ::-webkit-scrollbar-thumb { background: #1E293B; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #334155; }
+  </style>
+</head>
+<body class="text-slate-100 font-sans antialiased selection:bg-cyan-500 selection:text-black">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo, useRef } = React;
+
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyPiciglFUZIk2AuUfjdFInOJGYOoOgd6IkKtoeh3IaHXTuaCbaxy6TijiCbCK77iYRyQ/exec";
+    const STORAGE_KEY = "ANUJAYA_ERP_MASTER_ULTIMATE_ENTERPRISE_V33_ADV_DOCS";
+
+    function CompanyLogo({ className = "w-12 h-12" }) {
+      return (
+        <svg viewBox="0 0 200 200" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="greenSwooshGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#22c55e" />
+              <stop offset="60%" stopColor="#10b981" />
+              <stop offset="100%" stopColor="#059669" />
+            </linearGradient>
+            <linearGradient id="blueSwooshGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#0284c7" />
+              <stop offset="60%" stopColor="#0ea5e9" />
+              <stop offset="100%" stopColor="#38bdf8" />
+            </linearGradient>
+            <filter id="badgeShadow" x="-10%" y="-10%" width="120%" height="120%">
+              <feDropShadow dx="0" dy="4" stdDeviation="6" floodOpacity="0.22" />
+            </filter>
+          </defs>
+          <circle cx="100" cy="100" r="92" fill="#ffffff" filter="url(#badgeShadow)" />
+          <path d="M 32,100 C 32,58 66,24 108,24 C 146,24 168,48 174,72 C 160,54 136,42 108,42 C 76,42 52,66 52,100 C 52,122 62,142 80,154 C 50,144 32,124 32,100 Z" fill="url(#greenSwooshGrad)" />
+          <path d="M 168,100 C 168,142 134,176 92,176 C 54,176 32,152 26,128 C 40,146 64,158 92,158 C 124,158 148,134 148,100 C 148,78 138,58 120,46 C 150,56 168,76 168,100 Z" fill="url(#blueSwooshGrad)" />
+          <g transform="translate(42, 60)">
+            <path d="M 34,76 L 14,76 L 36,4 L 54,4 L 76,76 L 56,76 L 50,56 L 28,56 Z M 34,40 L 45,40 L 40,20 Z" fill="#10b981" />
+            <path d="M 64,4 L 112,4 L 112,18 L 82,18 L 82,32 L 106,32 L 106,46 L 82,46 L 82,62 L 114,62 L 114,76 L 64,76 Z" fill="#0284c7" />
+          </g>
+        </svg>
+      );
+    }
+
+    function MockBarcode({ code = "AE-DOC-2026" }) {
+      return (
+        <div className="flex flex-col items-end print:items-end">
+          <svg className="h-7 w-28" viewBox="0 0 100 22" preserveAspectRatio="none">
+            <rect x="0" y="0" width="3" height="22" fill="#0f172a" />
+            <rect x="5" y="0" width="1" height="22" fill="#0f172a" />
+            <rect x="8" y="0" width="4" height="22" fill="#0f172a" />
+            <rect x="15" y="0" width="2" height="22" fill="#0f172a" />
+            <rect x="19" y="0" width="1" height="22" fill="#0f172a" />
+            <rect x="23" y="0" width="5" height="22" fill="#0f172a" />
+            <rect x="31" y="0" width="2" height="22" fill="#0f172a" />
+            <rect x="35" y="0" width="3" height="22" fill="#0f172a" />
+            <rect x="40" y="0" width="1" height="22" fill="#0f172a" />
+            <rect x="44" y="0" width="4" height="22" fill="#0f172a" />
+            <rect x="51" y="0" width="2" height="22" fill="#0f172a" />
+            <rect x="55" y="0" width="3" height="22" fill="#0f172a" />
+            <rect x="60" y="0" width="1" height="22" fill="#0f172a" />
+            <rect x="64" y="0" width="4" height="22" fill="#0f172a" />
+            <rect x="70" y="0" width="2" height="22" fill="#0f172a" />
+            <rect x="74" y="0" width="5" height="22" fill="#0f172a" />
+            <rect x="81" y="0" width="1" height="22" fill="#0f172a" />
+            <rect x="84" y="0" width="3" height="22" fill="#0f172a" />
+            <rect x="89" y="0" width="2" height="22" fill="#0f172a" />
+            <rect x="93" y="0" width="4" height="22" fill="#0f172a" />
+            <rect x="98" y="0" width="2" height="22" fill="#0f172a" />
+          </svg>
+          <span className="font-mono text-[8px] text-slate-500 tracking-widest uppercase mt-0.5">{code}</span>
+        </div>
+      );
+    }
+
+    function OfficialSealStamp() {
+      return (
+        <div className="relative inline-flex items-center justify-center p-1.5 border-2 border-emerald-600 rounded-full text-emerald-700 font-mono rotate-[-5deg] select-none opacity-90 shadow-sm">
+          <div className="border border-dashed border-emerald-500 rounded-full px-3 py-2 text-center">
+            <div className="text-[8px] font-black tracking-widest uppercase">ANUJAYA ENTERPRISES</div>
+            <div className="text-[7px] font-bold text-slate-800">★ CERTIFIED INDUSTRIAL YARD ★</div>
+            <div className="text-[7px] font-extrabold text-emerald-800 tracking-wider">KOSGAMA CENTRAL BASE</div>
+            <div className="text-[6px] text-slate-500 font-mono uppercase tracking-widest">OFFICIALLY VERIFIED</div>
+          </div>
+        </div>
+      );
+    }
+
+    const INITIAL_MASTER_CUSTOMERS = [
+      { id: "c_1", code: "CUST-001", name: "DM Product", nic: "REG-001", phone: "071-0962669", address: "DM Product Factory", baseOpeningBalance: 266000, isArchived: false, rentals: [
+        { machineId: "m_1_1", machineCode: "M-700-14P", model: "Pegasus M-700 Overlock (Fleet of 14)", serialNumber: "SN-M700-01-14", rentRate: 56000, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null },
+        { machineId: "m_1_2", machineCode: "W-500-3P", model: "W-500 Flatlock Industrial (3 pcs)", serialNumber: "SN-W500-01-03", rentRate: 18000, status: "Active", accessories: "Stand, Table, Motor", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null },
+        { machineId: "m_1_3", machineCode: "C007JD-2P", model: "C007JD HEM Cutter Specialty (2 pcs)", serialNumber: "SN-C007-01-02", rentRate: 30000, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null }
+      ]},
+      { id: "c_2", code: "CUST-002", name: "Serandib Fashion", nic: "REG-002", phone: "077-5984571", address: "Serandib Fashion Factory", baseOpeningBalance: 0, isArchived: false, rentals: [
+        { machineId: "m_2_1", machineCode: "OL-8P", model: "Overlock O/L 4-Thread (8 Units)", serialNumber: "SN-OL-SER-08", rentRate: 32000, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null },
+        { machineId: "m_2_2", machineCode: "FB-3P", model: "Flat Bed Industrial Units (3 Units)", serialNumber: "SN-FB-SER-03", rentRate: 21000, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null },
+        { machineId: "m_2_3", machineCode: "W812-2P", model: "Siruba M Cutter W812-356 (2 Units)", serialNumber: "SN-SR-SER-02", rentRate: 30000, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null }
+      ]},
+      { id: "c_3", code: "CUST-003", name: "Sumith Dabadeniya", nic: "REG-003", phone: "071-5327669", address: "Sumith Dabadeniya Yard", baseOpeningBalance: 29000, isArchived: false, rentals: [
+        { machineId: "m_3_1", machineCode: "JK-4TH", model: "Jack 4-Thread Overlock (4 Units)", serialNumber: "SN-JK-04", rentRate: 20000, status: "Active", accessories: "Table, Stand, Motor", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null },
+        { machineId: "m_3_2", machineCode: "PEG-M700", model: "Pegasus M700 Overlock (3 Units)", serialNumber: "SN-M700-03", rentRate: 15000, status: "Active", accessories: "Table, Stand, Motor", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null },
+        { machineId: "m_3_3", machineCode: "SPECIAL-MIX", model: "M900, Zole, W500, Juki BH, Dbl Needle (6 Units)", serialNumber: "SN-MIX-06", rentRate: 29800, status: "Active", accessories: "Complete Units", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null }
+      ]},
+      { id: "c_4", code: "CUST-004", name: "Sithagama Ranasinghe", nic: "REG-004", phone: "077-9757217", address: "Sithagama Ranasinghe Site", baseOpeningBalance: 0, isArchived: false, rentals: [
+        { machineId: "m_4_1", machineCode: "MH380-DA", model: "Juki MH380 & Brother DA 9270", serialNumber: "SN-MH380-DA", rentRate: 16000, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null },
+        { machineId: "m_4_2", machineCode: "SN-5P", model: "Juki Single Needle Lockstitch (5 Units)", serialNumber: "SN-JK-SN5", rentRate: 20000, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null },
+        { machineId: "m_4_3", machineCode: "BT-BH-IB", model: "Bar Tack LK-1900B, Buttonhole BH 1790, Iron Board", serialNumber: "SN-BT-BH-IB", rentRate: 10000, status: "Active", accessories: "Complete Special Units", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null }
+      ]},
+      { id: "c_5", code: "CUST-005", name: "Udith Ariyarathna", nic: "REG-005", phone: "071-4520688", address: "Udith Ariyarathna Site", baseOpeningBalance: 0, isArchived: false, rentals: [
+        { machineId: "m_5_1", machineCode: "SR-W812", model: "Siruba M Cutter W812-356", serialNumber: "SN-SR-W812", rentRate: 14000, status: "Active", accessories: "Complete Stand & Motor", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null },
+        { machineId: "m_5_2", machineCode: "W-600", model: "W-600 Flatbed Heavy Duty", serialNumber: "SN-W600-01", rentRate: 7000, status: "Active", accessories: "Complete Stand & Motor", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null },
+        { machineId: "m_5_3", machineCode: "JK-SPEC", model: "Juki Special Machine Unit", serialNumber: "SN-JK-SPEC-01", rentRate: 30000, status: "Active", accessories: "Complete Setup", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null }
+      ]},
+      { id: "c_6", code: "CUST-006", name: "One Way", nic: "REG-006", phone: "077-3254046", address: "One Way Apparel", baseOpeningBalance: 128000, isArchived: false, rentals: [
+        { machineId: "m_6_1", machineCode: "M700-4P", model: "Pegasus M-700 O/L (4 Units)", serialNumber: "SN-M700-4P", rentRate: 20000, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null },
+        { machineId: "m_6_2", machineCode: "FB-PIGA", model: "Flatbed PIGA55A5 + W-500 Flatbed", serialNumber: "SN-FB-PIGA-W500", rentRate: 16000, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null },
+        { machineId: "m_6_3", machineCode: "BT-430D", model: "Brother 430D Bar Tack + Juki 4th O/L", serialNumber: "SN-BT430-JK4", rentRate: 12000, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null }
+      ]},
+      { id: "c_7", code: "CUST-007", name: "Dinesh Madusanka", nic: "REG-007", phone: "077-9749548", address: "Dinesh Madusanka Factory", baseOpeningBalance: 37160, isArchived: false, rentals: [
+        { machineId: "m_7_1", machineCode: "Z1752-2P", model: "Z1752-13H Specialty Units (2 Units)", serialNumber: "SN-Z1752-2P", rentRate: 16000, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null },
+        { machineId: "m_7_2", machineCode: "CW562-DDL", model: "CW562N0 Pegasus + Juki DDL 8700 A-7", serialNumber: "SN-CW562-DDL", rentRate: 16500, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null },
+        { machineId: "m_7_3", machineCode: "W644-BT", model: "W644 + W600 + Bar Tack Brother", serialNumber: "SN-W644-BT", rentRate: 15000, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null }
+      ]},
+      { id: "c_8", code: "CUST-008", name: "Chanaka Kumara", nic: "REG-008", phone: "077-0855726", address: "Chanaka Kumara Factory", baseOpeningBalance: 35580, isArchived: false, rentals: [
+        { machineId: "m_8_1", machineCode: "M700-3P", model: "Pegasus M-700 4th O/L (3 Units)", serialNumber: "SN-M700-3P", rentRate: 12000, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null },
+        { machineId: "m_8_2", machineCode: "M900-5TH", model: "Pegasus M-900 5th Overlock", serialNumber: "SN-M900-5TH", rentRate: 6000, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null },
+        { machineId: "m_8_3", machineCode: "DDL9000-2P", model: "Juki DDL 9000 BMS High-Speed (2 Units)", serialNumber: "SN-DDL9000-2P", rentRate: 9000, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null }
+      ]},
+      { id: "c_9", code: "CUST-009", name: "Cozy (Eheliyagoda)", nic: "REG-009", phone: "077-7063803", address: "Cozy Garments Eheliyagoda", baseOpeningBalance: 55000, isArchived: false, rentals: [
+        { machineId: "m_9_1", machineCode: "M700-2P", model: "Pegasus M-700 Overlock (2 Units)", serialNumber: "SN-M700-2P", rentRate: 9000, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null },
+        { machineId: "m_9_2", machineCode: "DDL9000-4P", model: "Juki DDL 9000 BMS Auto-Trimmer (4 Units)", serialNumber: "SN-DDL9000-4P", rentRate: 18000, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null }
+      ]},
+      { id: "c_10", code: "CUST-010", name: "Thinuli's Fashion", nic: "REG-010", phone: "077-3741479", address: "Thinuli's Fashion Site", baseOpeningBalance: 0, isArchived: false, rentals: [
+        { machineId: "m_10_1", machineCode: "JK-SN-3P", model: "Juki Single Needle Lockstitch (3 Units)", serialNumber: "SN-JKSN-3P", rentRate: 13500, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null },
+        { machineId: "m_10_2", machineCode: "M700-2P", model: "Pegasus M-700 Overlock (2 Units)", serialNumber: "SN-THIN-M700", rentRate: 9000, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null }
+      ]},
+      { id: "c_11", code: "CUST-011", name: "Tharushika Jayasekara", nic: "REG-011", phone: "074-1560924", address: "Tharushika Factory", baseOpeningBalance: 0, isArchived: false, rentals: [
+        { machineId: "m_11_1", machineCode: "OL-1P", model: "Industrial 4-Thread Overlock (1 Unit)", serialNumber: "SN-THAR-OL1", rentRate: 4500, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null },
+        { machineId: "m_11_2", machineCode: "JK-SN-4P", model: "Juki Single Needle Lockstitch (4 Units)", serialNumber: "SN-THAR-SN4", rentRate: 18000, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null }
+      ]},
+      { id: "c_12", code: "CUST-012", name: "Susantha (Homagama)", nic: "REG-012", phone: "077-2963138", address: "Susantha Homagama Unit", baseOpeningBalance: 0, isArchived: false, rentals: [
+        { machineId: "m_12_1", machineCode: "DDL9000-3P", model: "Juki DDL 9000 BMS Single Needle (3 Units)", serialNumber: "SN-SUS-DDL3", rentRate: 13500, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null }
+      ]},
+      { id: "c_13", code: "CUST-013", name: "Layanal (Eheliyagoda)", nic: "REG-013", phone: "077-5671813", address: "Layanal Eheliyagoda Site", baseOpeningBalance: 0, isArchived: false, rentals: [
+        { machineId: "m_13_1", machineCode: "M900-PEG", model: "Pegasus M-900 High-Speed Overlock", serialNumber: "SN-LAY-M900", rentRate: 3500, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null },
+        { machineId: "m_13_2", machineCode: "SPECIAL-DAYS", model: "Brother KE-430D + Juki LBH 1790S", serialNumber: "SN-LAY-SPECIAL", rentRate: 2340, status: "Active", accessories: "Short-Term Units", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null }
+      ]},
+      { id: "c_14", code: "CUST-014", name: "Iranga Lakmali", nic: "REG-014", phone: "071-6809100", address: "Iranga Lakmali Site", baseOpeningBalance: 0, isArchived: false, rentals: [
+        { machineId: "m_14_1", machineCode: "MCH-PKG-2P", model: "Industrial Sewing Machinery Fleet (2 Units)", serialNumber: "SN-IRN-2P", rentRate: 11500, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null }
+      ]},
+      { id: "c_15", code: "CUST-015", name: "Lahiru Madusanka", nic: "REG-015", phone: "074-3206240", address: "Lahiru Madusanka Site", baseOpeningBalance: 0, isArchived: false, rentals: [
+        { machineId: "m_15_1", machineCode: "MCH-PKG-2P", model: "Industrial Sewing Machinery Fleet (2 Units)", serialNumber: "SN-LHR-2P", rentRate: 11500, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null }
+      ]},
+      { id: "c_16", code: "CUST-016", name: "Nimanthi", nic: "REG-016", phone: "071-2607375", address: "Nimanthi Site", baseOpeningBalance: 0, isArchived: false, rentals: [
+        { machineId: "m_16_1", machineCode: "MCH-PKG-2P", model: "Industrial Lockstitch & Overlock Set (2 Units)", serialNumber: "SN-NIM-2P", rentRate: 9000, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null }
+      ]},
+      { id: "c_17", code: "CUST-017", name: "Kumara (Kosgama)", nic: "REG-017", phone: "072-9300000", address: "Kumara Kosgama", baseOpeningBalance: 0, isArchived: false, rentals: [
+        { machineId: "m_17_1", machineCode: "MCH-PKG-2P", model: "Industrial Sewing Machine Package (2 Units)", serialNumber: "SN-KUM-2P", rentRate: 9000, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null }
+      ]},
+      { id: "c_18", code: "CUST-018", name: "Jayamadu Kosgama", nic: "REG-018", phone: "071-6313043", address: "Jayamadu Kosgama Site", baseOpeningBalance: 0, isArchived: false, rentals: [
+        { machineId: "m_18_1", machineCode: "SETTLE-2P", model: "Settlement Fleet Package (2 Units)", serialNumber: "SN-JAY-2P", rentRate: 0, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null }
+      ]},
+      { id: "c_19", code: "CUST-019", name: "Miriswattha", nic: "REG-019", phone: "075-9115775", address: "Miriswattha Garments", baseOpeningBalance: 0, isArchived: false, rentals: [
+        { machineId: "m_19_1", machineCode: "FB-SPEC-1P", model: "Heavy Duty Flatbed Specialty Unit (1 Unit)", serialNumber: "SN-MIR-FB1", rentRate: 7000, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null }
+      ]},
+      { id: "c_20", code: "CUST-020", name: "Wajira Perera", nic: "REG-020", phone: "074-3654646", address: "Wajira Perera Unit", baseOpeningBalance: 0, isArchived: false, rentals: [
+        { machineId: "m_20_1", machineCode: "SN-1P", model: "Single Needle Lockstitch Unit (1 Unit)", serialNumber: "SN-WAJ-01", rentRate: 5000, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null }
+      ]},
+      { id: "c_21", code: "CUST-021", name: "Suresh Sanjeewa", nic: "REG-021", phone: "076-0489603", address: "Suresh Sanjeewa Unit", baseOpeningBalance: 0, isArchived: false, rentals: [
+        { machineId: "m_21_1", machineCode: "SN-1P", model: "Single Needle Lockstitch Unit (1 Unit)", serialNumber: "SN-SUR-01", rentRate: 4500, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null }
+      ]},
+      { id: "c_22", code: "CUST-022", name: "Kamani Lakmali (Thummodara)", nic: "REG-022", phone: "074-0085055", address: "Kamani Thummodara", baseOpeningBalance: 0, isArchived: false, rentals: [
+        { machineId: "m_22_1", machineCode: "SN-1P", model: "Single Needle Lockstitch Unit (1 Unit)", serialNumber: "SN-KAM-01", rentRate: 4500, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null }
+      ]},
+      { id: "c_23", code: "CUST-023", name: "Neha Saloon", nic: "REG-023", phone: "070-6630067", address: "Neha Saloon Site", baseOpeningBalance: 1500, isArchived: false, rentals: [
+        { machineId: "m_23_1", machineCode: "SEW-1P", model: "Industrial Lockstitch Sewing Machine (1 Unit)", serialNumber: "SN-NEH-01", rentRate: 2500, status: "Active", accessories: "Complete Set", startDate: "2026-08-01", isProratedFirstMonth: false, returnDetails: null }
+      ]}
+    ];
+
+    const INITIAL_PARTNERS = [
+      {
+        id: "part_1",
+        code: "PTR-001",
+        name: "Lanka Sewing Machinery Ltd",
+        contactPerson: "Mr. Bandara (Director)",
+        phone: "011-2856942 / 071-4567890",
+        address: "Pettah Commercial Zone, Colombo 11",
+        baseOpeningBalance: 45000,
+        isArchived: false,
+        purchases: [
+          { id: "pur_1", invoiceNo: "INV-LSM-8841", date: "2026-08-10", itemDescription: "Juki DDL 8700 Full Machines (2 Units)", category: "Machine", qty: 2, unitPrice: 38000, total: 76000, remarks: "Acquired for urgent DM Product client requirement" },
+          { id: "pur_2", invoiceNo: "INV-LSM-8902", date: "2026-08-18", itemDescription: "Pegasus Loopers, Needle Clamps & Belts", category: "Parts", qty: 15, unitPrice: 1800, total: 27000, remarks: "Yard replacement batch" }
+        ],
+        returns: [
+          { id: "pret_1", slipNo: "RET-LSM-01", date: "2026-08-22", itemDescription: "Defective Servo Motor 550W Unit", qty: 1, unitPrice: 16500, total: 16500, reason: "Defective winding coil returned for warranty relief" }
+        ],
+        payments: [
+          { id: "ppay_1", date: "2026-08-20", amount: 60000, method: "BOC Bank Transfer", refNo: "BOC-TXN-PART-991" }
+        ]
+      },
+      {
+        id: "part_2",
+        code: "PTR-002",
+        name: "Asian Garment Machinery & Spares Co.",
+        contactPerson: "Nihal Jayawardena",
+        phone: "077-3344556",
+        address: "Katunayake Industrial Access Road",
+        baseOpeningBalance: 0,
+        isArchived: false,
+        purchases: [
+          { id: "pur_3", invoiceNo: "AGM-9912", date: "2026-08-15", itemDescription: "Direct Drive Servo Motors 550W (4 pcs)", category: "Parts", qty: 4, unitPrice: 16500, total: 66000, remarks: "Upgraded client tables" }
+        ],
+        returns: [],
+        payments: [
+          { id: "ppay_2", date: "2026-08-24", amount: 40000, method: "Direct Cash Payment", refNo: "CASH-PTR-002" }
+        ]
+      }
+    ];
+
+    const INITIAL_ERP_DATA = {
+      activeMonth: "August 2026",
+      allMonths: ["August 2026", "September 2026", "October 2026"],
+      company: {
+        name: "ANUJAYA ENTERPRISES",
+        regNo: "PV/WP/78412",
+        taglineEn: "INDUSTRIAL SEWING MACHINERY FLEET, AUTOMATION & MAINTENANCE",
+        taglineSi: "කාර්මික මහන මැෂින් කුලියට දීම, නඩත්තුව සහ අලෙවිය",
+        addressEn: "200/2B/1, Pahala Kosgama, Kosgama, Sri Lanka",
+        addressSi: "200/2බී/1, පහළ කොස්ගම, කොස්ගම, ශ්‍රී ලංකාව",
+        hotline: "077 412 7702",
+        email: "anujayae@gmail.com"
+      },
+      bank: {
+        bankNameEn: "Bank Of Ceylon",
+        accountName: "Anujaya Enterprises",
+        accountNo: "94459826",
+        branchEn: "Ruwanwella Branch"
+      },
+      expenses: [
+        { id: "e1", title: "Fleet Mechanical Technician Wages", amount: 95000, type: "Salary" },
+        { id: "e2", title: "Kosgama Yard Operations & Power", amount: 42000, type: "Operations" }
+      ],
+      masterCustomers: INITIAL_MASTER_CUSTOMERS,
+      partners: INITIAL_PARTNERS,
+      monthlyPayments: {
+        "August 2026": [
+          { id: "pay_1", customerId: "c_8", customerName: "Chanaka Kumara", amount: 50000, date: "2026-08-25", method: "BOC Ruwanwella Transfer", refNo: "TXN-88421" },
+          { id: "pay_2", customerId: "c_10", customerName: "Thinuli's Fashion", amount: 22500, date: "2026-08-25", method: "BOC Ruwanwella Transfer", refNo: "TXN-88422" },
+          { id: "pay_3", customerId: "c_11", customerName: "Tharushika Jayasekara", amount: 13500, date: "2026-08-25", method: "Direct Cash Payment", refNo: "CASH-001" },
+          { id: "pay_4", customerId: "c_14", customerName: "Iranga Lakmali", amount: 11200, date: "2026-08-25", method: "Direct Cash Payment", refNo: "CASH-002" },
+          { id: "pay_5", customerId: "c_16", customerName: "Nimanthi", amount: 9000, date: "2026-08-25", method: "Direct Cash Payment", refNo: "CASH-003" },
+          { id: "pay_6", customerId: "c_22", customerName: "Kamani (Thummodara)", amount: 4500, date: "2026-08-25", method: "Direct Cash Payment", refNo: "CASH-004" }
+        ],
+        "September 2026": [],
+        "October 2026": []
+      }
+    };
+
+    function sanitizeERPData(raw) {
+      if (!raw || typeof raw !== "object") return INITIAL_ERP_DATA;
+      return {
+        activeMonth: raw.activeMonth || "August 2026",
+        allMonths: Array.isArray(raw.allMonths) && raw.allMonths.length ? raw.allMonths : ["August 2026", "September 2026", "October 2026"],
+        company: raw.company || INITIAL_ERP_DATA.company,
+        bank: raw.bank || INITIAL_ERP_DATA.bank,
+        expenses: Array.isArray(raw.expenses) ? raw.expenses : INITIAL_ERP_DATA.expenses,
+        masterCustomers: Array.isArray(raw.masterCustomers) ? raw.masterCustomers.map(c => ({
+          ...c,
+          isArchived: !!c.isArchived,
+          rentals: Array.isArray(c.rentals) ? c.rentals.map(r => ({
+            ...r,
+            startDate: r.startDate || "2026-08-01",
+            isProratedFirstMonth: r.isProratedFirstMonth !== undefined ? !!r.isProratedFirstMonth : false
+          })) : []
+        })) : INITIAL_MASTER_CUSTOMERS,
+        partners: Array.isArray(raw.partners) ? raw.partners.map(p => ({
+          ...p,
+          purchases: Array.isArray(p.purchases) ? p.purchases : [],
+          returns: Array.isArray(p.returns) ? p.returns : [],
+          payments: Array.isArray(p.payments) ? p.payments : []
+        })) : INITIAL_PARTNERS,
+        monthlyPayments: raw.monthlyPayments && typeof raw.monthlyPayments === "object" ? raw.monthlyPayments : INITIAL_ERP_DATA.monthlyPayments
+      };
+    }
+
+    function parseMonthYear(monthStr) {
+      if (!monthStr) return { year: 2026, monthIndex: 7 };
+      const parts = monthStr.split(" ");
+      const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+      const mIdx = monthNames.indexOf(parts[0]);
+      const y = parseInt(parts[1]) || 2026;
+      return { year: y, monthIndex: mIdx >= 0 ? mIdx : 7 };
+    }
+
+    function getDaysInMonth(year, monthIndex) {
+      return new Date(year, monthIndex + 1, 0).getDate();
+    }
+
+    function calculateMachineRentForMonth(rental, targetMonth) {
+      if (!rental || rental.status !== "Active") return 0;
+      const baseMonthly = Number(rental.rentRate || 0);
+      if (!rental.startDate || !rental.isProratedFirstMonth) return baseMonthly;
+
+      const [sYear, sMonth, sDay] = rental.startDate.split("-").map(Number);
+      const { year: tYear, monthIndex: tMonthIndex } = parseMonthYear(targetMonth);
+
+      if (sYear === tYear && (sMonth - 1) === tMonthIndex) {
+        const totalDays = getDaysInMonth(tYear, tMonthIndex);
+        const billableDays = Math.max(1, totalDays - sDay + 1);
+        const calculated = Math.round((baseMonthly / totalDays) * billableDays);
+        return calculated;
+      }
+      return baseMonthly;
+    }
+
+    function App() {
+      const [data, setData] = useState(() => {
+        try {
+          const saved = localStorage.getItem(STORAGE_KEY);
+          return saved ? sanitizeERPData(JSON.parse(saved)) : INITIAL_ERP_DATA;
+        } catch (e) {
+          return INITIAL_ERP_DATA;
+        }
+      });
+
+      const [syncStatus, setSyncStatus] = useState("Local Ready");
+      const isInitialMount = useRef(true);
+      const fileInputRef = useRef(null);
+
+      useEffect(() => {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        } catch (e) {
+          console.warn("Storage warning:", e);
+        }
+
+        if (isInitialMount.current) {
+          isInitialMount.current = false;
+          return;
+        }
+
+        setSyncStatus("Saving to Cloud...");
+        const timer = setTimeout(() => {
+          fetch(GOOGLE_SCRIPT_URL, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "text/plain" },
+            body: JSON.stringify(data)
+          })
+          .then(() => setSyncStatus("Cloud Synced"))
+          .catch(() => setSyncStatus("Local Secure"));
+        }, 1200);
+        return () => clearTimeout(timer);
+      }, [data]);
+
+      const [systemLang, setSystemLang] = useState("si");
+      const [docLang, setDocLang] = useState("en");
+      const [activeTab, setActiveTab] = useState("dashboard");
+      
+      const [customerSearchQuery, setCustomerSearchQuery] = useState("");
+      const [partnerSearchQuery, setPartnerSearchQuery] = useState("");
+      const [statusFilter, setStatusFilter] = useState("all");
+      const [activeModal, setActiveModal] = useState(null);
+
+      const [editingCustomer, setEditingCustomer] = useState(null);
+      const [targetCustomerForReturn, setTargetCustomerForReturn] = useState(null);
+      const [newCustForm, setNewCustForm] = useState({
+        name: "", phone: "", address: "", nic: "", previousBalance: 0,
+        machines: [{ 
+          machineCode: "JK-01", 
+          model: "Juki DDL-8700 High-Speed Lockstitch", 
+          serialNumber: "SN-001", 
+          rentRate: 4500, 
+          accessories: "Stand, Table, Servo Motor", 
+          startDate: new Date().toISOString().slice(0, 10), 
+          isProratedFirstMonth: false 
+        }]
+      });
+
+      const [newPayment, setNewPayment] = useState({ 
+        customerId: "", 
+        amount: "", 
+        method: "BOC Ruwanwella Transfer", 
+        refNo: "", 
+        date: new Date().toISOString().slice(0, 10) 
+      });
+      const [editingPayment, setEditingPayment] = useState(null);
+
+      const [returnForm, setReturnForm] = useState({
+        selectedMachineId: "CUSTOM",
+        customModel: "",
+        customCode: "",
+        customSerial: "",
+        deductAmount: 4500,
+        returnDate: new Date().toISOString().slice(0, 10),
+        slipNo: "RET-" + Date.now().toString().slice(-5),
+        condition: "Good / Operational",
+        remarks: "Motor, Table & Stand verified intact at Kosgama Central Yard.",
+        inspector: "Kosgama Yard Head"
+      });
+
+      const [quotation, setQuotation] = useState({
+        customerName: "", phone: "", address: "", nic: "",
+        quoteNo: "QUO-" + Date.now().toString().slice(-5),
+        date: new Date().toISOString().slice(0, 10),
+        validDays: 14, advanceMonths: 1, depositAmount: 10000, transportCharge: 3500,
+        serviceSupport: "24/7 breakdown technical service with free replacement guarantee within 4 hours in Western Province.",
+        specialTerms: "1. All machines supplied with 100% genuine factory calibrated direct drive servo motors.\n2. Scheduled bi-weekly looper & lubricant technical yard inspection.\n3. Rent payable monthly in advance on or before the 5th day.",
+        items: [
+          { description: "Juki DDL-8700 High-Speed Lockstitch Complete Set", motorSpec: "550W Energy Saving Servo Motor", qty: 2, rate: 4500 },
+          { description: "Pegasus M-700 High-Speed 4-Thread Overlock Set", motorSpec: "Direct Drive Servo System", qty: 1, rate: 6000 }
+        ]
+      });
+
+      const [selectedPartnerForPurchase, setSelectedPartnerForPurchase] = useState(null);
+      const [selectedPartnerForPayment, setSelectedPartnerForPayment] = useState(null);
+      const [selectedPartnerForReturn, setSelectedPartnerForReturn] = useState(null);
+      const [editingPartner, setEditingPartner] = useState(null);
+
+      const [newPartnerForm, setNewPartnerForm] = useState({ name: "", contactPerson: "", phone: "", address: "", baseOpeningBalance: 0 });
+      const [newPurchaseForm, setNewPurchaseForm] = useState({
+        invoiceNo: "PUR-" + Date.now().toString().slice(-5),
+        date: new Date().toISOString().slice(0, 10),
+        itemDescription: "", category: "Machine", qty: 1, unitPrice: 0, remarks: ""
+      });
+      const [editingPurchase, setEditingPurchase] = useState(null);
+
+      const [newPartnerPayForm, setNewPartnerPayForm] = useState({
+        amount: "", date: new Date().toISOString().slice(0, 10), method: "BOC Bank Transfer", refNo: "PAY-PTR-" + Date.now().toString().slice(-4)
+      });
+      const [editingPartnerPayment, setEditingPartnerPayment] = useState(null);
+
+      const [partnerReturnForm, setPartnerReturnForm] = useState({
+        slipNo: "RET-PTR-" + Date.now().toString().slice(-5), date: new Date().toISOString().slice(0, 10), itemDescription: "", qty: 1, unitPrice: 0, reason: "Surplus / Defective unit returned for warranty relief"
+      });
+      const [editingPartnerReturn, setEditingPartnerReturn] = useState(null);
+
+      const [newExpense, setNewExpense] = useState({ title: "", amount: "", type: "Operations" });
+      const [editingExpense, setEditingExpense] = useState(null);
+
+      const [tempBank, setTempBank] = useState(data.bank);
+      const [printDoc, setPrintDoc] = useState(null);
+
+      const [deliveryNoteData, setDeliveryNoteData] = useState({
+        vehicleNo: "WP-ND-4521 (Isuzu Lorry)", driverName: "K. G. Karunaratne", driverPhone: "077-8899120", dispatchTime: "08:30 AM", notes: "Supplied with calibrated needle positioners, complete tables, heavy-duty stands & accessory drawers intact."
+      });
+
+      const getActiveRentForCustomerInMonth = (c, targetMonth) => {
+        if (!c || c.isArchived || !Array.isArray(c.rentals)) return 0;
+        return c.rentals.filter(r => r && r.status === "Active").reduce((sum, r) => sum + calculateMachineRentForMonth(r, targetMonth), 0);
+      };
+
+      const getCustomerPaidInMonth = (cId, monthName) => {
+        const pList = (data.monthlyPayments && data.monthlyPayments[monthName]) || [];
+        return pList.filter(p => p && p.customerId === cId).reduce((sum, p) => sum + Number(p.amount || 0), 0);
+      };
+
+      const getCustomerOpeningArrears = (c, targetMonth) => {
+        if (!c) return 0;
+        const monthIndex = data.allMonths.indexOf(targetMonth);
+        if (monthIndex <= 0) return Number(c.baseOpeningBalance || 0);
+        const prevMonth = data.allMonths[monthIndex - 1];
+        const prevArrears = getCustomerOpeningArrears(c, prevMonth);
+        const prevRent = getActiveRentForCustomerInMonth(c, prevMonth);
+        const prevPaid = getCustomerPaidInMonth(c.id, prevMonth);
+        return prevArrears + prevRent - prevPaid;
+      };
+
+      const getPartnerTotalPurchased = (p) => (p.purchases || []).reduce((sum, i) => sum + (Number(i.qty || 1) * Number(i.unitPrice || 0)), 0);
+      const getPartnerTotalReturned = (p) => (p.returns || []).reduce((sum, i) => sum + (Number(i.qty || 1) * Number(i.unitPrice || 0)), 0);
+      const getPartnerTotalPaid = (p) => (p.payments || []).reduce((sum, pay) => sum + Number(pay.amount || 0), 0);
+      const getPartnerBalancePayable = (p) => Number(p.baseOpeningBalance || 0) + getPartnerTotalPurchased(p) - getPartnerTotalReturned(p) - getPartnerTotalPaid(p);
+
+      const metrics = useMemo(() => {
+        let totalMonthlyIncome = 0;
+        let totalReceivables = 0;
+        let totalArrears = 0;
+        let totalPaid = 0;
+
+        (data.masterCustomers || []).forEach(c => {
+          const activeRent = getActiveRentForCustomerInMonth(c, data.activeMonth);
+          const arrears = getCustomerOpeningArrears(c, data.activeMonth);
+          const custPaid = getCustomerPaidInMonth(c.id, data.activeMonth);
+          const currentBal = arrears + activeRent - custPaid;
+
+          totalMonthlyIncome += activeRent;
+          totalArrears += arrears;
+          totalPaid += custPaid;
+          totalReceivables += currentBal;
+        });
+
+        const totalExpenses = (data.expenses || []).reduce((acc, e) => acc + Number(e.amount || 0), 0);
+        const netProfit = totalMonthlyIncome - totalExpenses;
+        const totalDemand = totalMonthlyIncome + totalArrears;
+        const collectionRate = totalDemand > 0 ? Math.round((totalPaid / totalDemand) * 100) : 0;
+        const totalPartnerPayables = (data.partners || []).filter(p => !p.isArchived).reduce((sum, p) => sum + getPartnerBalancePayable(p), 0);
+
+        return {
+          totalMonthlyIncome, totalReceivables, totalArrears, totalPaid, totalExpenses, netProfit, collectionRate, totalPartnerPayables,
+          activeClients: (data.masterCustomers || []).filter(c => !c.isArchived).length,
+          closedClients: (data.masterCustomers || []).filter(c => c.isArchived).length,
+          totalActiveMachines: (data.masterCustomers || []).filter(c => !c.isArchived).reduce((s, c) => s + (c.rentals || []).filter(r => r.status === "Active").length, 0)
+        };
+      }, [data.masterCustomers, data.monthlyPayments, data.activeMonth, data.expenses, data.partners]);
+
+      const handleSwitchMonth = (m) => setData(p => ({ ...p, activeMonth: m }));
+
+      const handleCreateNewMonth = () => {
+        const next = window.prompt("නව මාසයේ නම ඇතුළත් කරන්න (උදා: November 2026):", "November 2026");
+        if (!next) return;
+        if (data.allMonths.includes(next)) {
+          alert(`${next} දැනටමත් පද්ධතියේ පවතී.`);
+          setData(p => ({ ...p, activeMonth: next }));
+          return;
+        }
+        setData(p => ({
+          ...p,
+          activeMonth: next,
+          allMonths: [...p.allMonths, next],
+          monthlyPayments: { ...p.monthlyPayments, [next]: [] }
+        }));
+        alert(`සාර්ථකයි! ${next} මාසය සාදන ලදී.\n\nActive Customers සහ පෙර මාසයේ Closing Balances නව මාසයට ස්වයංක්‍රීයව ගණනය විය.`);
+      };
+
+      const handleExportBackup = () => {
+        const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(data, null, 2))}`;
+        const downloadAnchor = document.createElement("a");
+        downloadAnchor.setAttribute("href", jsonString);
+        downloadAnchor.setAttribute("download", `Anujaya_ERP_Backup_${data.activeMonth.replace(/\s+/g, "_")}_${Date.now()}.json`);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+      };
+
+      const handleImportBackup = (event) => {
+        const fileReader = new FileReader();
+        if (event.target.files && event.target.files[0]) {
+          fileReader.readAsText(event.target.files[0], "UTF-8");
+          fileReader.onload = (e) => {
+            try {
+              const parsed = JSON.parse(e.target.result);
+              const sanitized = sanitizeERPData(parsed);
+              setData(sanitized);
+              alert("ERP Backup දත්ත සාර්ථකව Restore කරන ලදී!");
+            } catch (err) {
+              alert("අවලංගු Backup File එකකි. කරුණාකර නිවැරදි JSON file එකක් තෝරන්න.");
+            }
+          };
+        }
+      };
+
+      const handleToggleArchiveCustomer = (customer) => {
+        const isCurrentlyClosed = !!customer.isArchived;
+        const actionMsg = isCurrentlyClosed 
+          ? `"${customer.name}" ගිණුම නැවත ACTIVE කිරීමට තහවුරු කරන්නද?`
+          : `"${customer.name}" පාරිභෝගික ගිණුම CLOSE (අවසන්) කිරීමට අවශ්‍ය බව තහවුරු කරන්නද?\n\n• Close කළ පසු ඉදිරි මාස සඳහා අලුතින් Monthly Rent එකතු නොවේ.\n• මෙතෙක් පැවති හිඟ මුදල් (Arrears) පමණක් ශේෂව පවතී.`;
+        
+        if (!window.confirm(actionMsg)) return;
+
+        setData(p => ({
+          ...p,
+          masterCustomers: p.masterCustomers.map(c => c.id === customer.id ? { ...c, isArchived: !isCurrentlyClosed } : c)
+        }));
+      };
+
+      const handleDeleteCustomer = (customer) => {
+        if (!window.confirm(`අවවාදයයි! "${customer.name}" පාරිභෝගික ගිණුම සහ ඊට අදාළ සියලුම මැෂින් දත්ත පද්ධතියෙන්ම සම්පූර්ණයෙන්ම ඉවත් කිරීමට අවශ්‍ය බව තහවුරු කරන්නද?`)) return;
+        setData(p => ({
+          ...p,
+          masterCustomers: p.masterCustomers.filter(c => c.id !== customer.id)
+        }));
+        alert(`"${customer.name}" සාර්ථකව ඉවත් කරන ලදී.`);
+      };
+
+      const handleSaveNewCustomer = (e) => {
+        e.preventDefault();
+        const code = "CUST-" + String(data.masterCustomers.length + 1).padStart(3, "0");
+        const rentals = newCustForm.machines.map((m, idx) => ({
+          machineId: "m_" + Date.now() + "_" + idx,
+          machineCode: m.machineCode || `MCH-${idx+1}`,
+          model: m.model,
+          serialNumber: m.serialNumber,
+          rentRate: parseFloat(m.rentRate || 0),
+          status: "Active",
+          accessories: m.accessories,
+          startDate: m.startDate || new Date().toISOString().slice(0, 10),
+          isProratedFirstMonth: !!m.isProratedFirstMonth,
+          returnDetails: null
+        }));
+
+        const newEntry = {
+          id: "c_" + Date.now(),
+          code: code,
+          name: newCustForm.name,
+          nic: newCustForm.nic || "REG-NEW",
+          phone: newCustForm.phone,
+          address: newCustForm.address,
+          baseOpeningBalance: parseFloat(newCustForm.previousBalance || 0),
+          isArchived: false,
+          rentals: rentals
+        };
+
+        setData(p => ({ ...p, masterCustomers: [newEntry, ...p.masterCustomers] }));
+        setActiveModal(null);
+        setNewCustForm({
+          name: "", phone: "", address: "", nic: "", previousBalance: 0,
+          machines: [{ machineCode: "JK-01", model: "Juki DDL-8700 High-Speed Lockstitch", serialNumber: "SN-001", rentRate: 4500, accessories: "Stand, Table, Servo Motor", startDate: new Date().toISOString().slice(0, 10), isProratedFirstMonth: false }]
+        });
+        alert(`"${newEntry.name}" පාරිභෝගිකයා සාර්ථකව පද්ධතියට එක් විය!`);
+      };
+
+      const handleSaveEditedCustomer = (e) => {
+        e.preventDefault();
+        const updated = data.masterCustomers.map(c => c.id === editingCustomer.id ? {
+          ...editingCustomer,
+          baseOpeningBalance: parseFloat(editingCustomer.baseOpeningBalance || 0),
+          rentals: editingCustomer.rentals.map(r => ({ 
+            ...r, 
+            rentRate: parseFloat(r.rentRate || 0),
+            startDate: r.startDate || new Date().toISOString().slice(0, 10),
+            isProratedFirstMonth: !!r.isProratedFirstMonth
+          }))
+        } : c);
+
+        setData(p => ({ ...p, masterCustomers: updated }));
+        setActiveModal(null);
+        setEditingCustomer(null);
+        alert("පාරිභෝගික තොරතුරු සාර්ථකව Update කරන ලදී!");
+      };
+
+      const handleOpenReturnModal = (customer) => {
+        setTargetCustomerForReturn(customer);
+        const firstActive = (customer.rentals || []).find(r => r.status === "Active");
+        setReturnForm({
+          selectedMachineId: firstActive ? firstActive.machineId : "CUSTOM",
+          customModel: firstActive ? firstActive.model : "Industrial Sewing Unit",
+          customCode: firstActive ? firstActive.machineCode : "MCH-01",
+          customSerial: firstActive ? firstActive.serialNumber : "SN-RET-01",
+          deductAmount: firstActive ? firstActive.rentRate : 4500,
+          returnDate: new Date().toISOString().slice(0, 10),
+          slipNo: "RET-" + Date.now().toString().slice(-5),
+          condition: "Good / Operational",
+          remarks: "Motor, Table & Stand verified intact at Kosgama Central Yard.",
+          inspector: "Kosgama Yard Inspector"
+        });
+        setActiveModal("return_workflow");
+      };
+
+      const handleConfirmReturnSubmission = (e) => {
+        e.preventDefault();
+        const priceToDeduct = parseFloat(returnForm.deductAmount || 0);
+        if (priceToDeduct < 0) return alert("වලංගු Rent Deduction මුදලක් ඇතුළත් කරන්න.");
+
+        const customer = targetCustomerForReturn;
+        let returnedItemObj = null;
+
+        const updatedMaster = data.masterCustomers.map(c => {
+          if (c.id !== customer.id) return c;
+
+          if (returnForm.selectedMachineId !== "CUSTOM") {
+            return {
+              ...c,
+              rentals: c.rentals.map(r => {
+                if (r.machineId === returnForm.selectedMachineId) {
+                  returnedItemObj = {
+                    ...r,
+                    model: returnForm.customModel || r.model,
+                    machineCode: returnForm.customCode || r.machineCode,
+                    serialNumber: returnForm.customSerial || r.serialNumber,
+                    rentRate: priceToDeduct,
+                    status: "Returned",
+                    returnDetails: { ...returnForm }
+                  };
+                  return returnedItemObj;
+                }
+                return r;
+              })
+            };
+          } else {
+            returnedItemObj = {
+              machineId: "m_custom_" + Date.now(),
+              machineCode: returnForm.customCode || "RET-UNIT",
+              model: returnForm.customModel,
+              serialNumber: returnForm.customSerial,
+              rentRate: priceToDeduct,
+              status: "Returned",
+              accessories: "Complete Set Handed Over",
+              startDate: returnForm.returnDate,
+              isProratedFirstMonth: false,
+              returnDetails: { ...returnForm }
+            };
+
+            const activeRentals = c.rentals.filter(r => r.status === "Active");
+            let adjustedRentals = [...c.rentals, returnedItemObj];
+            if (activeRentals.length > 0) {
+              const targetActive = activeRentals[0];
+              const newRate = Math.max(0, targetActive.rentRate - priceToDeduct);
+              adjustedRentals = adjustedRentals.map(r => r.machineId === targetActive.machineId ? { ...r, rentRate: newRate } : r);
+            }
+            return { ...c, rentals: adjustedRentals };
+          }
+        });
+
+        setData(p => ({ ...p, masterCustomers: updatedMaster }));
+        setActiveModal(null);
+        setPrintDoc({
+          type: "RETURN",
+          customer: customer,
+          returnedMachines: [returnedItemObj || { model: returnForm.customModel, machineCode: returnForm.customCode, serialNumber: returnForm.customSerial, rentRate: priceToDeduct }],
+          meta: returnForm
+        });
+      };
+
+      const handleRollbackReturn = (customerId, machineId) => {
+        if (!window.confirm("මෙම මැෂිම නැවත ACTIVE FLEET එකට යථා තත්ත්වයට පත් කිරීමට (Rollback / Restore) අවශ්‍ය බව තහවුරු කරන්නද?")) return;
+        setData(p => ({
+          ...p,
+          masterCustomers: p.masterCustomers.map(c => c.id === customerId ? {
+            ...c,
+            rentals: c.rentals.map(r => r.machineId === machineId ? {
+              ...r,
+              status: "Active",
+              returnDetails: null
+            } : r)
+          } : c)
+        }));
+        alert("මැෂිම සාර්ථකව Active Fleet එකට Rollback කරන ලදී!");
+      };
+
+      const handleSavePayment = (e) => {
+        e.preventDefault();
+        const amt = parseFloat(newPayment.amount || 0);
+        if (amt <= 0) return alert("කරුණාකර වලංගු මුදලක් ඇතුළත් කරන්න.");
+        const c = data.masterCustomers.find(item => item.id === newPayment.customerId);
+        if (!c) return alert("පාරිභෝගිකයා තෝරන්න.");
+
+        const payRecord = {
+          id: "pay_" + Date.now(),
+          customerId: c.id,
+          customerName: c.name,
+          amount: amt,
+          date: newPayment.date || new Date().toISOString().slice(0, 10),
+          method: newPayment.method || "BOC Ruwanwella Transfer",
+          refNo: newPayment.refNo || "REC-" + Date.now().toString().slice(-6)
+        };
+
+        const targetMonth = data.activeMonth;
+        const currentList = (data.monthlyPayments && data.monthlyPayments[targetMonth]) || [];
+
+        setData(p => ({
+          ...p,
+          monthlyPayments: {
+            ...p.monthlyPayments,
+            [targetMonth]: [payRecord, ...currentList]
+          }
+        }));
+
+        setActiveModal(null);
+        if (window.confirm("ගෙවීම සාර්ථකව සටහන් විය! Official Payment Receipt එකක් Print කර ලබා දෙනවාද?")) {
+          setPrintDoc({ type: "RECEIPT", customer: c, payment: payRecord });
+        }
+        setNewPayment({ customerId: "", amount: "", method: "BOC Ruwanwella Transfer", refNo: "", date: new Date().toISOString().slice(0, 10) });
+      };
+
+      const handleSaveEditedPayment = (e) => {
+        e.preventDefault();
+        if (!editingPayment) return;
+        const amt = parseFloat(editingPayment.amount || 0);
+        if (amt <= 0) return alert("කරුණාකර වලංගු මුදලක් ඇතුළත් කරන්න.");
+
+        const c = data.masterCustomers.find(item => item.id === editingPayment.customerId);
+        const cName = c ? c.name : editingPayment.customerName;
+
+        const updatedMonthlyPayments = {};
+        Object.keys(data.monthlyPayments || {}).forEach(mKey => {
+          updatedMonthlyPayments[mKey] = (data.monthlyPayments[mKey] || []).map(p => {
+            if (p.id === editingPayment.id) {
+              return {
+                ...p,
+                customerId: editingPayment.customerId,
+                customerName: cName,
+                amount: amt,
+                date: editingPayment.date,
+                method: editingPayment.method,
+                refNo: editingPayment.refNo
+              };
+            }
+            return p;
+          });
+        });
+
+        setData(p => ({
+          ...p,
+          monthlyPayments: updatedMonthlyPayments
+        }));
+
+        setActiveModal(null);
+        setEditingPayment(null);
+        alert("ගෙවීම් විස්තර සාර්ථකව නිවැරදි කරන ලදී!");
+      };
+
+      const handleDeletePayment = (payId) => {
+        if (!window.confirm("මෙම ගෙවීම් වාර්තාව (Payment Record) පද්ධතියෙන් සම්පූර්ණයෙන්ම ඉවත් කිරීමට අවශ්‍ය බව තහවුරු කරන්නද?")) return;
+        
+        const updatedMonthlyPayments = {};
+        Object.keys(data.monthlyPayments || {}).forEach(mKey => {
+          updatedMonthlyPayments[mKey] = (data.monthlyPayments[mKey] || []).filter(p => p.id !== payId);
+        });
+
+        setData(p => ({
+          ...p,
+          monthlyPayments: updatedMonthlyPayments
+        }));
+
+        if (activeModal === "edit_payment") {
+          setActiveModal(null);
+          setEditingPayment(null);
+        }
+        alert("ගෙවීම් වාර්තාව ඉවත් කරන ලදී.");
+      };
+
+      const handleSaveNewPartner = (e) => {
+        e.preventDefault();
+        const code = "PTR-" + String((data.partners || []).length + 1).padStart(3, "0");
+        const newP = {
+          id: "ptr_" + Date.now(),
+          code: code,
+          name: newPartnerForm.name,
+          contactPerson: newPartnerForm.contactPerson || "Director",
+          phone: newPartnerForm.phone,
+          address: newPartnerForm.address,
+          baseOpeningBalance: parseFloat(newPartnerForm.baseOpeningBalance || 0),
+          isArchived: false,
+          purchases: [],
+          returns: [],
+          payments: []
+        };
+        setData(p => ({ ...p, partners: [newP, ...(p.partners || [])] }));
+        setActiveModal(null);
+        setNewPartnerForm({ name: "", contactPerson: "", phone: "", address: "", baseOpeningBalance: 0 });
+        alert(`Partner "${newP.name}" සාර්ථකව ඇතුළත් විය!`);
+      };
+
+      const handleSaveEditedPartner = (e) => {
+        e.preventDefault();
+        setData(p => ({
+          ...p,
+          partners: p.partners.map(item => item.id === editingPartner.id ? { ...editingPartner, baseOpeningBalance: parseFloat(editingPartner.baseOpeningBalance || 0) } : item)
+        }));
+        setActiveModal(null);
+        setEditingPartner(null);
+        alert("Partner තොරතුරු Update කරන ලදී!");
+      };
+
+      const handleToggleArchivePartner = (partner) => {
+        const action = partner.isArchived ? "නැවත Active කිරීමට" : "අවසන් කර අයින් කිරීමට (CLOSE ACCOUNT)";
+        if (!window.confirm(`"${partner.name}" ගිණුම ${action} අවශ්‍ය බව තහවුරු කරන්නද?`)) return;
+
+        setData(p => ({
+          ...p,
+          partners: p.partners.map(item => item.id === partner.id ? { ...item, isArchived: !item.isArchived } : item)
+        }));
+      };
+
+      const handleDeletePartner = (partner) => {
+        if (!window.confirm(`අවවාදයයි! "${partner.name}" Partner සමාගම සහ ඊට අදාළ සියලුම Purchase/Payment වාර්තා පද්ධතියෙන් සම්පූර්ණයෙන්ම ඉවත් කිරීමට අවශ්‍ය බව තහවුරු කරන්නද?`)) return;
+        setData(p => ({
+          ...p,
+          partners: p.partners.filter(item => item.id !== partner.id)
+        }));
+        alert(`"${partner.name}" සාර්ථකව ඉවත් කරන ලදී.`);
+      };
+
+      const handleSavePurchase = (e) => {
+        e.preventDefault();
+        const total = Number(newPurchaseForm.qty || 1) * Number(newPurchaseForm.unitPrice || 0);
+        if (total <= 0) return alert("කරුණාකර නිවැරදි Qty සහ Unit Price ඇතුළත් කරන්න.");
+
+        const purchaseItem = {
+          id: "pur_" + Date.now(),
+          ...newPurchaseForm,
+          qty: Number(newPurchaseForm.qty),
+          unitPrice: Number(newPurchaseForm.unitPrice),
+          total: total
+        };
+
+        setData(p => ({
+          ...p,
+          partners: p.partners.map(item => item.id === selectedPartnerForPurchase.id ? { ...item, purchases: [purchaseItem, ...(item.purchases || [])] } : item)
+        }));
+
+        setActiveModal(null);
+        if (window.confirm("මිලදී ගැනීම සාර්ථකයි! Inward Sourcing Invoice එකක් Print කරනවාද?")) {
+          setPrintDoc({ type: "PARTNER_INVOICE", partner: selectedPartnerForPurchase, purchase: purchaseItem });
+        }
+      };
+
+      const handleSaveEditedPurchase = (e) => {
+        e.preventDefault();
+        const total = Number(editingPurchase.qty || 1) * Number(editingPurchase.unitPrice || 0);
+        if (total <= 0) return alert("කරුණාකර නිවැරදි Qty සහ Unit Price ඇතුළත් කරන්න.");
+
+        setData(p => ({
+          ...p,
+          partners: p.partners.map(part => part.id === editingPurchase.partnerId ? {
+            ...part,
+            purchases: part.purchases.map(pur => pur.id === editingPurchase.id ? {
+              ...editingPurchase,
+              qty: Number(editingPurchase.qty),
+              unitPrice: Number(editingPurchase.unitPrice),
+              total: total
+            } : pur)
+          } : part)
+        }));
+
+        setActiveModal(null);
+        setEditingPurchase(null);
+        alert("මිලදී ගැනීමේ විස්තර සාර්ථකව Update කරන ලදී!");
+      };
+
+      const handleDeletePartnerPurchase = (partnerId, purchaseId) => {
+        if (!window.confirm("මෙම Sourced Purchase වාර්තාව ඉවත් කිරීමට අවශ්‍ය බව තහවුරු කරන්නද?")) return;
+        setData(p => ({
+          ...p,
+          partners: p.partners.map(part => part.id === partnerId ? {
+            ...part,
+            purchases: part.purchases.filter(pur => pur.id !== purchaseId)
+          } : part)
+        }));
+      };
+
+      const handleSavePartnerReturn = (e) => {
+        e.preventDefault();
+        const total = Number(partnerReturnForm.qty || 1) * Number(partnerReturnForm.unitPrice || 0);
+        if (total <= 0) return alert("කරුණාකර වලංගු Qty සහ Unit Price ඇතුළත් කරන්න.");
+
+        const returnItem = {
+          id: "pret_" + Date.now(),
+          ...partnerReturnForm,
+          qty: Number(partnerReturnForm.qty),
+          unitPrice: Number(partnerReturnForm.unitPrice),
+          total: total
+        };
+
+        setData(p => ({
+          ...p,
+          partners: p.partners.map(item => item.id === selectedPartnerForReturn.id ? { ...item, returns: [returnItem, ...(item.returns || [])] } : item)
+        }));
+
+        setActiveModal(null);
+        if (window.confirm("භාණ්ඩ ආපසු භාරදීම සාර්ථකයි! Outward Return Slip / Debit Note එකක් Print කරනවාද?")) {
+          setPrintDoc({ type: "PARTNER_RETURN", partner: selectedPartnerForReturn, returnItem: returnItem });
+        }
+      };
+
+      const handleSaveEditedPartnerReturn = (e) => {
+        e.preventDefault();
+        const total = Number(editingPartnerReturn.qty || 1) * Number(editingPartnerReturn.unitPrice || 0);
+        if (total <= 0) return alert("කරුණාකර වලංගු Qty සහ Unit Price ඇතුළත් කරන්න.");
+
+        setData(p => ({
+          ...p,
+          partners: p.partners.map(part => part.id === editingPartnerReturn.partnerId ? {
+            ...part,
+            returns: part.returns.map(ret => ret.id === editingPartnerReturn.id ? {
+              ...editingPartnerReturn,
+              qty: Number(editingPartnerReturn.qty),
+              unitPrice: Number(editingPartnerReturn.unitPrice),
+              total: total
+            } : ret)
+          } : part)
+        }));
+
+        setActiveModal(null);
+        setEditingPartnerReturn(null);
+        alert("Return වාර්තාව සාර්ථකව Update කරන ලදී!");
+      };
+
+      const handleDeletePartnerReturn = (partnerId, returnId) => {
+        if (!window.confirm("මෙම Return Slip එක ඉවත් කිරීමට අවශ්‍ය බව තහවුරු කරන්නද?")) return;
+        setData(p => ({
+          ...p,
+          partners: p.partners.map(part => part.id === partnerId ? {
+            ...part,
+            returns: part.returns.filter(ret => ret.id !== returnId)
+          } : part)
+        }));
+      };
+
+      const handleSavePartnerPayment = (e) => {
+        e.preventDefault();
+        const amt = parseFloat(newPartnerPayForm.amount || 0);
+        if (amt <= 0) return alert("කරුණාකර වලංගු මුදලක් ඇතුළත් කරන්න.");
+
+        const payRecord = {
+          id: "ppay_" + Date.now(),
+          ...newPartnerPayForm,
+          amount: amt
+        };
+
+        setData(p => ({
+          ...p,
+          partners: p.partners.map(item => item.id === selectedPartnerForPayment.id ? { ...item, payments: [payRecord, ...(item.payments || [])] } : item)
+        }));
+
+        setActiveModal(null);
+        if (window.confirm("ගෙවීම සාර්ථකයි! Payment Settlement Voucher එක Print කරනවාද?")) {
+          setPrintDoc({ type: "PARTNER_PAYMENT_VOUCHER", partner: selectedPartnerForPayment, payment: payRecord });
+        }
+      };
+
+      const handleSaveEditedPartnerPayment = (e) => {
+        e.preventDefault();
+        const amt = parseFloat(editingPartnerPayment.amount || 0);
+        if (amt <= 0) return alert("කරුණාකර වලංගු මුදලක් ඇතුළත් කරන්න.");
+
+        setData(p => ({
+          ...p,
+          partners: p.partners.map(part => part.id === editingPartnerPayment.partnerId ? {
+            ...part,
+            payments: part.payments.map(pay => pay.id === editingPartnerPayment.id ? {
+              ...editingPartnerPayment,
+              amount: amt
+            } : pay)
+          } : part)
+        }));
+
+        setActiveModal(null);
+        setEditingPartnerPayment(null);
+        alert("Payment Voucher එක සාර්ථකව Update කරන ලදී!");
+      };
+
+      const handleDeletePartnerPayment = (partnerId, paymentId) => {
+        if (!window.confirm("මෙම Payment වාර්තාව ඉවත් කිරීමට අවශ්‍ය බව තහවුරු කරන්නද?")) return;
+        setData(p => ({
+          ...p,
+          partners: p.partners.map(part => part.id === partnerId ? {
+            ...part,
+            payments: part.payments.filter(pay => pay.id !== paymentId)
+          } : part)
+        }));
+      };
+
+      const handleSaveEditedExpense = (e) => {
+        e.preventDefault();
+        const amt = parseFloat(editingExpense.amount || 0);
+        if (amt <= 0) return alert("කරුණාකර වලංගු මුදලක් ඇතුළත් කරන්න.");
+
+        setData(p => ({
+          ...p,
+          expenses: p.expenses.map(item => item.id === editingExpense.id ? { ...editingExpense, amount: amt } : item)
+        }));
+        setActiveModal(null);
+        setEditingExpense(null);
+        alert("වියදම් වාර්තාව Update කරන ලදී!");
+      };
+
+      const handleDeleteExpense = (expId) => {
+        if (!window.confirm("මෙම වියදම් වාර්තාව ඉවත් කිරීමට අවශ්‍ය බව තහවුරු කරන්නද?")) return;
+        setData(p => ({
+          ...p,
+          expenses: p.expenses.filter(item => item.id !== expId)
+        }));
+      };
+
+      return (
+        <div className="min-h-screen flex flex-col font-sans">
+          
+          {/* Top Executive Navigation Bar */}
+          <header className="h-16 border-b border-slate-800/90 bg-eyesafe-900/95 backdrop-blur-md px-6 flex items-center justify-between sticky top-0 z-30 shadow-2xl">
+            <div className="flex items-center gap-3.5">
+              <CompanyLogo className="w-10 h-10 drop-shadow-md" />
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-extrabold tracking-tight text-white text-base">{data.company.name}</span>
+                  <span className="text-[10px] uppercase font-mono font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">Enterprise ERP v33</span>
+                </div>
+                <p className="text-[11px] text-slate-400 font-medium">Industrial Sewing Machinery Fleet & Automation — Kosgama Central Yard</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2.5">
+              <div className="hidden xl:flex items-center gap-1.5 px-3 py-1 rounded-xl bg-eyesafe-950 border border-slate-800 text-[11px] font-mono">
+                <span className={`w-2 h-2 rounded-full ${syncStatus.includes('Synced') ? 'bg-emerald-400 shadow-sm shadow-emerald-400' : 'bg-cyan-400 animate-pulse'}`}></span>
+                <span className="text-slate-300 font-bold">{syncStatus}</span>
+              </div>
+
+              {/* Month Switcher */}
+              <div className="flex items-center gap-2 bg-eyesafe-950 border-2 border-accent-600/70 px-3 py-1 rounded-xl shadow-lg">
+                <span className="text-xs text-slate-300 font-extrabold">📅 Month:</span>
+                <select 
+                  value={data.activeMonth} 
+                  onChange={e => handleSwitchMonth(e.target.value)}
+                  className="bg-transparent text-amber-400 font-black text-xs focus:outline-none cursor-pointer"
+                >
+                  {data.allMonths.map(mKey => (
+                    <option key={mKey} value={mKey} className="bg-eyesafe-900 text-slate-100 font-semibold">{mKey}</option>
+                  ))}
+                </select>
+              </div>
+
+              <button onClick={handleCreateNewMonth} className="px-3.5 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-slate-950 font-black rounded-xl text-xs transition flex items-center gap-1 shadow-lg">
+                <span>➕</span> {systemLang === "si" ? "මාසයක් එක් කරන්න" : "Add Month"}
+              </button>
+
+              <button onClick={() => setActiveModal("quotation")} className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white font-bold border border-cyan-400/40 rounded-xl text-xs transition flex items-center gap-1 shadow-md">
+                <span>📑</span> Quotation Studio
+              </button>
+
+              <div className="flex items-center gap-1">
+                <button onClick={handleExportBackup} title="Backup ERP Data to JSON File" className="px-2.5 py-1.5 bg-eyesafe-800 hover:bg-eyesafe-750 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1">
+                  <span>💾</span> Backup
+                </button>
+                <button onClick={() => fileInputRef.current && fileInputRef.current.click()} title="Restore ERP Data from JSON File" className="px-2.5 py-1.5 bg-eyesafe-800 hover:bg-eyesafe-750 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1">
+                  <span>📂</span> Restore
+                </button>
+                <input ref={fileInputRef} type="file" accept=".json" onChange={handleImportBackup} className="hidden" />
+              </div>
+
+              <button onClick={() => { setTempBank(data.bank); setActiveModal("bank_settings"); }} className="px-3 py-1.5 bg-eyesafe-800 hover:bg-eyesafe-750 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold transition">
+                🏦 Bank
+              </button>
+
+              <button onClick={() => setSystemLang(systemLang === "si" ? "en" : "si")} className="px-3 py-1.5 bg-eyesafe-800 hover:bg-eyesafe-750 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold transition">
+                🌐 {systemLang === "si" ? "සිංහල" : "EN"}
+              </button>
+            </div>
+          </header>
+
+          <div className="flex flex-1">
+            {/* Sidebar Navigation */}
+            <aside className="w-64 border-r border-slate-800/80 bg-eyesafe-900/90 p-4 hidden md:flex flex-col justify-between">
+              <div className="space-y-6">
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3">Management Modules</span>
+                  <nav className="mt-2 space-y-1">
+                    <button onClick={() => setActiveTab("dashboard")} className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-between ${activeTab === "dashboard" ? "bg-accent-600 text-white shadow-lg shadow-accent-600/30" : "text-slate-400 hover:bg-eyesafe-800/60"}`}>
+                      <span className="flex items-center gap-2"><span>📊</span> {systemLang === "si" ? "කුලී ලෙජරය සහ ආදායම්" : "Master Rental Ledger"}</span>
+                      <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-black/30">{metrics.activeClients} Active</span>
+                    </button>
+                    
+                    <button onClick={() => setActiveTab("partners")} className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-between ${activeTab === "partners" ? "bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/30" : "text-amber-400 hover:bg-amber-500/10"}`}>
+                      <span className="flex items-center gap-2"><span>🤝</span> {systemLang === "si" ? "Partners & Spare Parts" : "Partner Suppliers"}</span>
+                      <span className="text-[9px] px-1.5 py-0.5 rounded font-mono font-black bg-black/40 text-white">B2B</span>
+                    </button>
+
+                    <button onClick={() => setActiveTab("payments")} className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2.5 ${activeTab === "payments" ? "bg-accent-600 text-white shadow-lg shadow-accent-600/30" : "text-slate-400 hover:bg-eyesafe-800/60"}`}>
+                      <span>💳</span> {systemLang === "si" ? "ලැබුණු ගෙවීම් වාර්තාව" : "Payment Audit Registry"}
+                    </button>
+
+                    <button onClick={() => setActiveTab("yard_returns")} className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2.5 ${activeTab === "yard_returns" ? "bg-accent-600 text-white shadow-lg shadow-accent-600/30" : "text-slate-400 hover:bg-eyesafe-800/60"}`}>
+                      <span>📥</span> {systemLang === "si" ? "ආපසු භාරගත් මැෂින් (Yard)" : "Returned Fleet Register"}
+                    </button>
+
+                    <button onClick={() => setActiveTab("expenses")} className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2.5 ${activeTab === "expenses" ? "bg-accent-600 text-white shadow-lg shadow-accent-600/30" : "text-slate-400 hover:bg-eyesafe-800/60"}`}>
+                      <span>💸</span> {systemLang === "si" ? "වියදම් සහ වැටුප්" : "Yard Overhead & Wages"}
+                    </button>
+                  </nav>
+                </div>
+
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3">Quick Executive Actions</span>
+                  <div className="mt-2 space-y-2">
+                    <button onClick={() => setActiveModal("add_customer")} className="w-full py-2.5 px-3 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl text-xs transition flex items-center justify-between shadow-md">
+                      <span>+ {systemLang === "si" ? "නව Customer Fleet" : "Add Client Fleet"}</span>
+                      <span className="text-[10px] opacity-80 font-mono">Global</span>
+                    </button>
+                    <button onClick={() => setActiveModal("quotation")} className="w-full py-2.5 px-3 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-xl text-xs transition flex items-center justify-between shadow-md">
+                      <span>📑 {systemLang === "si" ? "නව Quotation එකක්" : "New Quotation"}</span>
+                      <span className="text-[10px] opacity-80 font-mono">Custom</span>
+                    </button>
+                    <button onClick={() => { setNewPayment({ customerId: data.masterCustomers[0]?.id || "", amount: "", method: "BOC Ruwanwella Transfer", refNo: "", date: new Date().toISOString().slice(0, 10) }); setActiveModal("payment"); }} className="w-full py-2.5 px-3 bg-accent-600 hover:bg-accent-500 text-white font-bold rounded-xl text-xs transition flex items-center justify-between shadow-md">
+                      <span>+ {systemLang === "si" ? "ගෙවීමක් සටහන් කරන්න" : "Record Payment"}</span>
+                      <span className="text-[10px] opacity-80 font-mono">Receipt</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="bg-eyesafe-950/90 border border-slate-800 p-3.5 rounded-2xl text-xs space-y-1 shadow-inner">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] font-black uppercase text-accent-400">Settlement Bank Account</span>
+                    <button onClick={() => { setTempBank(data.bank); setActiveModal("bank_settings"); }} className="text-slate-400 hover:text-white">⚙️</button>
+                  </div>
+                  <div className="font-bold text-slate-200">{data.bank.bankNameEn}</div>
+                  <div className="text-slate-400 text-[11px]">{data.bank.branchEn}</div>
+                  <div className="pt-1.5 flex items-center justify-between border-t border-slate-800/80 mt-1">
+                    <span className="text-slate-500 text-[10px]">A/C No:</span>
+                    <span className="font-mono font-bold text-amber-400 text-xs">{data.bank.accountNo}</span>
+                  </div>
+                </div>
+              </div>
+            </aside>
+
+            {/* Main Content Workspace */}
+            <main className="flex-1 p-6 overflow-y-auto space-y-6">
+              
+              {/* Executive Metrics Bar */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div className="bg-eyesafe-900/90 border border-slate-800/90 p-4 rounded-2xl shadow-xl">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Monthly Fleet Demand</span>
+                  <div className="mt-1 text-xl font-black text-white">LKR {metrics.totalMonthlyIncome.toLocaleString()}</div>
+                  <div className="mt-1 text-[11px] text-emerald-400 font-medium">● {metrics.totalActiveMachines} Units Active on Rent</div>
+                </div>
+
+                <div className="bg-eyesafe-900/90 border border-slate-800/90 p-4 rounded-2xl shadow-xl">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Customer Collections</span>
+                  <div className="mt-1 text-xl font-black text-emerald-400">LKR {metrics.totalPaid.toLocaleString()}</div>
+                  <div className="mt-1 text-[11px] text-slate-400">Collection Rate: <b className="text-white">{metrics.collectionRate}%</b></div>
+                </div>
+
+                <div className="bg-eyesafe-900/90 border border-rose-900/40 bg-rose-950/10 p-4 rounded-2xl shadow-xl">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-rose-400">Customer Receivables</span>
+                  <div className="mt-1 text-xl font-black text-rose-400">LKR {metrics.totalReceivables.toLocaleString()}</div>
+                  <div className="mt-1 text-[11px] text-slate-400">Carried: LKR {metrics.totalArrears.toLocaleString()}</div>
+                </div>
+
+                <div className="bg-eyesafe-900/90 border border-amber-900/40 bg-amber-950/10 p-4 rounded-2xl shadow-xl">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-amber-400">Partner Payables</span>
+                  <div className="mt-1 text-xl font-black text-amber-400">LKR {metrics.totalPartnerPayables.toLocaleString()}</div>
+                  <div className="mt-1 text-[11px] text-slate-400">Owed for External Sourcing</div>
+                </div>
+
+                <div className="bg-eyesafe-900/90 border border-slate-800/90 p-4 rounded-2xl shadow-xl">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-brand-400">Net Yard Margin</span>
+                  <div className="mt-1 text-xl font-black text-brand-400">LKR {metrics.netProfit.toLocaleString()}</div>
+                  <div className="mt-1 text-[11px] text-slate-400">Overhead & Wages Deducted</div>
+                </div>
+              </div>
+
+              {/* TAB 1: MASTER CUSTOMER LEDGER */}
+              {activeTab === "dashboard" && (
+                <div className="space-y-4">
+                  <div className="flex flex-col md:flex-row gap-3 items-center justify-between bg-eyesafe-900/70 border border-slate-800/80 p-3.5 rounded-2xl">
+                    <div className="relative w-full md:w-1/2">
+                      <input
+                        type="text"
+                        placeholder="🔍 Search Machine Model, Serial Number (SN), Unit Code, Customer Name, or Phone..."
+                        value={customerSearchQuery}
+                        onChange={e => setCustomerSearchQuery(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2.5 bg-eyesafe-950 border border-slate-700/80 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-cyan-400 transition"
+                      />
+                      <span className="absolute left-3.5 top-3 text-cyan-400 text-xs">⚡</span>
+                    </div>
+
+                    <div className="flex items-center gap-2 w-full md:w-auto">
+                      <select
+                        value={statusFilter}
+                        onChange={e => setStatusFilter(e.target.value)}
+                        className="bg-eyesafe-950 border border-slate-700/80 text-xs text-slate-300 rounded-xl px-3 py-2.5 focus:outline-none cursor-pointer"
+                      >
+                        <option value="all">All Records ({data.masterCustomers.length})</option>
+                        <option value="active">Active Accounts Only ({metrics.activeClients})</option>
+                        <option value="due">Pending Balance Due in {data.activeMonth}</option>
+                        <option value="paid">Fully Settled Accounts</option>
+                        <option value="archived">Closed / Terminated Accounts ({metrics.closedClients})</option>
+                      </select>
+                      <button onClick={() => setActiveModal("add_customer")} className="px-4 py-2.5 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-bold transition shadow-md whitespace-nowrap">
+                        + New Customer Fleet
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="bg-eyesafe-900/90 border border-slate-800/90 rounded-2xl overflow-hidden shadow-2xl">
+                    <div className="px-6 py-4 border-b border-slate-800/80 flex justify-between items-center bg-eyesafe-900/95">
+                      <div>
+                        <h2 className="font-extrabold text-sm text-white tracking-tight uppercase">
+                          Customer Rental Ledger — Viewing {data.activeMonth}
+                        </h2>
+                        <p className="text-[11px] text-slate-400">Prorated Day calculations active for mid-month leases. To fix or delete a wrong payment, click ✏️ directly under Paid column.</p>
+                      </div>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-eyesafe-950 text-slate-400 uppercase tracking-wider text-[10px] border-b border-slate-800">
+                          <tr>
+                            <th className="px-4 py-3.5">Customer / Code</th>
+                            <th className="px-4 py-3.5">Assigned Machinery Fleet (Model & Serial)</th>
+                            <th className="px-4 py-3.5">Calculated Hire ({data.activeMonth})</th>
+                            <th className="px-4 py-3.5">Carried Arrears</th>
+                            <th className="px-4 py-3.5">Paid in {data.activeMonth} (Click ✏️ to Fix)</th>
+                            <th className="px-4 py-3.5">Net Due</th>
+                            <th className="px-4 py-3.5 text-right">Official Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-800/80">
+                          {data.masterCustomers
+                            .filter(c => {
+                              const q = customerSearchQuery.toLowerCase();
+                              const matchesCustomer = c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q) || (c.phone || '').includes(q);
+                              const matchesMachines = (c.rentals || []).some(r => 
+                                (r.model || '').toLowerCase().includes(q) || 
+                                (r.serialNumber || '').toLowerCase().includes(q) || 
+                                (r.machineCode || '').toLowerCase().includes(q) || 
+                                (r.accessories || '').toLowerCase().includes(q)
+                              );
+                              if (!matchesCustomer && !matchesMachines) return false;
+                              if (statusFilter === "archived") return c.isArchived;
+                              if (statusFilter === "active") return !c.isArchived;
+                              
+                              const activeRent = getActiveRentForCustomerInMonth(c, data.activeMonth);
+                              const arrears = getCustomerOpeningArrears(c, data.activeMonth);
+                              const dynamicPaid = getCustomerPaidInMonth(c.id, data.activeMonth);
+                              const bal = arrears + activeRent - dynamicPaid;
+
+                              if (statusFilter === "due") return bal > 0;
+                              if (statusFilter === "paid") return bal <= 0;
+                              return true;
+                            })
+                            .map(c => {
+                              const activeRent = getActiveRentForCustomerInMonth(c, data.activeMonth);
+                              const arrears = getCustomerOpeningArrears(c, data.activeMonth);
+                              const monthPayments = ((data.monthlyPayments && data.monthlyPayments[data.activeMonth]) || []).filter(p => p.customerId === c.id);
+                              const dynamicPaid = monthPayments.reduce((s, p) => s + Number(p.amount || 0), 0);
+                              const balance = arrears + activeRent - dynamicPaid;
+
+                              return (
+                                <tr key={c.id} className={`hover:bg-eyesafe-800/40 transition ${c.isArchived ? "opacity-60 bg-eyesafe-950/70" : ""}`}>
+                                  <td className="px-4 py-3.5 align-top">
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="font-bold text-slate-100">{c.name}</span>
+                                      {c.isArchived && (
+                                        <span className="text-[9px] px-2 py-0.5 rounded bg-rose-950 text-rose-400 border border-rose-800/80 font-bold font-mono">ACCOUNT CLOSED</span>
+                                      )}
+                                    </div>
+                                    <div className="text-[10px] text-slate-400 font-mono mt-0.5">{c.code} · {c.phone}</div>
+                                    <div className="text-[10px] text-slate-500">{c.address}</div>
+                                    
+                                    <div className="mt-2.5 flex items-center gap-2 flex-wrap">
+                                      <button 
+                                        onClick={() => { setEditingCustomer({ ...c, rentals: (c.rentals || []).map(r => ({ ...r })) }); setActiveModal("edit_customer"); }} 
+                                        className="text-[10px] text-cyan-400 hover:text-cyan-300 font-bold flex items-center gap-0.5"
+                                      >
+                                        ✏️ Edit Profile/Fleet
+                                      </button>
+                                      
+                                      {!c.isArchived ? (
+                                        <>
+                                          <span className="text-slate-600">·</span>
+                                          <button 
+                                            onClick={() => handleOpenReturnModal(c)} 
+                                            className="text-[10px] text-rose-400 hover:text-rose-300 font-bold"
+                                          >
+                                            📥 Return
+                                          </button>
+                                          <span className="text-slate-600">·</span>
+                                          <button 
+                                            onClick={() => handleToggleArchiveCustomer(c)} 
+                                            className="text-[10px] text-amber-400 hover:text-amber-300 font-bold"
+                                            title="Close account so rent does not carry to next months"
+                                          >
+                                            🚫 Close
+                                          </button>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <span className="text-slate-600">·</span>
+                                          <button 
+                                            onClick={() => handleToggleArchiveCustomer(c)} 
+                                            className="text-[10px] text-emerald-400 hover:text-emerald-300 font-bold"
+                                          >
+                                            🔄 Reopen
+                                          </button>
+                                        </>
+                                      )}
+                                      
+                                      <span className="text-slate-600">·</span>
+                                      <button 
+                                        onClick={() => handleDeleteCustomer(c)} 
+                                        className="text-[10px] text-rose-500 hover:text-rose-400 font-bold"
+                                        title="Delete customer completely"
+                                      >
+                                        🗑️ Delete
+                                      </button>
+                                    </div>
+                                  </td>
+
+                                  <td className="px-4 py-3.5 max-w-md align-top space-y-1">
+                                    {(c.rentals || []).map(r => {
+                                      const thisMonthRate = calculateMachineRentForMonth(r, data.activeMonth);
+                                      const isProratedNow = r.isProratedFirstMonth && thisMonthRate !== Number(r.rentRate || 0);
+
+                                      return (
+                                        <div key={r.machineId} className={`p-2 rounded-xl border text-[11px] ${r.status === "Active" ? "bg-eyesafe-950/80 border-slate-800" : "bg-eyesafe-950/30 border-slate-900 opacity-60"}`}>
+                                          <div className="flex items-center justify-between">
+                                            <span className="font-mono font-bold text-cyan-400">{r.machineCode}</span>
+                                            <div className="flex items-center gap-1.5">
+                                              <span className="text-[9px] px-1.5 py-0.2 rounded bg-eyesafe-800 text-slate-300 font-mono">SN: {r.serialNumber}</span>
+                                              {r.status === "Returned" && (
+                                                <button 
+                                                  onClick={() => handleRollbackReturn(c.id, r.machineId)} 
+                                                  className="text-[9px] px-1.5 py-0.2 rounded bg-rose-900/80 hover:bg-rose-800 text-rose-200 font-bold"
+                                                  title="Undo Return & Restore to Active"
+                                                >
+                                                  🔄 Rollback
+                                                </button>
+                                              )}
+                                            </div>
+                                          </div>
+                                          <div className={`font-medium text-slate-200 mt-0.5 ${r.status === "Returned" ? "line-through opacity-70" : ""}`}>{r.model}</div>
+                                          <div className="text-[10px] text-slate-400 mt-0.5">
+                                            Month Hire: <b className="text-amber-400 font-mono">LKR {thisMonthRate.toLocaleString()}</b>
+                                            {isProratedNow && (
+                                              <span className="ml-1 text-[9px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-mono font-bold border border-amber-500/30">
+                                                (Prorated from {r.startDate})
+                                              </span>
+                                            )}
+                                            {r.status === "Active" && !isProratedNow && (
+                                              <span className="ml-1 text-[9px] text-slate-500">· Full Monthly Rate: LKR {Number(r.rentRate || 0).toLocaleString()}</span>
+                                            )}
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </td>
+
+                                  <td className="px-4 py-3.5 font-bold text-slate-200 align-top">
+                                    {c.isArchived ? (
+                                      <span className="text-slate-500 font-mono">LKR 0 (Closed)</span>
+                                    ) : (
+                                      `LKR ${activeRent.toLocaleString()}`
+                                    )}
+                                  </td>
+                                  <td className="px-4 py-3.5 font-mono text-amber-400 align-top">LKR {arrears.toLocaleString()}</td>
+
+                                  {/* Paid in Month Column with Instant In-Place Edit/Delete */}
+                                  <td className="px-4 py-3.5 align-top">
+                                    <div className="font-mono font-bold text-emerald-400 text-xs">
+                                      LKR {dynamicPaid.toLocaleString()}
+                                    </div>
+                                    {monthPayments.length > 0 ? (
+                                      <div className="mt-1.5 space-y-1">
+                                        {monthPayments.map(pay => (
+                                          <div key={pay.id} className="flex items-center justify-between text-[10px] bg-eyesafe-950/80 px-2 py-1 rounded-lg border border-slate-800/80">
+                                            <span className="font-mono text-emerald-300 font-bold">LKR {Number(pay.amount || 0).toLocaleString()}</span>
+                                            <div className="flex items-center gap-1.5">
+                                              <span className="text-[9px] text-slate-400 font-mono">{pay.date}</span>
+                                              <button 
+                                                type="button"
+                                                onClick={() => { setEditingPayment({ ...pay }); setActiveModal("edit_payment"); }}
+                                                className="text-cyan-400 hover:text-cyan-300 font-bold px-1"
+                                                title="Edit / Correct this payment entry"
+                                              >
+                                                ✏️
+                                              </button>
+                                              <button 
+                                                type="button"
+                                                onClick={() => handleDeletePayment(pay.id)}
+                                                className="text-rose-400 hover:text-rose-300 font-bold px-1"
+                                                title="Delete this payment"
+                                              >
+                                                🗑️
+                                              </button>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <div className="text-[10px] text-slate-500 mt-1 font-mono">No payment yet</div>
+                                    )}
+                                  </td>
+
+                                  <td className="px-4 py-3.5 font-black text-xs align-top text-rose-400">LKR {balance.toLocaleString()}</td>
+
+                                  <td className="px-4 py-3.5 text-right align-top space-x-1 space-y-1">
+                                    {!c.isArchived && (
+                                      <button onClick={() => { setNewPayment({ customerId: c.id, amount: "", method: "BOC Ruwanwella Transfer", refNo: "", date: new Date().toISOString().slice(0, 10) }); setActiveModal("payment"); }} className="px-2.5 py-1 bg-brand-600 hover:bg-brand-500 text-white rounded-lg text-[10px] font-bold shadow-sm">+ Pay</button>
+                                    )}
+                                    <button onClick={() => { setPrintDoc({ type: "INVOICE", customer: { ...c, arrears, totalPaid: dynamicPaid } }); }} className="px-2 py-1 bg-eyesafe-800 hover:bg-accent-600 text-slate-300 rounded-lg text-[10px] font-bold">Invoice</button>
+                                    <button onClick={() => { setPrintDoc({ type: "AGREEMENT", customer: { ...c, arrears, totalPaid: dynamicPaid } }); }} className="px-2 py-1 bg-eyesafe-800 hover:bg-accent-600 text-slate-300 rounded-lg text-[10px] font-bold">Agreement</button>
+                                    <button onClick={() => { setPrintDoc({ type: "DELIVERY", customer: { ...c, arrears, totalPaid: dynamicPaid }, meta: deliveryNoteData }); }} className="px-2 py-1 bg-eyesafe-800 hover:bg-accent-600 text-slate-300 rounded-lg text-[10px] font-bold">Delivery</button>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 2: PARTNERS & SOURCED PARTS */}
+              {activeTab === "partners" && (
+                <div className="space-y-6">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <div>
+                      <h2 className="text-base font-extrabold text-white flex items-center gap-2">
+                        <span>🤝</span> Partner Companies, Machinery Sourcing & Payables Directory
+                      </h2>
+                      <p className="text-xs text-slate-400">External machinery suppliers, motor & looper sourcing, purchases, payables, and debit return notes.</p>
+                    </div>
+                    <button onClick={() => setActiveModal("add_partner")} className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-slate-950 font-black rounded-xl text-xs transition shadow-lg flex items-center gap-1.5">
+                      <span>➕</span> + New Partner / Supplier Company
+                    </button>
+                  </div>
+
+                  <div className="bg-eyesafe-900/70 border border-slate-800/80 p-3.5 rounded-2xl flex items-center gap-3">
+                    <span className="text-amber-400 text-sm">🔍</span>
+                    <input
+                      type="text"
+                      placeholder="Search partner spare parts, machine models, categories (Motors, Loopers, Machines), or partner names..."
+                      value={partnerSearchQuery}
+                      onChange={e => setPartnerSearchQuery(e.target.value)}
+                      className="w-full bg-transparent border-none text-xs text-slate-200 focus:outline-none placeholder:text-slate-500"
+                    />
+                  </div>
+
+                  <div className="space-y-4">
+                    {data.partners
+                      .filter(partner => {
+                        const q = partnerSearchQuery.toLowerCase();
+                        const matchesName = partner.name.toLowerCase().includes(q) || partner.code.toLowerCase().includes(q);
+                        const matchesItems = (partner.purchases || []).some(p => (p.itemDescription || '').toLowerCase().includes(q) || (p.invoiceNo || '').toLowerCase().includes(q) || (p.category || '').toLowerCase().includes(q));
+                        return matchesName || matchesItems;
+                      })
+                      .map(partner => {
+                        const totalPurchased = getPartnerTotalPurchased(partner);
+                        const totalReturned = getPartnerTotalReturned(partner);
+                        const totalPaid = getPartnerTotalPaid(partner);
+                        const balancePayable = getPartnerBalancePayable(partner);
+
+                        return (
+                          <div key={partner.id} className={`bg-eyesafe-900/90 border border-slate-800/90 rounded-3xl p-6 shadow-2xl space-y-4 transition ${partner.isArchived ? "opacity-60 bg-eyesafe-950/80" : ""}`}>
+                            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border-b border-slate-800 pb-4">
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-mono text-xs px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/40 font-bold">{partner.code}</span>
+                                  <h3 className="text-lg font-black text-white">{partner.name}</h3>
+                                  {partner.isArchived && <span className="text-[9px] px-2 py-0.5 bg-rose-950 text-rose-400 font-bold rounded border border-rose-800">ACCOUNT CLOSED</span>}
+                                </div>
+                                <p className="text-xs text-slate-400 mt-1">
+                                  👤 Contact: <b className="text-slate-200">{partner.contactPerson}</b> | 📞 {partner.phone} | 📍 {partner.address}
+                                </p>
+                              </div>
+
+                              <div className="flex items-center gap-3 bg-eyesafe-950 p-3 rounded-2xl border border-slate-800">
+                                <div className="px-3 border-r border-slate-800">
+                                  <span className="text-[10px] uppercase font-bold text-slate-400">Opening Arrears</span>
+                                  <div className="text-xs font-mono font-bold text-slate-300">LKR {Number(partner.baseOpeningBalance || 0).toLocaleString()}</div>
+                                </div>
+                                <div className="px-3 border-r border-slate-800">
+                                  <span className="text-[10px] uppercase font-bold text-slate-400">Total Sourced</span>
+                                  <div className="text-xs font-mono font-bold text-white">LKR {totalPurchased.toLocaleString()}</div>
+                                </div>
+                                <div className="px-3 border-r border-slate-800">
+                                  <span className="text-[10px] uppercase font-bold text-rose-400">Returned Relief</span>
+                                  <div className="text-xs font-mono font-bold text-rose-400">- LKR {totalReturned.toLocaleString()}</div>
+                                </div>
+                                <div className="px-3 border-r border-slate-800">
+                                  <span className="text-[10px] uppercase font-bold text-emerald-400">Total Paid</span>
+                                  <div className="text-xs font-mono font-bold text-emerald-400">LKR {totalPaid.toLocaleString()}</div>
+                                </div>
+                                <div className="px-3">
+                                  <span className="text-[10px] uppercase font-black text-amber-400">Net Payable</span>
+                                  <div className="text-base font-mono font-black text-amber-400">LKR {balancePayable.toLocaleString()}</div>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center justify-between flex-wrap gap-2 pt-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                {!partner.isArchived && (
+                                  <>
+                                    <button 
+                                      onClick={() => { setSelectedPartnerForPurchase(partner); setNewPurchaseForm(p => ({ ...p, invoiceNo: "PUR-" + Date.now().toString().slice(-5) })); setActiveModal("add_partner_purchase"); }}
+                                      className="px-3 py-1.5 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow"
+                                    >
+                                      <span>📦</span> + Sourced Machines / Parts
+                                    </button>
+
+                                    <button 
+                                      onClick={() => { setSelectedPartnerForPayment(partner); setNewPartnerPayForm(p => ({ ...p, refNo: "PAY-PTR-" + Date.now().toString().slice(-4) })); setActiveModal("add_partner_payment"); }}
+                                      className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow"
+                                    >
+                                      <span>💵</span> + Make Payment
+                                    </button>
+
+                                    <button 
+                                      onClick={() => { setSelectedPartnerForReturn(partner); setPartnerReturnForm(p => ({ ...p, slipNo: "RET-PTR-" + Date.now().toString().slice(-5) })); setActiveModal("partner_return"); }}
+                                      className="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow"
+                                    >
+                                      <span>📥</span> Return Item to Partner
+                                    </button>
+                                  </>
+                                )}
+
+                                <button 
+                                  onClick={() => { setEditingPartner({ ...partner }); setActiveModal("edit_partner"); }}
+                                  className="px-3 py-1.5 bg-eyesafe-800 hover:bg-eyesafe-750 text-slate-300 rounded-xl text-xs font-bold transition"
+                                >
+                                  ✏️ Edit Info
+                                </button>
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                <button 
+                                  onClick={() => setPrintDoc({ type: "PARTNER_STATEMENT", partner: partner, balanceDue: balancePayable, totalPurchased: totalPurchased, totalReturned: totalReturned, totalPaid: totalPaid })}
+                                  className="px-3 py-1.5 bg-eyesafe-800 hover:bg-eyesafe-750 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1"
+                                >
+                                  <span>🖨️</span> Statement
+                                </button>
+
+                                <button 
+                                  onClick={() => handleToggleArchivePartner(partner)}
+                                  className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition ${partner.isArchived ? "bg-emerald-950 text-emerald-400 border-emerald-800 hover:bg-emerald-900" : "bg-rose-950/80 text-rose-300 border-rose-800/80 hover:bg-rose-900"}`}
+                                >
+                                  {partner.isArchived ? "🔄 Reactivate" : "🚫 Close"}
+                                </button>
+
+                                <button 
+                                  onClick={() => handleDeletePartner(partner)}
+                                  className="px-2.5 py-1.5 rounded-xl text-xs font-bold border border-rose-800/50 bg-rose-950/50 text-rose-400 hover:bg-rose-900"
+                                  title="Delete partner completely"
+                                >
+                                  🗑️ Delete
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-2">
+                              {/* Sourced Items & Parts Table */}
+                              <div className="bg-eyesafe-950/80 border border-slate-800/90 rounded-2xl p-3.5 space-y-2">
+                                <div className="flex justify-between items-center text-xs font-bold text-slate-300 pb-1 border-b border-slate-800">
+                                  <span>📦 Sourced Fleet & Parts Inventory</span>
+                                  <span className="font-mono text-cyan-400 text-[11px]">{(partner.purchases || []).length + (partner.returns || []).length} Records</span>
+                                </div>
+                                <div className="max-h-60 overflow-y-auto space-y-1.5">
+                                  {(partner.purchases || []).map(item => (
+                                    <div key={item.id} className="p-2.5 bg-eyesafe-900 rounded-xl border border-slate-800 text-xs flex justify-between items-start">
+                                      <div>
+                                        <div className="font-bold text-white flex items-center gap-1.5">
+                                          <span>{item.itemDescription}</span>
+                                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-eyesafe-800 text-cyan-400 font-mono">{item.category}</span>
+                                        </div>
+                                        <div className="text-[10px] text-slate-400 font-mono mt-0.5">
+                                          Ref: {item.invoiceNo} · Date: {item.date} · Qty: {item.qty} × LKR {Number(item.unitPrice || 0).toLocaleString()}
+                                        </div>
+                                      </div>
+                                      <div className="text-right flex flex-col items-end">
+                                        <div className="font-mono font-black text-amber-400 text-xs">+ LKR {Number(item.total || 0).toLocaleString()}</div>
+                                        <div className="flex items-center gap-1.5 mt-1">
+                                          <button onClick={() => { setEditingPurchase({ ...item, partnerId: partner.id }); setActiveModal("edit_partner_purchase"); }} className="text-[10px] text-cyan-400 hover:underline">Edit</button>
+                                          <span className="text-slate-600">·</span>
+                                          <button onClick={() => handleDeletePartnerPurchase(partner.id, item.id)} className="text-[10px] text-rose-400 hover:underline">Delete</button>
+                                          <span className="text-slate-600">·</span>
+                                          <button onClick={() => setPrintDoc({ type: "PARTNER_INVOICE", partner: partner, purchase: item })} className="text-[10px] text-slate-300 hover:underline">Slip</button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+
+                                  {(partner.returns || []).map(item => (
+                                    <div key={item.id} className="p-2.5 bg-rose-950/30 rounded-xl border border-rose-900/50 text-xs flex justify-between items-start">
+                                      <div>
+                                        <div className="font-bold text-rose-300 flex items-center gap-1.5">
+                                          <span>{item.itemDescription}</span>
+                                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-rose-950 text-white font-mono">RETURNED</span>
+                                        </div>
+                                        <div className="text-[10px] text-rose-400 font-mono mt-0.5">
+                                          Slip: {item.slipNo} · Date: {item.date} · Qty: {item.qty} pcs
+                                        </div>
+                                      </div>
+                                      <div className="text-right flex flex-col items-end">
+                                        <div className="font-mono font-black text-rose-400 text-xs">- LKR {Number(item.total || 0).toLocaleString()}</div>
+                                        <div className="flex items-center gap-1.5 mt-1">
+                                          <button onClick={() => { setEditingPartnerReturn({ ...item, partnerId: partner.id }); setActiveModal("edit_partner_return"); }} className="text-[10px] text-rose-300 hover:underline">Edit</button>
+                                          <span className="text-slate-600">·</span>
+                                          <button onClick={() => handleDeletePartnerReturn(partner.id, item.id)} className="text-[10px] text-rose-400 hover:underline">Delete</button>
+                                          <span className="text-slate-600">·</span>
+                                          <button onClick={() => setPrintDoc({ type: "PARTNER_RETURN", partner: partner, returnItem: item })} className="text-[10px] text-rose-300 hover:underline">Slip</button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* Partner Payments Table */}
+                              <div className="bg-eyesafe-950/80 border border-slate-800/90 rounded-2xl p-3.5 space-y-2">
+                                <div className="flex justify-between items-center text-xs font-bold text-slate-300 pb-1 border-b border-slate-800">
+                                  <span>💳 Payments Made to Partner</span>
+                                  <span className="font-mono text-emerald-400 text-[11px]">{(partner.payments || []).length} Payments</span>
+                                </div>
+                                <div className="max-h-60 overflow-y-auto space-y-1.5">
+                                  {(partner.payments || []).length === 0 ? (
+                                    <div className="text-slate-400 text-[11px] text-center py-6">No payments recorded yet.</div>
+                                  ) : (
+                                    partner.payments.map(pay => (
+                                      <div key={pay.id} className="p-2.5 bg-eyesafe-900 rounded-xl border border-slate-800 text-xs flex justify-between items-center">
+                                        <div>
+                                          <div className="font-mono font-bold text-emerald-400">{pay.refNo}</div>
+                                          <div className="text-[10px] text-slate-400 font-mono">{pay.date} · via {pay.method}</div>
+                                        </div>
+                                        <div className="text-right flex items-center gap-2">
+                                          <div className="font-mono font-black text-emerald-400 text-xs">LKR {Number(pay.amount || 0).toLocaleString()}</div>
+                                          <button onClick={() => { setEditingPartnerPayment({ ...pay, partnerId: partner.id }); setActiveModal("edit_partner_payment"); }} className="text-[10px] text-cyan-400 hover:underline">Edit</button>
+                                          <button onClick={() => handleDeletePartnerPayment(partner.id, pay.id)} className="text-[10px] text-rose-400 hover:underline">Delete</button>
+                                          <button onClick={() => setPrintDoc({ type: "PARTNER_PAYMENT_VOUCHER", partner: partner, payment: pay })} className="px-2 py-0.5 bg-eyesafe-800 text-slate-300 rounded text-[9px]">Voucher</button>
+                                        </div>
+                                      </div>
+                                    ))
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 3: CUSTOMER PAYMENTS AUDIT */}
+              {activeTab === "payments" && (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h2 className="text-base font-extrabold text-white">Customer Payment Collections for {data.activeMonth}</h2>
+                      <p className="text-xs text-slate-400">All customer payments can be edited or removed in case of typing error.</p>
+                    </div>
+                  </div>
+                  <div className="bg-eyesafe-900/90 border border-slate-800/90 rounded-2xl overflow-hidden shadow-2xl">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-eyesafe-950 text-slate-400 uppercase text-[10px]">
+                        <tr>
+                          <th className="px-5 py-3.5">Date</th>
+                          <th className="px-5 py-3.5">Customer</th>
+                          <th className="px-5 py-3.5">Ref No</th>
+                          <th className="px-5 py-3.5">Method</th>
+                          <th className="px-5 py-3.5 text-right">Amount (LKR)</th>
+                          <th className="px-5 py-3.5 text-right">Corrections</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800">
+                        {((data.monthlyPayments && data.monthlyPayments[data.activeMonth]) || []).map(p => {
+                          const customerObj = data.masterCustomers.find(item => item.id === p.customerId);
+                          return (
+                            <tr key={p.id} className="hover:bg-eyesafe-800/40 transition">
+                              <td className="px-5 py-3.5 font-mono text-slate-300">{p.date}</td>
+                              <td className="px-5 py-3.5 font-bold text-white">{p.customerName}</td>
+                              <td className="px-5 py-3.5 font-mono text-cyan-400 font-bold">{p.refNo || "N/A"}</td>
+                              <td className="px-5 py-3.5 text-slate-300">{p.method}</td>
+                              <td className="px-5 py-3.5 text-right font-black text-emerald-400 font-mono">LKR {Number(p.amount || 0).toLocaleString()}</td>
+                              <td className="px-5 py-3.5 text-right space-x-2">
+                                <button onClick={() => { setEditingPayment({ ...p }); setActiveModal("edit_payment"); }} className="text-cyan-400 hover:underline font-bold text-[11px]">✏️ Edit</button>
+                                <button onClick={() => handleDeletePayment(p.id)} className="text-rose-400 hover:underline font-bold text-[11px]">🗑️ Delete</button>
+                                <button onClick={() => setPrintDoc({ type: "RECEIPT", customer: customerObj || { name: p.customerName, code: "CUST-REC", phone: "N/A", address: "Sri Lanka" }, payment: p })} className="px-2 py-0.5 bg-eyesafe-800 text-slate-300 rounded text-[10px] font-bold">Receipt</button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 4: YARD OVERHEAD & EXPENSES */}
+              {activeTab === "expenses" && (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h2 className="text-base font-extrabold text-white">Central Yard Overhead & Wages</h2>
+                    <button onClick={() => setActiveModal("add_expense")} className="px-3.5 py-1.5 bg-brand-600 text-white text-xs font-bold rounded-xl shadow-md">+ Add Expense</button>
+                  </div>
+                  <div className="bg-eyesafe-900/90 border border-slate-800/90 rounded-2xl p-6 shadow-xl space-y-3">
+                    {data.expenses.map(e => (
+                      <div key={e.id} className="flex justify-between items-center p-3.5 bg-eyesafe-950/80 rounded-xl border border-slate-800">
+                        <div>
+                          <span className="font-bold text-slate-200 text-sm">{e.title}</span>
+                          <span className="ml-2.5 text-[10px] px-2.5 py-0.5 rounded-full bg-eyesafe-800 text-slate-300 font-semibold">{e.type}</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="font-mono font-black text-rose-400 text-base">LKR {Number(e.amount || 0).toLocaleString()}</span>
+                          <button onClick={() => { setEditingExpense({ ...e }); setActiveModal("edit_expense"); }} className="text-cyan-400 hover:underline text-xs font-bold">Edit</button>
+                          <button onClick={() => handleDeleteExpense(e.id)} className="text-rose-400 hover:underline text-xs font-bold">Delete</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 5: YARD RETURNS */}
+              {activeTab === "yard_returns" && (
+                <div className="space-y-4">
+                  <div>
+                    <h2 className="text-base font-extrabold text-white">Central Yard Returned Fleet Directory</h2>
+                    <p className="text-xs text-slate-400">All returned machinery units. You can restore/rollback any unit if marked by mistake.</p>
+                  </div>
+                  <div className="bg-eyesafe-900/90 border border-slate-800/90 rounded-2xl p-6 shadow-xl">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-eyesafe-950 text-slate-400 uppercase text-[10px]">
+                        <tr>
+                          <th className="p-3">Gatepass Ref</th>
+                          <th className="p-3">Customer</th>
+                          <th className="p-3">Machine Model & Code</th>
+                          <th className="p-3">Relieved Rent</th>
+                          <th className="p-3 text-right">Restoration</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800">
+                        {data.masterCustomers.flatMap(c => (c.rentals || []).filter(r => r.status === "Returned").map(r => (
+                          <tr key={r.machineId}>
+                            <td className="p-3 font-mono text-cyan-400">{r.returnDetails?.slipNo || "RET-LEGACY"}</td>
+                            <td className="p-3 font-bold text-white">{c.name}</td>
+                            <td className="p-3">{r.model} ({r.machineCode}) - <span className="font-mono text-slate-400">SN: {r.serialNumber}</span></td>
+                            <td className="p-3 font-mono text-emerald-400 font-bold">LKR {Number(r.rentRate || 0).toLocaleString()}</td>
+                            <td className="p-3 text-right">
+                              <button 
+                                onClick={() => handleRollbackReturn(c.id, r.machineId)} 
+                                className="px-3 py-1 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-[10px] font-bold shadow transition"
+                              >
+                                🔄 Restore to Active
+                              </button>
+                            </td>
+                          </tr>
+                        )))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+            </main>
+          </div>
+
+          {/* ========================================================================= */}
+          {/* ALL MODALS & EDIT ENGINES */}
+          {/* ========================================================================= */}
+
+          {/* ADD CUSTOMER MODAL */}
+          {activeModal === "add_customer" && (
+            <div className="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
+              <form onSubmit={handleSaveNewCustomer} className="bg-eyesafe-900 border border-slate-800 p-6 rounded-3xl w-full max-w-3xl space-y-4 shadow-2xl my-8">
+                <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+                  <div>
+                    <h3 className="font-extrabold text-white text-base">➕ Add New Customer & Machinery Fleet</h3>
+                    <p className="text-[11px] text-cyan-400">Register new client and configure initial assigned machinery units.</p>
+                  </div>
+                  <button type="button" onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-white">✕</button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[10px] text-slate-400 font-bold uppercase">Customer / Factory Name</label>
+                    <input required placeholder="e.g. Acme Garments" value={newCustForm.name} onChange={e => setNewCustForm({ ...newCustForm, name: e.target.value })} className="w-full p-2.5 bg-eyesafe-950 border border-slate-800 rounded-xl text-xs mt-1 text-white" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-slate-400 font-bold uppercase">Phone Number</label>
+                    <input required placeholder="07X-XXXXXXX" value={newCustForm.phone} onChange={e => setNewCustForm({ ...newCustForm, phone: e.target.value })} className="w-full p-2.5 bg-eyesafe-950 border border-slate-800 rounded-xl text-xs mt-1 text-white" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-slate-400 font-bold uppercase">NIC / Registration No</label>
+                    <input placeholder="e.g. 2004XXXXXXXX" value={newCustForm.nic} onChange={e => setNewCustForm({ ...newCustForm, nic: e.target.value })} className="w-full p-2.5 bg-eyesafe-950 border border-slate-800 rounded-xl text-xs mt-1 text-white" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-slate-400 font-bold uppercase">Previous Opening Arrears (LKR)</label>
+                    <input type="number" value={newCustForm.previousBalance} onChange={e => setNewCustForm({ ...newCustForm, previousBalance: e.target.value })} className="w-full p-2.5 bg-eyesafe-950 border border-slate-800 rounded-xl text-xs font-mono font-bold text-amber-400 mt-1" />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="text-[10px] text-slate-400 font-bold uppercase">Factory / Delivery Address</label>
+                    <input required placeholder="e.g. 123 Main Street, Kosgama" value={newCustForm.address} onChange={e => setNewCustForm({ ...newCustForm, address: e.target.value })} className="w-full p-2.5 bg-eyesafe-950 border border-slate-800 rounded-xl text-xs mt-1 text-white" />
+                  </div>
+                </div>
+
+                <div className="border border-slate-800 p-4 rounded-2xl bg-eyesafe-950/60 space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-bold text-slate-200 uppercase">Assigned Fleet Machinery Items</span>
+                    <button 
+                      type="button" 
+                      onClick={() => setNewCustForm(p => ({ ...p, machines: [...p.machines, { machineCode: `MCH-${p.machines.length+1}`, model: "Industrial Lockstitch Machine", serialNumber: "SN-NEW", rentRate: 4500, accessories: "Stand, Table, Servo Motor", startDate: new Date().toISOString().slice(0, 10), isProratedFirstMonth: false }] }))}
+                      className="px-2.5 py-1 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-xs font-bold transition"
+                    >
+                      + Add Machine Unit
+                    </button>
+                  </div>
+
+                  {(newCustForm.machines || []).map((m, idx) => (
+                    <div key={idx} className="p-3 bg-eyesafe-900 rounded-xl border border-slate-800 space-y-2">
+                      <div className="flex justify-between items-center text-[10px] font-bold text-slate-400">
+                        <span>Machine Unit #{idx + 1}</span>
+                        {newCustForm.machines.length > 1 && (
+                          <button type="button" onClick={() => setNewCustForm(p => ({ ...p, machines: p.machines.filter((_, i) => i !== idx) }))} className="text-rose-400 hover:text-rose-300">✕ Remove</button>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                        <input required placeholder="Code (e.g. JK-01)" value={m.machineCode} onChange={e => { const v = e.target.value; setNewCustForm(p => ({ ...p, machines: p.machines.map((it, i) => i === idx ? { ...it, machineCode: v } : it) })); }} className="p-2 bg-eyesafe-950 border border-slate-800 rounded-lg text-xs text-cyan-400 font-mono" />
+                        <input required placeholder="Model Description" value={m.model} onChange={e => { const v = e.target.value; setNewCustForm(p => ({ ...p, machines: p.machines.map((it, i) => i === idx ? { ...it, model: v } : it) })); }} className="p-2 bg-eyesafe-950 border border-slate-800 rounded-lg text-xs text-white" />
+                        <input required placeholder="Serial No (SN)" value={m.serialNumber} onChange={e => { const v = e.target.value; setNewCustForm(p => ({ ...p, machines: p.machines.map((it, i) => i === idx ? { ...it, serialNumber: v } : it) })); }} className="p-2 bg-eyesafe-950 border border-slate-800 rounded-lg text-xs text-slate-300 font-mono" />
+                        <input required type="number" placeholder="Rent Rate" value={m.rentRate} onChange={e => { const v = e.target.value; setNewCustForm(p => ({ ...p, machines: p.machines.map((it, i) => i === idx ? { ...it, rentRate: v } : it) })); }} className="p-2 bg-eyesafe-950 border border-slate-800 rounded-lg text-xs font-mono font-bold text-amber-400" />
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-1 border-t border-slate-800/60 items-center">
+                        <div className="flex items-center gap-2">
+                          <label className="text-[10px] text-slate-400 uppercase font-bold">Delivered Date:</label>
+                          <input type="date" value={m.startDate || new Date().toISOString().slice(0, 10)} onChange={e => { const v = e.target.value; setNewCustForm(p => ({ ...p, machines: p.machines.map((it, i) => i === idx ? { ...it, startDate: v } : it) })); }} className="p-1 bg-eyesafe-950 border border-slate-800 rounded text-xs text-white" />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input type="checkbox" id={`new_prorated_${idx}`} checked={!!m.isProratedFirstMonth} onChange={e => { const v = e.target.checked; setNewCustForm(p => ({ ...p, machines: p.machines.map((it, i) => i === idx ? { ...it, isProratedFirstMonth: v } : it) })); }} className="w-4 h-4 rounded text-cyan-500 focus:ring-0" />
+                          <label htmlFor={`new_prorated_${idx}`} className="text-xs text-slate-300 font-bold cursor-pointer">
+                            පළමු මස ඉතිරි දින ගණනට පමණක් බිල් කරන්න (Prorated Days)
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <button type="button" onClick={() => setActiveModal(null)} className="px-4 py-2 bg-eyesafe-800 text-xs rounded-xl">Cancel</button>
+                  <button type="submit" className="px-5 py-2 bg-brand-600 hover:bg-brand-500 font-bold text-xs rounded-xl text-white shadow-lg">Save New Customer & Fleet</button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* ADD PAYMENT MODAL */}
+          {activeModal === "payment" && (
+            <div className="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+              <form onSubmit={handleSavePayment} className="bg-eyesafe-900 border border-slate-800 p-6 rounded-3xl w-full max-w-sm space-y-3.5 shadow-2xl">
+                <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+                  <h3 className="font-extrabold text-white text-base">💳 Record Customer Rent Payment</h3>
+                  <button type="button" onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-white">✕</button>
+                </div>
+                <div>
+                  <label className="text-[10px] text-slate-400 uppercase font-bold">Customer</label>
+                  <select required value={newPayment.customerId} onChange={e => setNewPayment({ ...newPayment, customerId: e.target.value })} className="w-full p-2.5 bg-eyesafe-950 border border-slate-800 rounded-xl text-xs mt-1 text-white">
+                    <option value="">-- Select Customer --</option>
+                    {data.masterCustomers.filter(c => !c.isArchived).map(c => (
+                      <option key={c.id} value={c.id}>{c.name} ({c.code})</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] text-slate-400 uppercase font-bold">Amount (LKR)</label>
+                  <input required type="number" placeholder="e.g. 25000" value={newPayment.amount} onChange={e => setNewPayment({ ...newPayment, amount: e.target.value })} className="w-full p-2.5 bg-eyesafe-950 border border-slate-800 rounded-xl text-xs text-emerald-400 font-mono font-bold mt-1" />
+                </div>
+                <div>
+                  <label className="text-[10px] text-slate-400 uppercase font-bold">Payment Date</label>
+                  <input required type="date" value={newPayment.date} onChange={e => setNewPayment({ ...newPayment, date: e.target.value })} className="w-full p-2.5 bg-eyesafe-950 border border-slate-800 rounded-xl text-xs mt-1 text-white" />
+                </div>
+                <div>
+                  <label className="text-[10px] text-slate-400 uppercase font-bold">Method</label>
+                  <select value={newPayment.method} onChange={e => setNewPayment({ ...newPayment, method: e.target.value })} className="w-full p-2.5 bg-eyesafe-950 border border-slate-800 rounded-xl text-xs mt-1 text-white">
+                    <option value="BOC Ruwanwella Transfer">BOC Ruwanwella Transfer</option>
+                    <option value="Direct Cash Payment">Direct Cash Payment</option>
+                    <option value="Cheque Deposit">Cheque Deposit</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] text-slate-400 uppercase font-bold">Receipt / Ref Slip No</label>
+                  <input placeholder="e.g. BOC-TXN-88421" value={newPayment.refNo} onChange={e => setNewPayment({ ...newPayment, refNo: e.target.value })} className="w-full p-2.5 bg-eyesafe-950 border border-slate-800 rounded-xl text-xs font-mono text-cyan-400 mt-1" />
+                </div>
+                <div className="flex justify-end gap-2 pt-2">
+                  <button type="button" onClick={() => setActiveModal(null)} className="px-4 py-2 bg-eyesafe-800 text-xs rounded-xl">Cancel</button>
+                  <button type="submit" className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 font-bold text-xs rounded-xl text-white">Record & Issue Receipt</button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* BANK SETTINGS MODAL */}
+          {activeModal === "bank_settings" && (
+            <div className="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+              <form onSubmit={e => { e.preventDefault(); setData(p => ({ ...p, bank: tempBank })); setActiveModal(null); alert("Bank details updated successfully!"); }} className="bg-eyesafe-900 border border-slate-800 p-6 rounded-3xl w-full max-w-sm space-y-3.5 shadow-2xl">
+                <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+                  <h3 className="font-extrabold text-white text-base">🏦 Bank Account Settings</h3>
+                  <button type="button" onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-white">✕</button>
+                </div>
+                <div>
+                  <label className="text-[10px] text-slate-400 uppercase font-bold">Bank Name</label>
+                  <input required value={tempBank.bankNameEn} onChange={e => setTempBank({...tempBank, bankNameEn: e.target.value})} className="w-full p-2.5 bg-eyesafe-950 border border-slate-800 rounded-xl text-xs text-white mt-1" />
+                </div>
+                <div>
+                  <label className="text-[10px] text-slate-400 uppercase font-bold">Branch Name</label>
+                  <input required value={tempBank.branchEn} onChange={e => setTempBank({...tempBank, branchEn: e.target.value})} className="w-full p-2.5 bg-eyesafe-950 border border-slate-800 rounded-xl text-xs text-white mt-1" />
+                </div>
+                <div>
+                  <label className="text-[10px] text-slate-400 uppercase font-bold">Account Name</label>
+                  <input required value={tempBank.accountName} onChange={e => setTempBank({...tempBank, accountName: e.target.value})} className="w-full p-2.5 bg-eyesafe-950 border border-slate-800 rounded-xl text-xs text-white mt-1" />
+                </div>
+                <div>
+                  <label className="text-[10px] text-slate-400 uppercase font-bold">Account Number</label>
+                  <input required value={tempBank.accountNo} onChange={e => setTempBank({...tempBank, accountNo: e.target.value})} className="w-full p-2.5 bg-eyesafe-950 border border-slate-800 rounded-xl text-xs font-mono font-bold text-amber-400 mt-1" />
+                </div>
+                <div className="flex justify-end gap-2 pt-2">
+                  <button type="button" onClick={() => setActiveModal(null)} className="px-4 py-2 bg-eyesafe-800 text-xs rounded-xl">Cancel</button>
+                  <button type="submit" className="px-5 py-2 bg-accent-600 hover:bg-accent-500 font-bold text-xs rounded-xl text-white">Save Bank Settings</button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* MACHINE RETURN WORKFLOW MODAL */}
+          {activeModal === "return_workflow" && targetCustomerForReturn && (
+            <div className="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
+              <form onSubmit={handleConfirmReturnSubmission} className="bg-eyesafe-900 border border-slate-800 p-6 rounded-3xl w-full max-w-xl space-y-4 shadow-2xl my-8">
+                <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+                  <div>
+                    <h3 className="font-extrabold text-white text-base">📥 Machinery Return Inward Gatepass</h3>
+                    <p className="text-[11px] text-slate-400">Customer: <b className="text-cyan-400">{targetCustomerForReturn.name}</b></p>
+                  </div>
+                  <button type="button" onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-white">✕</button>
+                </div>
+
+                <div>
+                  <label className="text-[10px] text-slate-400 uppercase font-bold">Select Active Machine to Return</label>
+                  <select 
+                    value={returnForm.selectedMachineId} 
+                    onChange={e => {
+                      const val = e.target.value;
+                      if (val === "CUSTOM") {
+                        setReturnForm({ ...returnForm, selectedMachineId: "CUSTOM" });
+                      } else {
+                        const m = (targetCustomerForReturn.rentals || []).find(item => item.machineId === val);
+                        if (m) {
+                          setReturnForm({
+                            ...returnForm,
+                            selectedMachineId: m.machineId,
+                            customModel: m.model,
+                            customCode: m.machineCode,
+                            customSerial: m.serialNumber,
+                            deductAmount: m.rentRate
+                          });
+                        }
+                      }
+                    }} 
+                    className="w-full p-2.5 bg-eyesafe-950 border border-slate-800 rounded-xl text-xs mt-1 text-white"
+                  >
+                    {(targetCustomerForReturn.rentals || []).filter(r => r.status === "Active").map(r => (
+                      <option key={r.machineId} value={r.machineId}>
+                        {r.machineCode} — {r.model} (SN: {r.serialNumber}) [Rate: LKR {Number(r.rentRate || 0).toLocaleString()}]
+                      </option>
+                    ))}
+                    <option value="CUSTOM">-- Custom / Other Machine Unit --</option>
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[10px] text-slate-400 uppercase font-bold">Machine Code Ref</label>
+                    <input required value={returnForm.customCode} onChange={e => setReturnForm({...returnForm, customCode: e.target.value})} className="w-full p-2.5 bg-eyesafe-950 border border-slate-800 rounded-xl text-xs text-cyan-400 font-mono mt-1" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-slate-400 uppercase font-bold">Serial Number (SN)</label>
+                    <input required value={returnForm.customSerial} onChange={e => setReturnForm({...returnForm, customSerial: e.target.value})} className="w-full p-2.5 bg-eyesafe-950 border border-slate-800 rounded-xl text-xs text-white font-mono mt-1" />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="text-[10px] text-slate-400 uppercase font-bold">Machine Model Description</label>
+                    <input required value={returnForm.customModel} onChange={e => setReturnForm({...returnForm, customModel: e.target.value})} className="w-full p-2.5 bg-eyesafe-950 border border-slate-800 rounded-xl text-xs text-white mt-1" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-amber-400 uppercase font-bold">Monthly Rent to Deduct / Relieve (LKR)</label>
+                    <input required type="number" value={returnForm.deductAmount} onChange={e => setReturnForm({...returnForm, deductAmount: e.target.value})} className="w-full p-2.5 bg-eyesafe-950 border border-slate-800 rounded-xl text-xs font-mono font-bold text-amber-400 mt-1" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-slate-400 uppercase font-bold">Gatepass Inward Slip No</label>
+                    <input required value={returnForm.slipNo} onChange={e => setReturnForm({...returnForm, slipNo: e.target.value})} className="w-full p-2.5 bg-eyesafe-950 border border-slate-800 rounded-xl text-xs font-mono text-cyan-400 mt-1" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-slate-400 uppercase font-bold">Return Date</label>
+                    <input required type="date" value={returnForm.returnDate} onChange={e => setReturnForm({...returnForm, returnDate: e.target.value})} className="w-full p-2.5 bg-eyesafe-950 border border-slate-800 rounded-xl text-xs text-white mt-1" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-slate-400 uppercase font-bold">Physical Condition</label>
+                    <select value={returnForm.condition} onChange={e => setReturnForm({...returnForm, condition: e.target.value})} className="w-full p-2.5 bg-eyesafe-950 border border-slate-800 rounded-xl text-xs text-white mt-1">
+                      <option value="Good / Operational">Good / Operational</option>
+                      <option value="Requires Servicing / Minor Repair">Requires Servicing / Minor Repair</option>
+                      <option value="Major Damage / Defective">Major Damage / Defective</option>
+                    </select>
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="text-[10px] text-slate-400 uppercase font-bold">Yard Inspection Remarks</label>
+                    <input value={returnForm.remarks} onChange={e => setReturnForm({...returnForm, remarks: e.target.value})} className="w-full p-2.5 bg-eyesafe-950 border border-slate-800 rounded-xl text-xs text-slate-300 mt-1" />
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+                  <button type="button" onClick={() => setActiveModal(null)} className="px-4 py-2 bg-eyesafe-800 text-xs rounded-xl">Cancel</button>
+                  <button type="submit" className="px-5 py-2 bg-rose-600 hover:bg-rose-500 font-bold text-xs rounded-xl text-white shadow-lg">Confirm Return & Print Gatepass</button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* EDIT CUSTOMER MODAL */}
+          {activeModal === "edit_customer" && editingCustomer && (
+            <div className="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
+              <form onSubmit={handleSaveEditedCustomer} className="bg-eyesafe-900 border border-slate-800 p-6 rounded-3xl w-full max-w-3xl space-y-4 shadow-2xl my-8">
+                <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+                  <div>
+                    <h3 className="font-extrabold text-white text-base">✏️ Edit Customer Fleet Profile (Global Sync)</h3>
+                    <p className="text-[11px] text-slate-400">Prorated Day calculations can be enabled per machine with custom start dates.</p>
+                  </div>
+                  <button type="button" onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-white">✕</button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[10px] text-slate-400 font-bold uppercase">Customer Name</label>
+                    <input required value={editingCustomer.name} onChange={e => setEditingCustomer({ ...editingCustomer, name: e.target.value })} className="w-full p-2.5 bg-eyesafe-950 border border-slate-800 rounded-xl text-xs mt-1 text-white" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-slate-400 font-bold uppercase">Phone Number</label>
+                    <input required value={editingCustomer.phone} onChange={e => setEditingCustomer({ ...editingCustomer, phone: e.target.value })} className="w-full p-2.5 bg-eyesafe-950 border border-slate-800 rounded-xl text-xs mt-1 text-white" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-slate-400 font-bold uppercase">NIC / Reg No</label>
+                    <input value={editingCustomer.nic} onChange={e => setEditingCustomer({ ...editingCustomer, nic: e.target.value })} className="w-full p-2.5 bg-eyesafe-950 border border-slate-800 rounded-xl text-xs mt-1 text-white" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-slate-400 font-bold uppercase">Base Opening Arrears (LKR)</label>
+                    <input type="number" value={editingCustomer.baseOpeningBalance} onChange={e => setEditingCustomer({ ...editingCustomer, baseOpeningBalance: e.target.value })} className="w-full p-2.5 bg-eyesafe-950 border border-slate-800 rounded-xl text-xs font-mono font-bold text-amber-400 mt-1" />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="text-[10px] text-slate-400 font-bold uppercase">Factory / Delivery Address</label>
+                    <input required value={editingCustomer.address} onChange={e => setEditingCustomer({ ...editingCustomer, address: e.target.value })} className="w-full p-2.5 bg-eyesafe-950 border border-slate-800 rounded-xl text-xs mt-1 text-white" />
+                  </div>
+                </div>
+
+                <div className="border border-slate-800 p-4 rounded-2xl bg-eyesafe-950/60 space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-bold text-slate-200 uppercase">Assigned Fleet Machinery Items</span>
+                    <button 
+                      type="button" 
+                      onClick={() => setEditingCustomer(p => ({ ...p, rentals: [...p.rentals, { machineId: "m_" + Date.now(), machineCode: `MCH-${p.rentals.length+1}`, model: "Lockstitch / Overlock Unit", serialNumber: "SN-NEW", rentRate: 4500, status: "Active", accessories: "Complete Set", startDate: new Date().toISOString().slice(0, 10), isProratedFirstMonth: true }] }))}
+                      className="px-2.5 py-1 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-xs font-bold transition"
+                    >
+                      + Add Machine Line
+                    </button>
+                  </div>
+
+                  {(editingCustomer.rentals || []).map((r, idx) => (
+                    <div key={r.machineId} className="p-3 bg-eyesafe-900 rounded-xl border border-slate-800 space-y-2">
+                      <div className="flex justify-between items-center text-[10px] font-bold text-slate-400">
+                        <span>Unit #{idx + 1} ({r.status})</span>
+                        <button type="button" onClick={() => setEditingCustomer(p => ({ ...p, rentals: p.rentals.filter((_, i) => i !== idx) }))} className="text-rose-400 hover:text-rose-300">✕ Remove Line</button>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                        <input required placeholder="Code" value={r.machineCode} onChange={e => { const v = e.target.value; setEditingCustomer(p => ({ ...p, rentals: p.rentals.map((it, i) => i === idx ? { ...it, machineCode: v } : it) })); }} className="p-2 bg-eyesafe-950 border border-slate-800 rounded-lg text-xs text-cyan-400 font-mono" />
+                        <input required placeholder="Model" value={r.model} onChange={e => { const v = e.target.value; setEditingCustomer(p => ({ ...p, rentals: p.rentals.map((it, i) => i === idx ? { ...it, model: v } : it) })); }} className="p-2 bg-eyesafe-950 border border-slate-800 rounded-lg text-xs text-white" />
+                        <input required placeholder="Serial" value={r.serialNumber} onChange={e => { const v = e.target.value; setEditingCustomer(p => ({ ...p, rentals: p.rentals.map((it, i) => i === idx ? { ...it, serialNumber: v } : it) })); }} className="p-2 bg-eyesafe-950 border border-slate-800 rounded-lg text-xs text-slate-300 font-mono" />
+                        <input required type="number" placeholder="Rent" value={r.rentRate} onChange={e => { const v = e.target.value; setEditingCustomer(p => ({ ...p, rentals: p.rentals.map((it, i) => i === idx ? { ...it, rentRate: v } : it) })); }} className="p-2 bg-eyesafe-950 border border-slate-800 rounded-lg text-xs font-mono font-bold text-amber-400" />
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-1 border-t border-slate-800/60 items-center">
+                        <div className="flex items-center gap-2">
+                          <label className="text-[10px] text-slate-400 uppercase font-bold">Delivered Date:</label>
+                          <input type="date" value={r.startDate || new Date().toISOString().slice(0, 10)} onChange={e => { const v = e.target.value; setEditingCustomer(p => ({ ...p, rentals: p.rentals.map((it, i) => i === idx ? { ...it, startDate: v } : it) })); }} className="p-1 bg-eyesafe-950 border border-slate-800 rounded text-xs text-white" />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input type="checkbox" id={`prorated_${idx}`} checked={!!r.isProratedFirstMonth} onChange={e => { const v = e.target.checked; setEditingCustomer(p => ({ ...p, rentals: p.rentals.map((it, i) => i === idx ? { ...it, isProratedFirstMonth: v } : it) })); }} className="w-4 h-4 rounded text-cyan-500 focus:ring-0" />
+                          <label htmlFor={`prorated_${idx}`} className="text-xs text-slate-300 font-bold cursor-pointer">
+                            පළමු මස ඉතිරි දින ගණනට පමණක් බිල් කරන්න (Prorated Days)
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <button type="button" onClick={() => setActiveModal(null)} className="px-4 py-2 bg-eyesafe-800 text-xs rounded-xl">Cancel</button>
+                  <button type="submit" className="px-5 py-2 bg-amber-500 hover:bg-amber-400 font-bold text-xs rounded-xl text-slate-950">Update Globally in All Months</button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* EDIT PAYMENT MODAL */}
+          {activeModal === "edit_payment" && editingPayment && (
+            <div className="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+              <form onSubmit={handleSaveEditedPayment} className="bg-eyesafe-900 border border-slate-800 p-6 rounded-3xl w-full max-w-sm space-y-3.5 shadow-2xl">
+                <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+                  <h3 className="font-extrabold text-white text-base">✏️ Edit Customer Payment Entry</h3>
+                  <button type="button" onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-white">✕</button>
+                </div>
+                <div>
+                  <label className="text-[10px] text-slate-400 uppercase font-bold">Customer</label>
+                  <select required value={editingPayment.customerId} onChange={e => setEditingPayment({...editingPayment, customerId: e.target.value})} className="w-full p-2.5 bg-eyesafe-950 border border-slate-800 rounded-xl text-xs mt-1 text-white">
+                    {data.masterCustomers.map(c => (
+                      <option key={c.id} value={c.id}>{c.name} ({c.code})</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] text-slate-400 uppercase font-bold">Amount (LKR)</label>
+                  <input required type="number" value={editingPayment.amount} onChange={e => setEditingPayment({...editingPayment, amount: e.target.value})} className="w-full p-2.5 bg-eyesafe-950 border border-slate-800 rounded-xl text-xs text-emerald-400 font-mono font-bold mt-1" />
+                </div>
+                <div>
+                  <label className="text-[10px] text-slate-400 uppercase font-bold">Payment Date</label>
+                  <input required type="date" value={editingPayment.date} onChange={e => setEditingPayment({...editingPayment, date: e.target.value})} className="w-full p-2.5 bg-eyesafe-950 border border-slate-800 rounded-xl text-xs mt-1 text-white" />
+                </div>
+                <div>
+                  <label className="text-[10px] text-slate-400 uppercase font-bold">Method</label>
+                  <select value={editingPayment.method} onChange={e => setEditingPayment({...editingPayment, method: e.target.value})} className="w-full p-2.5 bg-eyesafe-950 border border-slate-800 rounded-xl text-xs mt-1 text-white">
+                    <option value="BOC Ruwanwella Transfer">BOC Ruwanwella Transfer</option>
+                    <option value="Direct Cash Payment">Direct Cash Payment</option>
+                    <option value="Cheque Deposit">Cheque Deposit</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] text-slate-400 uppercase font-bold">Bank Ref / Slip</label>
+                  <input value={editingPayment.refNo} onChange={e => setEditingPayment({...editingPayment, refNo: e.target.value})} className="w-full p-2.5 bg-eyesafe-950 border border-slate-800 rounded-xl text-xs font-mono mt-1 text-cyan-400" />
+                </div>
+                <div className="flex justify-between items-center pt-2">
+                  <button type="button" onClick={() => handleDeletePayment(editingPayment.id)} className="px-3 py-2 bg-rose-950 text-rose-300 border border-rose-800/80 hover:bg-rose-900 text-xs font-bold rounded-xl">
+                    🗑️ Delete Entry
+                  </button>
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => setActiveModal(null)} className="px-4 py-2 bg-eyesafe-800 text-xs rounded-xl">Cancel</button>
+                    <button type="submit" className="px-5 py-2 bg-amber-500 hover:bg-amber-400 font-bold text-xs rounded-xl text-slate-950">Update Payment</button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* QUOTATION MODAL */}
+          {activeModal === "quotation" && (
+            <div className="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
+              <form onSubmit={e => { e.preventDefault(); setActiveModal(null); setPrintDoc({ type: "QUOTATION", quotation }); }} className="bg-eyesafe-900 border border-slate-800 p-6 rounded-3xl w-full max-w-3xl space-y-4 shadow-2xl my-8">
+                <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+                  <div>
+                    <h3 className="font-extrabold text-white text-base">📑 Dynamic Quotation & Commercial Proposal Studio</h3>
+                    <p className="text-[11px] text-cyan-400">Generate executive machinery rental proposals with automated deposits, advance terms, and technical warranties.</p>
+                  </div>
+                  <button type="button" onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-white">✕</button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <label className="text-[10px] text-slate-400 uppercase font-bold">Client / Factory Name</label>
+                    <input required placeholder="e.g. MAS Linea / Brandix Apparel" value={quotation.customerName} onChange={e => setQuotation({...quotation, customerName: e.target.value})} className="w-full p-2.5 bg-eyesafe-950 border border-slate-800 rounded-xl text-xs text-white mt-1" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-slate-400 uppercase font-bold">Phone Number</label>
+                    <input required placeholder="07X-XXXXXXX" value={quotation.phone} onChange={e => setQuotation({...quotation, phone: e.target.value})} className="w-full p-2.5 bg-eyesafe-950 border border-slate-800 rounded-xl text-xs text-white mt-1" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-slate-400 uppercase font-bold">Factory / Site Location</label>
+                    <input required placeholder="e.g. Biyagama Industrial Zone" value={quotation.address} onChange={e => setQuotation({...quotation, address: e.target.value})} className="w-full p-2.5 bg-eyesafe-950 border border-slate-800 rounded-xl text-xs text-white mt-1" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                  <div>
+                    <label className="text-[10px] text-slate-400 uppercase font-bold">Quotation Ref No</label>
+                    <input required value={quotation.quoteNo} onChange={e => setQuotation({...quotation, quoteNo: e.target.value})} className="w-full p-2.5 bg-eyesafe-950 border border-slate-800 rounded-xl text-xs font-mono text-cyan-400 mt-1" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-slate-400 uppercase font-bold">Validity (Days)</label>
+                    <input required type="number" min="1" value={quotation.validDays} onChange={e => setQuotation({...quotation, validDays: e.target.value})} className="w-full p-2.5 bg-eyesafe-950 border border-slate-800 rounded-xl text-xs font-bold text-center mt-1" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-amber-400 uppercase font-bold">Refundable Deposit (LKR)</label>
+                    <input type="number" value={quotation.depositAmount} onChange={e => setQuotation({...quotation, depositAmount: e.target.value})} className="w-full p-2.5 bg-eyesafe-950 border border-slate-800 rounded-xl text-xs font-mono font-bold text-amber-400 mt-1" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-emerald-400 uppercase font-bold">Transport & Setup (LKR)</label>
+                    <input type="number" value={quotation.transportCharge} onChange={e => setQuotation({...quotation, transportCharge: e.target.value})} className="w-full p-2.5 bg-eyesafe-950 border border-slate-800 rounded-xl text-xs font-mono font-bold text-emerald-400 mt-1" />
+                  </div>
+                </div>
+
+                <div className="border border-slate-800 p-4 rounded-2xl bg-eyesafe-950/70 space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-bold text-slate-200 uppercase">Proposed Machinery Fleet Items</span>
+                    <button 
+                      type="button" 
+                      onClick={() => setQuotation(p => ({ ...p, items: [...p.items, { description: "Juki / Pegasus Industrial Machine Complete Set", motorSpec: "550W Servo Motor & Stand", qty: 1, rate: 4500 }] }))}
+                      className="px-2.5 py-1 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-xs font-bold transition shadow"
+                    >
+                      + Add Machinery Item
+                    </button>
+                  </div>
+
+                  {quotation.items.map((it, idx) => (
+                    <div key={idx} className="p-3 bg-eyesafe-900 rounded-xl border border-slate-800 space-y-2">
+                      <div className="flex justify-between items-center text-[10px] font-bold text-slate-400">
+                        <span>Line #{idx + 1}</span>
+                        {quotation.items.length > 1 && (
+                          <button type="button" onClick={() => setQuotation(p => ({ ...p, items: p.items.filter((_, i) => i !== idx) }))} className="text-rose-400 hover:text-rose-300">✕ Remove Line</button>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-12 gap-2 items-center">
+                        <input required placeholder="Model Description" value={it.description} onChange={e => { const v = e.target.value; setQuotation(p => ({ ...p, items: p.items.map((item, i) => i === idx ? { ...item, description: v } : item) })); }} className="col-span-5 p-2 bg-eyesafe-950 border border-slate-800 rounded-lg text-xs text-white" />
+                        <input placeholder="Motor / Spec" value={it.motorSpec || ''} onChange={e => { const v = e.target.value; setQuotation(p => ({ ...p, items: p.items.map((item, i) => i === idx ? { ...item, motorSpec: v } : item) })); }} className="col-span-3 p-2 bg-eyesafe-950 border border-slate-800 rounded-lg text-xs text-slate-300" />
+                        <input required type="number" min="1" placeholder="Qty" value={it.qty} onChange={e => { const v = parseInt(e.target.value || 1); setQuotation(p => ({ ...p, items: p.items.map((item, i) => i === idx ? { ...item, qty: v } : item) })); }} className="col-span-2 p-2 bg-eyesafe-950 border border-slate-800 rounded-lg text-xs text-center font-bold" />
+                        <input required type="number" placeholder="Rent / Month" value={it.rate} onChange={e => { const v = parseFloat(e.target.value || 0); setQuotation(p => ({ ...p, items: p.items.map((item, i) => i === idx ? { ...item, rate: v } : item) })); }} className="col-span-2 p-2 bg-eyesafe-950 border border-slate-800 rounded-lg text-xs text-right font-mono font-bold text-amber-400" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[10px] text-slate-400 uppercase font-bold">Service & Technical Support Guarantee</label>
+                    <textarea rows="2" value={quotation.serviceSupport} onChange={e => setQuotation({...quotation, serviceSupport: e.target.value})} className="w-full p-2 bg-eyesafe-950 border border-slate-800 rounded-xl text-xs text-slate-300 mt-1" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-slate-400 uppercase font-bold">Commercial Terms & Conditions</label>
+                    <textarea rows="2" value={quotation.specialTerms} onChange={e => setQuotation({...quotation, specialTerms: e.target.value})} className="w-full p-2 bg-eyesafe-950 border border-slate-800 rounded-xl text-xs text-slate-300 mt-1" />
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+                  <button type="button" onClick={() => setActiveModal(null)} className="px-4 py-2 bg-eyesafe-800 text-xs rounded-xl">Cancel</button>
+                  <button type="submit" className="px-5 py-2 bg-cyan-600 hover:bg-cyan-500 font-bold text-xs rounded-xl text-white shadow-lg">Generate Quotation & Print</button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* PRINTABLE OFFICIAL DOCUMENTS ENGINE (WITH ADVANCED AGREEMENT, DELIVERY & RETURN) */}
+          {/* ========================================================================= */}
+          {printDoc && (
+            <div className="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto">
+              <div className="w-full max-w-4xl my-8">
+                
+                {/* Print Control Toolbar */}
+                <div className="bg-eyesafe-900 border border-slate-800 p-3.5 rounded-t-3xl flex justify-between items-center print:hidden shadow-xl">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-slate-400 mr-1">Document Language:</span>
+                    <button onClick={() => setDocLang("en")} className={`px-3 py-1 rounded-lg text-xs font-bold transition ${docLang === "en" ? "bg-cyan-600 text-white" : "bg-eyesafe-800 text-slate-400"}`}>English (Official)</button>
+                    <button onClick={() => setDocLang("si")} className={`px-3 py-1 rounded-lg text-xs font-bold transition ${docLang === "si" ? "bg-cyan-600 text-white" : "bg-eyesafe-800 text-slate-400"}`}>සිංහල</button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => window.print()} className="bg-brand-600 hover:bg-brand-500 text-white px-5 py-1.5 rounded-xl text-xs font-bold shadow-md flex items-center gap-1.5">
+                      <span>🖨️</span> Print / Save PDF
+                    </button>
+                    <button onClick={() => setPrintDoc(null)} className="bg-eyesafe-800 hover:bg-eyesafe-750 text-slate-300 px-3.5 py-1.5 rounded-xl text-xs font-bold">
+                      ✕ Close
+                    </button>
+                  </div>
+                </div>
+
+                {/* Printable Document Sheet */}
+                <div id="printable-document" className="bg-white text-slate-900 rounded-b-3xl p-10 shadow-2xl relative font-sans leading-relaxed border-t-0">
+                  
+                  {/* Background Watermark Logo */}
+                  <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none select-none">
+                    <CompanyLogo className="w-[480px] h-[480px]" />
+                  </div>
+
+                  {/* Header */}
+                  <div className="border-b-2 border-slate-900 pb-5 mb-6 flex items-start justify-between relative">
+                    <div className="flex items-start gap-4">
+                      <CompanyLogo className="w-20 h-20 drop-shadow-sm flex-shrink-0" />
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h1 className="text-2xl font-black text-slate-950 tracking-tight">{data.company.name}</h1>
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-100 border border-slate-300 font-bold text-slate-700">{data.company.regNo}</span>
+                        </div>
+                        <p className="text-[11px] font-bold text-sky-700 tracking-wide uppercase mt-0.5">{docLang === "si" ? data.company.taglineSi : data.company.taglineEn}</p>
+                        <p className="text-[11px] text-slate-600 mt-0.5">{docLang === "si" ? data.company.addressSi : data.company.addressEn}</p>
+                        <p className="text-[11px] text-slate-600 font-mono mt-0.5">Direct Technical Hotline: <b className="text-slate-900">{data.company.hotline}</b> | Operations: <b className="text-slate-900">{data.company.email}</b></p>
+                      </div>
+                    </div>
+
+                    <div className="text-right flex flex-col items-end">
+                      <span className="text-xs font-black uppercase tracking-widest bg-slate-950 text-white px-3.5 py-1.5 rounded-lg inline-block shadow-sm">
+                        {printDoc.type === "INVOICE" && "OFFICIAL RENTAL INVOICE"}
+                        {printDoc.type === "RECEIPT" && "OFFICIAL PAYMENT RECEIPT"}
+                        {printDoc.type === "PARTNER_INVOICE" && "INWARD SOURCING INVOICE"}
+                        {printDoc.type === "PARTNER_PAYMENT_VOUCHER" && "PARTNER SETTLEMENT VOUCHER"}
+                        {printDoc.type === "PARTNER_RETURN" && "OUTWARD RETURN DEBIT NOTE"}
+                        {printDoc.type === "PARTNER_STATEMENT" && "PARTNER ACCOUNT STATEMENT"}
+                        {printDoc.type === "RETURN" && "EQUIPMENT RETURN INWARD GATEPASS"}
+                        {printDoc.type === "QUOTATION" && "COMMERCIAL MACHINERY PROPOSAL"}
+                        {printDoc.type === "AGREEMENT" && "INDUSTRIAL MACHINERY HIRE LEASE AGREEMENT"}
+                        {printDoc.type === "DELIVERY" && "MACHINERY DISPATCH & GATEPASS NOTE"}
+                      </span>
+                      <div className="mt-2">
+                        <MockBarcode code={`AE-${printDoc.type}-${Date.now().toString().slice(-4)}`} />
+                      </div>
+                      <p className="text-[10px] font-mono text-slate-600 mt-1 font-semibold">Issued Date: {new Date().toLocaleDateString('en-GB')}</p>
+                    </div>
+                  </div>
+
+                  {/* 1. CUSTOMER INVOICE */}
+                  {printDoc.type === "INVOICE" && (
+                    <div className="space-y-4 text-xs">
+                      <div className="grid grid-cols-2 gap-4 p-4 rounded-xl bg-slate-50 border border-slate-300">
+                        <div>
+                          <p className="text-[10px] text-slate-500 uppercase font-bold">Billed To (Lessee / Customer):</p>
+                          <p className="text-sm font-black text-slate-950">{printDoc.customer.name}</p>
+                          <p className="text-slate-600 mt-0.5">{printDoc.customer.address}</p>
+                          <p className="text-slate-600 font-mono">Contact: {printDoc.customer.phone} | Reg: {printDoc.customer.nic || "N/A"}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[10px] text-slate-500 uppercase font-bold">Billing Summary:</p>
+                          <p className="font-mono font-bold text-slate-900 text-sm">Billing Month: {data.activeMonth}</p>
+                          <p className="text-slate-600 font-mono">Client Account Code: {printDoc.customer.code}</p>
+                          <p className="text-slate-600">Payment Due: Upon Presentation / 5th of Month</p>
+                        </div>
+                      </div>
+
+                      <table className="w-full text-left text-xs border border-slate-300">
+                        <thead className="bg-slate-100 font-bold border-b border-slate-300 text-slate-900">
+                          <tr>
+                            <th className="p-2.5">Code</th>
+                            <th className="p-2.5">Industrial Machinery Fleet Model & Description</th>
+                            <th className="p-2.5">Serial Number</th>
+                            <th className="p-2.5">Accessories & Stand</th>
+                            <th className="p-2.5 text-right">Calculated Hire Fee</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200">
+                          {(printDoc.customer.rentals || []).filter(r => r.status === "Active").map(r => {
+                            const calculatedFee = calculateMachineRentForMonth(r, data.activeMonth);
+                            return (
+                              <tr key={r.machineId}>
+                                <td className="p-2.5 font-mono font-bold text-sky-700">{r.machineCode}</td>
+                                <td className="p-2.5 font-bold text-slate-900">
+                                  {r.model}
+                                  {r.isProratedFirstMonth && calculatedFee !== Number(r.rentRate || 0) && (
+                                    <span className="text-[10px] font-normal text-amber-700 ml-1">(Prorated)</span>
+                                  )}
+                                </td>
+                                <td className="p-2.5 font-mono text-slate-600">{r.serialNumber}</td>
+                                <td className="p-2.5 text-slate-600">{r.accessories}</td>
+                                <td className="p-2.5 text-right font-mono font-bold text-slate-900">LKR {calculatedFee.toLocaleString()}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+
+                      <div className="border border-slate-300 p-4 rounded-xl bg-slate-50 grid grid-cols-4 gap-2 text-center">
+                        <div>
+                          <span className="text-slate-500 text-[10px] uppercase font-bold">Active Month Hire</span>
+                          <div className="font-black text-slate-900 font-mono mt-0.5">LKR {getActiveRentForCustomerInMonth(printDoc.customer, data.activeMonth).toLocaleString()}</div>
+                        </div>
+                        <div>
+                          <span className="text-slate-500 text-[10px] uppercase font-bold">Carried Arrears (පෙර හිඟ)</span>
+                          <div className="font-black text-slate-700 font-mono mt-0.5">LKR {Number(printDoc.customer.arrears || 0).toLocaleString()}</div>
+                        </div>
+                        <div>
+                          <span className="text-slate-500 text-[10px] uppercase font-bold">Payments Credited</span>
+                          <div className="font-black text-emerald-600 font-mono mt-0.5">LKR {Number(printDoc.customer.totalPaid || 0).toLocaleString()}</div>
+                        </div>
+                        <div>
+                          <span className="text-rose-600 text-[10px] uppercase font-black">Net Balance Due</span>
+                          <div className="font-black text-rose-600 font-mono text-base mt-0.5">LKR {(Number(printDoc.customer.arrears || 0) + getActiveRentForCustomerInMonth(printDoc.customer, data.activeMonth) - (printDoc.customer.totalPaid || 0)).toLocaleString()}</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 2. ADVANCED LEASE AGREEMENT */}
+                  {printDoc.type === "AGREEMENT" && (
+                    <div className="space-y-4 text-xs">
+                      <div className="p-4 bg-slate-50 border border-slate-300 rounded-xl grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-[10px] text-slate-500 uppercase font-bold">The Lessor (Owner / Management):</p>
+                          <p className="font-black text-slate-950 text-sm">{data.company.name}</p>
+                          <p className="text-slate-600 mt-0.5">{data.company.addressEn}</p>
+                          <p className="text-slate-600 font-mono">Hotline: {data.company.hotline}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-slate-500 uppercase font-bold">The Lessee (Hirer / Factory):</p>
+                          <p className="font-black text-slate-950 text-sm">{printDoc.customer.name}</p>
+                          <p className="text-slate-600 mt-0.5">{printDoc.customer.address}</p>
+                          <p className="text-slate-600 font-mono">Contact: {printDoc.customer.phone} | Reg / NIC: {printDoc.customer.nic || "Verified"}</p>
+                        </div>
+                      </div>
+
+                      <div className="font-bold text-slate-900 border-b border-slate-200 pb-1 uppercase tracking-wider text-[11px]">
+                        1. Schedule of Rented Industrial Machinery Fleet
+                      </div>
+                      <table className="w-full text-left text-xs border border-slate-300">
+                        <thead className="bg-slate-100 font-bold border-b border-slate-300 text-slate-900">
+                          <tr><th className="p-2.5">Unit Code</th><th className="p-2.5">Machinery Model Description</th><th className="p-2.5">Serial Number (SN)</th><th className="p-2.5 text-right">Agreed Monthly Hire</th></tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200">
+                          {(printDoc.customer.rentals || []).filter(r => r.status === "Active").map(r => (
+                            <tr key={r.machineId}>
+                              <td className="p-2.5 font-mono font-bold text-sky-700">{r.machineCode}</td>
+                              <td className="p-2.5 font-bold text-slate-900">{r.model}</td>
+                              <td className="p-2.5 font-mono text-slate-600">{r.serialNumber}</td>
+                              <td className="p-2.5 text-right font-mono font-bold text-slate-900">LKR {Number(r.rentRate || 0).toLocaleString()}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+
+                      <div className="p-4 bg-slate-50 border border-slate-300 rounded-xl space-y-2 text-[11px] leading-relaxed text-slate-700">
+                        <div className="font-bold text-slate-900 uppercase">2. Terms, Conditions & Covenants of Lease Agreement:</div>
+                        <p><b>i. Absolute Ownership:</b> The machinery listed above remains at all times the sole absolute property of <b>Anujaya Enterprises, Kosgama</b>. The Lessee shall not mortgage, pledge, sell, or transfer the equipment under any circumstance.</p>
+                        <p><b>ii. Maintenance & Servicing:</b> Periodic mechanical inspections, looper adjustments, and technical oversight are provided by Kosgama Central Yard. The Lessee agrees to operate machinery with qualified personnel and maintain proper lubrication daily.</p>
+                        <p><b>iii. Monthly Remittance:</b> Monthly hire rental is payable in advance on or before the 5th day of each calendar month directly to Bank of Ceylon Account No: <b>94459826</b>.</p>
+                        <p><b>iv. Repossession Rights:</b> In the event of rent default exceeding 30 days or unauthorized relocation of machinery, Anujaya Enterprises reserves the legal right to enter premises and repossess the entire fleet without prior notice.</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 3. ADVANCED MACHINERY DISPATCH & DELIVERY NOTE */}
+                  {printDoc.type === "DELIVERY" && (
+                    <div className="space-y-4 text-xs">
+                      <div className="grid grid-cols-2 gap-4 p-4 rounded-xl bg-slate-50 border border-slate-300">
+                        <div>
+                          <p className="text-[10px] text-slate-500 uppercase font-bold">Consignee (Delivery Factory Site):</p>
+                          <p className="text-sm font-black text-slate-950">{printDoc.customer.name}</p>
+                          <p className="text-slate-600 mt-0.5">{printDoc.customer.address}</p>
+                          <p className="text-slate-600 font-mono">Contact: {printDoc.customer.phone}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[10px] text-slate-500 uppercase font-bold">Logistics & Transport Dispatch Note:</p>
+                          <p className="font-mono font-bold text-slate-900 text-sm">Gatepass Ref: DEL-{Date.now().toString().slice(-6)}</p>
+                          <p className="text-slate-600">Transport Lorry: {printDoc.meta?.vehicleNo || "WP-ND-4521"}</p>
+                          <p className="text-slate-600">Assigned Driver: {printDoc.meta?.driverName || "K. G. Karunaratne"} ({printDoc.meta?.driverPhone})</p>
+                        </div>
+                      </div>
+
+                      <div className="font-bold text-slate-900 border-b border-slate-200 pb-1 uppercase tracking-wider text-[11px]">
+                        Dispatched Machinery Fleet & Inventory Checklist
+                      </div>
+                      <table className="w-full text-left text-xs border border-slate-300">
+                        <thead className="bg-slate-100 font-bold border-b border-slate-300 text-slate-900">
+                          <tr><th className="p-2.5">Code</th><th className="p-2.5">Model Description</th><th className="p-2.5">Serial Number (SN)</th><th className="p-2.5">Included Attachments & Accessories</th><th className="p-2.5 text-center">Status</th></tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200">
+                          {(printDoc.customer.rentals || []).filter(r => r.status === "Active").map(r => (
+                            <tr key={r.machineId}>
+                              <td className="p-2.5 font-mono font-bold text-sky-700">{r.machineCode}</td>
+                              <td className="p-2.5 font-bold text-slate-900">{r.model}</td>
+                              <td className="p-2.5 font-mono text-slate-600">{r.serialNumber}</td>
+                              <td className="p-2.5 text-slate-600">{r.accessories}</td>
+                              <td className="p-2.5 text-center font-bold text-emerald-700">Checked & Tested OK</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+
+                      <div className="p-4 bg-slate-50 border border-slate-300 rounded-xl space-y-1 text-[11px]">
+                        <p className="font-bold text-slate-900 uppercase">Pre-Dispatch Yard Certification:</p>
+                        <p className="text-slate-600">"All sewing heads, direct-drive servo motors, tables, heavy-duty stands, and thread stands listed above have been bench-tested, lubricated, and certified 100% operational at Kosgama Central Yard prior to dispatch."</p>
+                        <p className="text-slate-600 mt-1"><b>Logistics Notes:</b> {printDoc.meta?.notes}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 4. ADVANCED RETURN GATEPASS & CREDIT RELIEF NOTE */}
+                  {printDoc.type === "RETURN" && (
+                    <div className="space-y-4 text-xs">
+                      <div className="grid grid-cols-2 gap-4 p-4 rounded-xl bg-rose-50/50 border border-rose-200">
+                        <div>
+                          <p className="text-[10px] text-slate-500 uppercase font-bold">Returned From (Client / Factory):</p>
+                          <p className="text-sm font-black text-slate-950">{printDoc.customer.name}</p>
+                          <p className="text-slate-600 mt-0.5">{printDoc.customer.address} · {printDoc.customer.phone}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-mono font-bold text-slate-900 text-sm">Inward Slip Ref: {printDoc.meta?.slipNo}</p>
+                          <p className="text-slate-600 font-mono">Return Date: {printDoc.meta?.returnDate}</p>
+                          <p className="text-slate-600">Receiving Yard Inspector: {printDoc.meta?.inspector}</p>
+                        </div>
+                      </div>
+
+                      <div className="font-bold text-rose-950 border-b border-rose-200 pb-1 uppercase tracking-wider text-[11px]">
+                        Inward Returned Machinery Fleet & Rent Relief Schedule
+                      </div>
+                      <table className="w-full text-left text-xs border border-rose-200">
+                        <thead className="bg-rose-100/70 font-bold border-b border-rose-200 text-rose-950">
+                          <tr><th className="p-2.5">Code</th><th className="p-2.5">Machine Model Description</th><th className="p-2.5">Serial Number (SN)</th><th className="p-2.5 text-right">Relieved Monthly Rent</th></tr>
+                        </thead>
+                        <tbody className="divide-y divide-rose-100">
+                          {(printDoc.returnedMachines || []).map((m, i) => (
+                            <tr key={i}>
+                              <td className="p-2.5 font-mono font-bold text-slate-900">{m.machineCode}</td>
+                              <td className="p-2.5 font-bold text-slate-800">{m.model}</td>
+                              <td className="p-2.5 font-mono text-slate-700">{m.serialNumber}</td>
+                              <td className="p-2.5 text-right font-mono font-bold text-emerald-700">LKR {Number(m.rentRate || 0).toLocaleString()}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+
+                      <div className="p-4 bg-slate-50 border border-slate-300 rounded-xl space-y-1.5 text-[11px]">
+                        <p className="font-bold text-slate-900">Yard Inspection & Condition Verification:</p>
+                        <p><b>Physical Condition:</b> <span className="text-rose-700 font-bold">{printDoc.meta?.condition}</span></p>
+                        <p className="text-slate-600"><b>Central Yard Remarks:</b> {printDoc.meta?.remarks}</p>
+                        <p className="text-emerald-700 font-bold mt-1">✓ Monthly recurring rent demand has been automatically reduced by the relieved amount effective from the next billing cycle.</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 5. COMMERCIAL QUOTATION */}
+                  {printDoc.type === "QUOTATION" && (
+                    <div className="space-y-4 text-xs">
+                      <div className="grid grid-cols-2 gap-4 p-4 rounded-xl bg-slate-50 border border-slate-300">
+                        <div>
+                          <p className="text-[10px] text-slate-500 uppercase font-bold">Proposal Prepared For:</p>
+                          <p className="text-sm font-black text-slate-950">{printDoc.quotation.customerName}</p>
+                          <p className="text-slate-600">{printDoc.quotation.address}</p>
+                          <p className="text-slate-600">Contact: {printDoc.quotation.phone}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-mono font-bold text-slate-900">Quote Ref: {printDoc.quotation.quoteNo}</p>
+                          <p className="text-slate-600">Validity: {printDoc.quotation.validDays} Days from Issue</p>
+                          <p className="text-slate-600">Advance Term: {printDoc.quotation.advanceMonths} Month(s) Upfront</p>
+                        </div>
+                      </div>
+
+                      <table className="w-full text-left text-xs border border-slate-300">
+                        <thead className="bg-slate-100 font-bold border-b border-slate-300">
+                          <tr><th className="p-3">Machinery Model Description</th><th className="p-3">Specification / Motor</th><th className="p-3 text-center">Qty</th><th className="p-3 text-right">Rent / Unit</th><th className="p-3 text-right">Monthly Total</th></tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200">
+                          {printDoc.quotation.items.map((it, idx) => (
+                            <tr key={idx}>
+                              <td className="p-3 font-semibold text-slate-900">{it.description}</td>
+                              <td className="p-3 text-slate-600">{it.motorSpec || "Servo Motor Set"}</td>
+                              <td className="p-3 text-center font-bold">{it.qty}</td>
+                              <td className="p-3 text-right font-mono">LKR {Number(it.rate || 0).toLocaleString()}</td>
+                              <td className="p-3 text-right font-mono font-black text-slate-950">LKR {(it.qty * it.rate).toLocaleString()}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+
+                      <div className="grid grid-cols-3 gap-3 p-3.5 bg-slate-50 border border-slate-300 rounded-xl text-center">
+                        <div>
+                          <span className="text-slate-500 text-[10px] uppercase font-bold">Total Monthly Hire</span>
+                          <div className="font-black text-slate-950 font-mono text-sm mt-0.5">
+                            LKR {printDoc.quotation.items.reduce((s, i) => s + (i.qty * i.rate), 0).toLocaleString()}
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-slate-500 text-[10px] uppercase font-bold">Refundable Security Deposit</span>
+                          <div className="font-black text-amber-700 font-mono text-sm mt-0.5">
+                            LKR {Number(printDoc.quotation.depositAmount || 0).toLocaleString()}
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-slate-500 text-[10px] uppercase font-bold">Transport & Installation</span>
+                          <div className="font-black text-emerald-700 font-mono text-sm mt-0.5">
+                            LKR {Number(printDoc.quotation.transportCharge || 0).toLocaleString()}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-[11px] leading-relaxed">
+                        <p><b>Service Guarantee:</b> {printDoc.quotation.serviceSupport}</p>
+                        <p className="mt-1 whitespace-pre-line text-slate-600"><b>Terms of Offer:</b> {printDoc.quotation.specialTerms}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 6. PAYMENT RECEIPT */}
+                  {printDoc.type === "RECEIPT" && (
+                    <div className="space-y-4 text-xs">
+                      <div className="p-5 bg-emerald-50/60 border border-emerald-300 rounded-2xl flex justify-between items-center">
+                        <div>
+                          <span className="text-xs font-black text-emerald-950 uppercase tracking-wide">Receipt of Monthly Rent Collection</span>
+                          <h2 className="text-3xl font-black text-emerald-700 mt-1 font-mono">LKR {Number(printDoc.payment.amount || 0).toLocaleString()}</h2>
+                          <p className="text-[11px] text-emerald-900 mt-1">Status: Credited to Kosgama Central Settlement Account</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-mono font-bold text-slate-900 text-sm">{printDoc.payment.refNo}</p>
+                          <p className="text-slate-600">Date: {printDoc.payment.date}</p>
+                          <p className="text-slate-600 font-bold">{printDoc.payment.method}</p>
+                        </div>
+                      </div>
+
+                      <div className="p-4 bg-slate-50 border border-slate-300 rounded-xl space-y-1.5">
+                        <p><b>Received From:</b> {printDoc.customer.name} ({printDoc.customer.code})</p>
+                        <p><b>Factory Address:</b> {printDoc.customer.address} | <b>Contact:</b> {printDoc.customer.phone}</p>
+                        <p><b>Amount in Words:</b> Sri Lankan Rupees {Number(printDoc.payment.amount || 0).toLocaleString()} Only</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Bank Details Box */}
+                  <div className="mt-8 border border-sky-300 bg-sky-50/70 p-3.5 rounded-xl text-xs flex justify-between items-center">
+                    <div>
+                      <p className="font-bold text-sky-900 uppercase tracking-wider text-[10px] mb-0.5">Official Settlement Remittance Account:</p>
+                      <p className="text-slate-800 font-mono">Bank: <b>{data.bank.bankNameEn}</b> | Branch: <b>{data.bank.branchEn}</b> | A/C No: <b className="text-sky-800 text-sm">{data.bank.accountNo}</b> ({data.bank.accountName})</p>
+                    </div>
+                    <div className="hidden sm:block">
+                      <OfficialSealStamp />
+                    </div>
+                  </div>
+
+                  {/* Executive Signatures */}
+                  <div className="mt-10 pt-6 grid grid-cols-2 gap-12 text-xs border-t border-dashed border-slate-300">
+                    <div className="text-center">
+                      <div className="border-b border-slate-400 pb-10 flex justify-center items-end">
+                        <span className="font-serif italic text-slate-400 text-[11px] mb-1">Authorized Management Signatory</span>
+                      </div>
+                      <p className="mt-2 font-black text-slate-950">ANUJAYA ENTERPRISES</p>
+                      <p className="text-[10px] text-slate-500">Central Industrial Yard Operations — Kosgama</p>
+                    </div>
+                    <div className="text-center">
+                      <div className="border-b border-slate-400 pb-10 flex justify-center items-end">
+                        <span className="font-serif italic text-slate-400 text-[11px] mb-1">Proprietor / Director Acknowledgment</span>
+                      </div>
+                      <p className="mt-2 font-black text-slate-950">CUSTOMER / PARTNER AUTHORIZED SIGNATURE</p>
+                      <p className="text-[10px] text-slate-500">Official Seal, Date & Signature</p>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+          )}
+
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<App />);
+  </script>
+</body>
+</html>
