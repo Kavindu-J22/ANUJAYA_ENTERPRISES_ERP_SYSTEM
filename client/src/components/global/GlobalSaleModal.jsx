@@ -6,27 +6,54 @@ export function GlobalSaleModal({
   isOpen,
   mode = 'ADD', // 'ADD' or 'EDIT'
   initialData = null,
+  sale = null, // alternate prop name from App.jsx
   prefilledMachineId = null,
-  machines,
-  usdRate,
+  machines = [],
+  usdRate = 330,
   onClose,
-  onSubmit
+  onSubmit,
+  onSave // alternate callback prop name from App.jsx
 }) {
   if (!isOpen) return null;
 
-  const [machineId, setMachineId] = useState(initialData?.machineId || prefilledMachineId || (machines[0]?.id || ''));
-  const [qty, setQty] = useState(initialData?.qty || 1);
-  const [unitPrice, setUnitPrice] = useState(initialData?.unitPrice || 0);
-  const [customer, setCustomer] = useState(initialData?.customer || '');
-  const [phone, setPhone] = useState(initialData?.phone || '');
-  const [region, setRegion] = useState(initialData?.region || 'Colombo / Western Province');
-  const [payment, setPayment] = useState(initialData?.payment || 'Bank Wire / SLIPS');
-  const [paymentStatus, setPaymentStatus] = useState(initialData?.paymentStatus || 'PAID');
-  const [paidAmount, setPaidAmount] = useState(initialData?.paidAmount || 0);
-  const [serialNumbers, setSerialNumbers] = useState(initialData?.serialNumbers || '');
-  const [date, setDate] = useState(initialData?.date || new Date().toISOString().slice(0, 10));
-  const [warranty, setWarranty] = useState(initialData?.warranty || '1-Year Comprehensive Warranty (Motor & PCB)');
+  const activeData = initialData || sale;
+  const effectiveMode = (activeData && activeData.id) ? 'EDIT' : (mode || 'ADD');
+
+  const [machineId, setMachineId] = useState(() => activeData?.machineId || prefilledMachineId || (machines[0]?.id || ''));
+  const [qty, setQty] = useState(() => activeData?.qty || 1);
+  const [unitPrice, setUnitPrice] = useState(() => activeData?.unitPrice || 0);
+  const [customer, setCustomer] = useState(() => activeData?.customer || '');
+  const [phone, setPhone] = useState(() => activeData?.phone || '');
+  const [region, setRegion] = useState(() => activeData?.region || 'Colombo / Western Province');
+  const [payment, setPayment] = useState(() => activeData?.payment || 'Bank Wire / SLIPS');
+  const [paymentStatus, setPaymentStatus] = useState(() => activeData?.paymentStatus || 'PAID');
+  const [paidAmount, setPaidAmount] = useState(() => activeData?.paidAmount || 0);
+  const [serialNumbers, setSerialNumbers] = useState(() => activeData?.serialNumbers || '');
+  const [date, setDate] = useState(() => activeData?.date || new Date().toISOString().slice(0, 10));
+  const [warranty, setWarranty] = useState(() => activeData?.warranty || '1-Year Comprehensive Warranty (Motor & PCB)');
   const [error, setError] = useState('');
+
+  // Sync state whenever activeData or prefilledMachineId changes or modal opens
+  useEffect(() => {
+    if (isOpen) {
+      const targetMachineId = activeData?.machineId || prefilledMachineId || (machines[0]?.id || '');
+      setMachineId(targetMachineId);
+      setQty(activeData?.qty || 1);
+      
+      const targetMachine = machines.find(m => m.id === targetMachineId);
+      setUnitPrice(activeData?.unitPrice || targetMachine?.wholesalePrice || targetMachine?.retailPrice || 0);
+      setCustomer(activeData?.customer || '');
+      setPhone(activeData?.phone || '');
+      setRegion(activeData?.region || 'Colombo / Western Province');
+      setPayment(activeData?.payment || 'Bank Wire / SLIPS');
+      setPaymentStatus(activeData?.paymentStatus || 'PAID');
+      setPaidAmount(activeData?.paidAmount || 0);
+      setSerialNumbers(activeData?.serialNumbers || '');
+      setDate(activeData?.date || new Date().toISOString().slice(0, 10));
+      setWarranty(activeData?.warranty || '1-Year Comprehensive Warranty (Motor & PCB)');
+      setError('');
+    }
+  }, [isOpen, activeData, prefilledMachineId, machines]);
 
   const selectedMachine = machines.find(m => m.id === machineId);
 
@@ -46,7 +73,7 @@ export function GlobalSaleModal({
   // Set default price when machine changes if unitPrice is zero
   useEffect(() => {
     if (selectedMachine && (!unitPrice || unitPrice === 0)) {
-      setUnitPrice(selectedMachine.wholesalePrice || 0);
+      setUnitPrice(selectedMachine.wholesalePrice || selectedMachine.retailPrice || 0);
     }
   }, [machineId, selectedMachine]);
 
@@ -72,7 +99,10 @@ export function GlobalSaleModal({
       return;
     }
 
+    const assignedId = activeData?.id || `INV-${Math.floor(100000 + Math.random() * 900000)}`;
+
     const payload = {
+      id: assignedId,
       date,
       machineId,
       qty: parseInt(qty),
@@ -90,11 +120,10 @@ export function GlobalSaleModal({
       cancelled: false
     };
 
-    if (mode === 'EDIT' && initialData) {
-      payload.id = initialData.id;
+    const submitFn = onSubmit || onSave;
+    if (submitFn) {
+      submitFn(payload, effectiveMode);
     }
-
-    onSubmit(payload, mode);
   };
 
   return (
@@ -106,7 +135,7 @@ export function GlobalSaleModal({
           <div>
             <h3 className="font-display font-black text-lg sm:text-xl text-white flex items-center gap-2">
               <ShoppingCart className="w-5 h-5 text-emerald-400" />
-              <span>{mode === 'ADD' ? 'Process Machinery Dispatch & Invoice' : `Edit Dispatch: ${initialData?.id}`}</span>
+              <span>{effectiveMode === 'ADD' ? 'Process Machinery Dispatch & Invoice' : `Edit Dispatch: ${activeData?.id}`}</span>
             </h3>
             <p className="text-xs text-slate-400 mt-0.5 font-mono">
               Factory Dispatch, Inventory Deduction & Tax Accounting
@@ -354,7 +383,7 @@ export function GlobalSaleModal({
             className="w-full py-4 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 hover:from-emerald-500 hover:to-teal-400 font-bold text-xs uppercase tracking-wider rounded-xl text-white shadow-xl shadow-emerald-950/60 transition flex items-center justify-center gap-2 mt-4"
           >
             <CheckCircle2 className="w-4 h-4" />
-            <span>{mode === 'ADD' ? 'Confirm & Generate Official Tax Invoice' : 'Update Transaction & Reconcile'}</span>
+            <span>{effectiveMode === 'ADD' ? 'Confirm & Generate Official Tax Invoice' : 'Update Transaction & Reconcile'}</span>
           </button>
         </form>
       </div>

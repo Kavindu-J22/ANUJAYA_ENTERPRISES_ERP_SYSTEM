@@ -15,16 +15,16 @@ import {
 import { formatLKR } from '../../utils/formatters';
 
 export function GlobalDashboard({
-  metrics,
-  recentSales,
-  brandBreakdown,
+  metrics = {},
+  recentSales = [],
+  brandBreakdown = [],
   onResetBaseline,
   onOpenSaleModal,
   onOpenMachineModal,
   onPrintInvoice,
   currentUser,
   currentLang,
-  usdRate
+  usdRate = 330
 }) {
   const isAdmin = currentUser?.role === 'ADMIN';
 
@@ -329,7 +329,7 @@ export function GlobalDashboard({
                       </td>
                       <td className="px-3.5 py-3 text-right">
                         <button
-                          onClick={() => onPrintInvoice(sale.id)}
+                          onClick={() => onPrintInvoice(sale)}
                           className="px-2 py-1 rounded-lg bg-carbon-850 hover:bg-sky-600 text-slate-300 hover:text-white transition text-xs flex items-center gap-1.5 ml-auto"
                           title="Print Commercial Tax Invoice"
                         >
@@ -353,7 +353,7 @@ export function GlobalDashboard({
           </div>
 
           <div className="space-y-3.5 pt-2">
-            {brandBreakdown.map(item => (
+            {(brandBreakdown || []).map(item => (
               <div key={item.brand} className="space-y-1.5 font-mono text-xs">
                 <div className="flex justify-between items-center">
                   <span className="font-bold text-slate-200">{item.brand}</span>

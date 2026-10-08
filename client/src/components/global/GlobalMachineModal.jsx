@@ -1,28 +1,81 @@
 import React, { useState, useEffect } from 'react';
-import { X, Boxes, CheckCircle2, DollarSign } from 'lucide-react';
+import { X, Boxes, CheckCircle2, DollarSign, Sparkles, RefreshCw } from 'lucide-react';
 import { formatLKR } from '../../utils/formatters';
 
 export function GlobalMachineModal({
   isOpen,
   mode = 'ADD', // 'ADD' or 'EDIT'
   initialData = null,
-  usdRate,
+  machine = null, // alternate prop name from App.jsx
+  machines = [],
+  usdRate = 330,
   onClose,
-  onSubmit
+  onSubmit,
+  onSave // alternate callback prop name from App.jsx
 }) {
   if (!isOpen) return null;
 
-  const [sku, setSku] = useState(initialData?.id || '');
-  const [brand, setBrand] = useState(initialData?.brand || 'JUKI');
-  const [model, setModel] = useState(initialData?.model || '');
-  const [name, setName] = useState(initialData?.name || '');
-  const [unit, setUnit] = useState(initialData?.unit || 'SETS');
-  const [initialStock, setInitialStock] = useState(initialData?.initialStock || 10);
-  const [usdPrice, setUsdPrice] = useState(initialData?.usdPrice || 150);
-  const [taxLKR, setTaxLKR] = useState(initialData?.taxLKR || 5000);
-  const [wholesalePrice, setWholesalePrice] = useState(initialData?.wholesalePrice || 60000);
-  const [retailPrice, setRetailPrice] = useState(initialData?.retailPrice || 70000);
+  const activeData = initialData || machine;
+  const effectiveMode = (activeData && activeData.id) ? 'EDIT' : (mode || 'ADD');
+
+  const getNextSku = (existingList) => {
+    const list = existingList || [];
+    const nums = list.map(m => {
+      const match = String(m.id || '').match(/M-(\d+)/i);
+      return match ? parseInt(match[1], 10) : 0;
+    });
+    const maxNum = nums.length > 0 ? Math.max(...nums, 0) : 0;
+    return `M-${String(maxNum + 1).padStart(2, '0')}`;
+  };
+
+  const [sku, setSku] = useState(() => {
+    if (activeData?.id) return activeData.id;
+    return getNextSku(machines);
+  });
+  const [brand, setBrand] = useState(() => activeData?.brand || 'JUKI');
+  const [model, setModel] = useState(() => activeData?.model || '');
+  const [name, setName] = useState(() => activeData?.name || '');
+  const [unit, setUnit] = useState(() => activeData?.unit || 'SETS');
+  const [initialStock, setInitialStock] = useState(() => {
+    if (activeData?.initialStock !== undefined) return activeData.initialStock;
+    if (activeData?.stock !== undefined) return activeData.stock;
+    return 10;
+  });
+  const [usdPrice, setUsdPrice] = useState(() => activeData?.usdPrice || 150);
+  const [taxLKR, setTaxLKR] = useState(() => activeData?.taxLKR || 5000);
+  const [wholesalePrice, setWholesalePrice] = useState(() => activeData?.wholesalePrice || 60000);
+  const [retailPrice, setRetailPrice] = useState(() => activeData?.retailPrice || 70000);
   const [error, setError] = useState('');
+
+  // Sync state when activeData changes or modal opens
+  useEffect(() => {
+    if (isOpen) {
+      if (effectiveMode === 'EDIT' && activeData) {
+        setSku(activeData.id || '');
+        setBrand(activeData.brand || 'JUKI');
+        setModel(activeData.model || '');
+        setName(activeData.name || '');
+        setUnit(activeData.unit || 'SETS');
+        setInitialStock(activeData.initialStock !== undefined ? activeData.initialStock : (activeData.stock || 10));
+        setUsdPrice(activeData.usdPrice || 150);
+        setTaxLKR(activeData.taxLKR || 5000);
+        setWholesalePrice(activeData.wholesalePrice || 60000);
+        setRetailPrice(activeData.retailPrice || 70000);
+      } else {
+        setSku(getNextSku(machines));
+        setBrand('JUKI');
+        setModel('');
+        setName('');
+        setUnit('SETS');
+        setInitialStock(10);
+        setUsdPrice(150);
+        setTaxLKR(5000);
+        setWholesalePrice(60000);
+        setRetailPrice(70000);
+      }
+      setError('');
+    }
+  }, [isOpen, activeData, effectiveMode, machines]);
 
   const baseCostLKR = (parseFloat(usdPrice) || 0) * usdRate;
   const totalCostLKR = baseCostLKR + (parseFloat(taxLKR) || 0);
@@ -49,7 +102,10 @@ export function GlobalMachineModal({
       retailPrice: parseFloat(retailPrice) || 0
     };
 
-    onSubmit(payload, mode);
+    const saveFn = onSubmit || onSave;
+    if (saveFn) {
+      saveFn(payload, effectiveMode);
+    }
   };
 
   return (
@@ -61,7 +117,7 @@ export function GlobalMachineModal({
           <div>
             <h3 className="font-display font-black text-lg text-white flex items-center gap-2">
               <Boxes className="w-5 h-5 text-sky-400" />
-              <span>{mode === 'ADD' ? 'Add Machinery SKU (Global Warehouse)' : `Edit SKU Specs: ${initialData?.id}`}</span>
+              <span>{effectiveMode === 'ADD' ? 'Add Machinery SKU (Global Warehouse)' : `Edit SKU Specs: ${activeData?.id}`}</span>
             </h3>
             <p className="text-xs text-slate-400 mt-0.5 font-mono">
               FOB Costing, Port Duties & Price Benchmarks
@@ -82,11 +138,23 @@ export function GlobalMachineModal({
           
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-slate-300 font-bold uppercase text-[10px] font-mono">SKU Code</label>
+              <div className="flex justify-between items-center">
+                <label className="text-slate-300 font-bold uppercase text-[10px] font-mono">SKU Code</label>
+                {effectiveMode === 'ADD' && (
+                  <button
+                    type="button"
+                    onClick={() => setSku(getNextSku(machines))}
+                    className="flex items-center gap-1 text-[10px] font-mono text-sky-400 hover:text-sky-300 bg-sky-950/60 border border-sky-800/80 px-2 py-0.5 rounded transition"
+                  >
+                    <Sparkles className="w-2.5 h-2.5" />
+                    <span>Auto-Gen</span>
+                  </button>
+                )}
+              </div>
               <input
                 type="text"
                 required
-                disabled={mode === 'EDIT'}
+                disabled={effectiveMode === 'EDIT'}
                 placeholder="e.g. M-27"
                 value={sku}
                 onChange={(e) => setSku(e.target.value)}
@@ -227,7 +295,7 @@ export function GlobalMachineModal({
             className="w-full py-3.5 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 font-bold text-xs uppercase tracking-wider rounded-xl text-white shadow-lg transition flex items-center justify-center gap-2 mt-4"
           >
             <CheckCircle2 className="w-4 h-4" />
-            <span>{mode === 'ADD' ? 'Save Machinery SKU' : 'Update SKU Specifications'}</span>
+            <span>{effectiveMode === 'ADD' ? 'Save Machinery SKU' : 'Update SKU Specifications'}</span>
           </button>
         </form>
       </div>

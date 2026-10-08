@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Scale, CheckCircle2 } from 'lucide-react';
 
-export function GlobalDisburseModal({ isOpen, onClose, onSubmit }) {
+export function GlobalDisburseModal({ isOpen, onClose, onSubmit, onSave }) {
   if (!isOpen) return null;
 
   const [partner, setPartner] = useState('X');
@@ -14,13 +14,18 @@ export function GlobalDisburseModal({ isOpen, onClose, onSubmit }) {
     const parsedAmount = parseFloat(amount);
     if (!parsedAmount || parsedAmount <= 0) return;
 
-    onSubmit({
+    const payload = {
       id: "DIS-" + Date.now().toString().slice(-6),
       partner,
       amount: parsedAmount,
       date,
       memo: memo.trim() || 'Capital Draw'
-    });
+    };
+
+    const saveFn = onSubmit || onSave;
+    if (saveFn) {
+      saveFn(payload);
+    }
   };
 
   return (

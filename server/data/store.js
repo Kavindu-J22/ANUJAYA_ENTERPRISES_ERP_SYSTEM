@@ -172,33 +172,55 @@ const store = {
   },
 
   async addGlobalMachine(data) {
-    if (isDbActive()) {
-      const created = await GlobalMachine.create(data);
-      // also keep local in sync
+    if (!data.id) {
       const s = loadLocalStore();
-      s.globalMachines.push(created.toObject());
-      saveLocalStore();
-      return created;
+      const existingNums = (s.globalMachines || []).map(m => {
+        const match = String(m.id || '').match(/M-(\d+)/i);
+        return match ? parseInt(match[1], 10) : 0;
+      });
+      const maxNum = existingNums.length > 0 ? Math.max(...existingNums, 0) : 0;
+      data.id = `M-${String(maxNum + 1).padStart(2, '0')}`;
+    }
+    if (isDbActive()) {
+      try {
+        const created = await GlobalMachine.create(data);
+        const s = loadLocalStore();
+        s.globalMachines.push(created.toObject());
+        saveLocalStore();
+        return created;
+      } catch (err) {
+        console.warn("Mongo addGlobalMachine failed, using local store:", err.message);
+      }
     }
     const s = loadLocalStore();
-    s.globalMachines.push(data);
+    // Prevent duplicate SKU
+    const existingIdx = s.globalMachines.findIndex(x => x.id === data.id);
+    if (existingIdx !== -1) {
+      s.globalMachines[existingIdx] = { ...s.globalMachines[existingIdx], ...data };
+    } else {
+      s.globalMachines.push(data);
+    }
     saveLocalStore();
     return data;
   },
 
   async updateGlobalMachine(id, data) {
     if (isDbActive()) {
-      const updated = await GlobalMachine.findOneAndUpdate({ id }, data, { new: true }).lean();
-      const s = loadLocalStore();
-      const idx = s.globalMachines.findIndex(x => x.id === id);
-      if (idx !== -1) s.globalMachines[idx] = { ...s.globalMachines[idx], ...data };
-      saveLocalStore();
-      return updated;
+      try {
+        const updated = await GlobalMachine.findOneAndUpdate({ id }, data, { returnDocument: 'after', new: true }).lean();
+        const s = loadLocalStore();
+        const idx = s.globalMachines.findIndex(x => x.id === id);
+        if (idx !== -1) s.globalMachines[idx] = { ...s.globalMachines[idx], ...data, id };
+        saveLocalStore();
+        if (updated) return updated;
+      } catch (err) {
+        console.warn("Mongo updateGlobalMachine failed, using local store:", err.message);
+      }
     }
     const s = loadLocalStore();
     const idx = s.globalMachines.findIndex(x => x.id === id);
     if (idx !== -1) {
-      s.globalMachines[idx] = { ...s.globalMachines[idx], ...data };
+      s.globalMachines[idx] = { ...s.globalMachines[idx], ...data, id };
       saveLocalStore();
       return s.globalMachines[idx];
     }
@@ -207,7 +229,11 @@ const store = {
 
   async deleteGlobalMachine(id) {
     if (isDbActive()) {
-      await GlobalMachine.findOneAndDelete({ id });
+      try {
+        await GlobalMachine.findOneAndDelete({ id });
+      } catch (err) {
+        console.warn("Mongo deleteGlobalMachine failed:", err.message);
+      }
     }
     const s = loadLocalStore();
     s.globalMachines = s.globalMachines.filter(x => x.id !== id);
@@ -217,11 +243,15 @@ const store = {
 
   async resetGlobalBaseline() {
     if (isDbActive()) {
-      await GlobalMachine.deleteMany({});
-      await GlobalMachine.insertMany(GLOBAL_MACHINES_BASELINE);
-      await GlobalSale.deleteMany({});
-      await GlobalDisbursement.deleteMany({});
-      await GlobalConfig.findOneAndUpdate({}, { usdRate: 330.00, lang: 'en' }, { upsert: true });
+      try {
+        await GlobalMachine.deleteMany({});
+        await GlobalMachine.insertMany(GLOBAL_MACHINES_BASELINE);
+        await GlobalSale.deleteMany({});
+        await GlobalDisbursement.deleteMany({});
+        await GlobalConfig.findOneAndUpdate({}, { usdRate: 330.00, lang: 'en' }, { upsert: true });
+      } catch (err) {
+        console.warn("Mongo resetGlobalBaseline failed:", err.message);
+      }
     }
     const s = loadLocalStore();
     s.globalMachines = JSON.parse(JSON.stringify(GLOBAL_MACHINES_BASELINE));
@@ -235,18 +265,29 @@ const store = {
   // Global Sales
   async getGlobalSales() {
     if (isDbActive()) {
-      return await GlobalSale.find().sort({ createdAt: -1 }).lean();
+      try {
+        return await GlobalSale.find().sort({ createdAt: -1 }).lean();
+      } catch (err) {
+        console.warn("Mongo getGlobalSales failed, falling back:", err.message);
+      }
     }
     return loadLocalStore().globalSales;
   },
 
   async addGlobalSale(sale) {
+    if (!sale.id) {
+      sale.id = `INV-${Math.floor(100000 + Math.random() * 900000)}`;
+    }
     if (isDbActive()) {
-      const created = await GlobalSale.create(sale);
-      const s = loadLocalStore();
-      s.globalSales.unshift(created.toObject());
-      saveLocalStore();
-      return created;
+      try {
+        const created = await GlobalSale.create(sale);
+        const s = loadLocalStore();
+        s.globalSales.unshift(created.toObject());
+        saveLocalStore();
+        return created;
+      } catch (err) {
+        console.warn("Mongo addGlobalSale failed, using local store:", err.message);
+      }
     }
     const s = loadLocalStore();
     s.globalSales.unshift(sale);
@@ -256,17 +297,21 @@ const store = {
 
   async updateGlobalSale(id, data) {
     if (isDbActive()) {
-      const updated = await GlobalSale.findOneAndUpdate({ id }, data, { new: true }).lean();
-      const s = loadLocalStore();
-      const idx = s.globalSales.findIndex(x => x.id === id);
-      if (idx !== -1) s.globalSales[idx] = { ...s.globalSales[idx], ...data };
-      saveLocalStore();
-      return updated;
+      try {
+        const updated = await GlobalSale.findOneAndUpdate({ id }, data, { returnDocument: 'after', new: true }).lean();
+        const s = loadLocalStore();
+        const idx = s.globalSales.findIndex(x => x.id === id);
+        if (idx !== -1) s.globalSales[idx] = { ...s.globalSales[idx], ...data, id };
+        saveLocalStore();
+        if (updated) return updated;
+      } catch (err) {
+        console.warn("Mongo updateGlobalSale failed, using local store:", err.message);
+      }
     }
     const s = loadLocalStore();
     const idx = s.globalSales.findIndex(x => x.id === id);
     if (idx !== -1) {
-      s.globalSales[idx] = { ...s.globalSales[idx], ...data };
+      s.globalSales[idx] = { ...s.globalSales[idx], ...data, id };
       saveLocalStore();
       return s.globalSales[idx];
     }

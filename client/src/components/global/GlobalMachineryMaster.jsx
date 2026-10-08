@@ -245,7 +245,7 @@ export function GlobalMachineryMaster({
                     <td className="px-4 py-3 text-center">
                       <div className="flex items-center justify-center gap-1.5">
                         <button
-                          onClick={() => onPrefillSale(m.id)}
+                          onClick={() => onPrefillSale(m)}
                           disabled={m.availableStock <= 0}
                           title="Record Dispatch with this SKU"
                           className="p-1.5 rounded-lg bg-emerald-950/60 hover:bg-emerald-700 text-emerald-300 hover:text-white transition disabled:opacity-30 disabled:cursor-not-allowed"

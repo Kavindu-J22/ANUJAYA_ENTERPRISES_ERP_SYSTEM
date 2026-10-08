@@ -1,18 +1,6 @@
 {
   "globalMachines": [
     {
-      "id": "M-01",
-      "brand": "JUKI",
-      "model": "DDL-8700-7/SC500/CP160",
-      "name": "High Speed 1-Needle Lockstitch with Trimmer",
-      "unit": "SETS",
-      "initialStock": 80,
-      "usdPrice": 140,
-      "taxLKR": 5000,
-      "wholesalePrice": 61200,
-      "retailPrice": 71200
-    },
-    {
       "id": "M-02",
       "brand": "JUKI",
       "model": "DDL-8700-7/SC500/CP160/AK85",
@@ -311,6 +299,22 @@
       "taxLKR": 28000,
       "wholesalePrice": 582500,
       "retailPrice": 585500
+    },
+    {
+      "id": "M-27",
+      "brand": "JUKI",
+      "model": "DDL-9000C-FMS",
+      "name": "Full Digital High Speed Lockstitch",
+      "unit": "SETS",
+      "initialStock": 10,
+      "usdPrice": 150,
+      "taxLKR": 5000,
+      "wholesalePrice": 78000,
+      "retailPrice": 88000,
+      "_id": "6ac771a2af2c3f8376dd8a31",
+      "createdAt": "2026-10-08T10:34:10.746Z",
+      "updatedAt": "2026-10-08T10:34:10.746Z",
+      "__v": 0
     }
   ],
   "globalSales": [],
@@ -1427,17 +1431,6 @@
       "isArchived": false,
       "purchases": [
         {
-          "id": "pur_1",
-          "invoiceNo": "INV-LSM-8841",
-          "date": "2026-08-10",
-          "itemDescription": "Juki DDL 8700 Full Machines (2 Units)",
-          "category": "Machine",
-          "qty": 2,
-          "unitPrice": 38000,
-          "total": 76000,
-          "remarks": "Acquired for urgent DM Product client requirement"
-        },
-        {
           "id": "pur_2",
           "invoiceNo": "INV-LSM-8902",
           "date": "2026-08-18",
@@ -1525,7 +1518,8 @@
       "August 2026",
       "September 2026",
       "October 2026",
-      "November 2026"
+      "November 2026",
+      "NaN-NaN"
     ],
     "company": {
       "name": "ANUJAYA ENTERPRISES",
@@ -1551,5 +1545,23 @@
       "cronHour": 8
     }
   },
-  "alertLogs": []
+  "alertLogs": [
+    {
+      "id": "AL-1791456881758",
+      "customerId": "c_1",
+      "customerName": "DM Product",
+      "alertType": "OVERDUE",
+      "daysDiff": -64,
+      "dueDate": "2026-08-05",
+      "amountDue": 370000,
+      "recipientEmail": "dmproductgarments@gmail.com",
+      "status": "SENT",
+      "error": null,
+      "sentAt": "2026-10-08T10:54:41.759Z",
+      "_id": "6ac77671af2c3f8376dd8a32",
+      "createdAt": "2026-10-08T10:54:41.762Z",
+      "updatedAt": "2026-10-08T10:54:41.762Z",
+      "__v": 0
+    }
+  ]
 }

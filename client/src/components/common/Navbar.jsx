@@ -28,6 +28,7 @@ export function Navbar({
   onRecalculateStock
 }) {
   const isGlobal = currentPath === 'global';
+  const isPartner = currentUser?.role === 'PARTNER';
 
   return (
     <header className="glass-header sticky top-0 z-40">
@@ -68,46 +69,50 @@ export function Navbar({
               </div>
             </div>
 
-            {/* Consortium Portal Switcher */}
-            <div className="hidden lg:flex items-center p-1 bg-carbon-900 border border-carbon-700/80 rounded-2xl ml-4">
-              <button
-                onClick={() => onPathChange('global')}
-                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
-                  isGlobal 
-                    ? 'bg-gradient-to-r from-sky-600 to-emerald-600 text-white shadow-md' 
-                    : 'text-slate-400 hover:text-white hover:bg-carbon-800'
-                }`}
-              >
-                <Globe className="w-3.5 h-3.5 text-sky-300" />
-                <span>Global Sales ERP (China)</span>
-              </button>
-              <button
-                onClick={() => onPathChange('local')}
-                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
-                  !isGlobal 
-                    ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md' 
-                    : 'text-slate-400 hover:text-white hover:bg-carbon-800'
-                }`}
-              >
-                <Warehouse className="w-3.5 h-3.5 text-emerald-300" />
-                <span>Local Rental ERP (Yard)</span>
-              </button>
-            </div>
+            {/* Consortium Portal Switcher — hidden for PARTNER role */}
+            {!isPartner && (
+              <div className="hidden lg:flex items-center p-1 bg-carbon-900 border border-carbon-700/80 rounded-2xl ml-4">
+                <button
+                  onClick={() => onPathChange('global')}
+                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
+                    isGlobal 
+                      ? 'bg-gradient-to-r from-sky-600 to-emerald-600 text-white shadow-md' 
+                      : 'text-slate-400 hover:text-white hover:bg-carbon-800'
+                  }`}
+                >
+                  <Globe className="w-3.5 h-3.5 text-sky-300" />
+                  <span>Global Sales ERP (China)</span>
+                </button>
+                <button
+                  onClick={() => onPathChange('local')}
+                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
+                    !isGlobal 
+                      ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md' 
+                      : 'text-slate-400 hover:text-white hover:bg-carbon-800'
+                  }`}
+                >
+                  <Warehouse className="w-3.5 h-3.5 text-emerald-300" />
+                  <span>Local Rental ERP (Yard)</span>
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Right Controls */}
           <div className="flex items-center gap-2.5">
             
-            {/* Mobile Path Switcher */}
-            <div className="flex lg:hidden">
-              <button
-                onClick={() => onPathChange(isGlobal ? 'local' : 'global')}
-                className="px-2.5 py-1.5 rounded-xl bg-carbon-850 border border-carbon-700 text-xs font-bold text-sky-300 flex items-center gap-1.5"
-              >
-                {isGlobal ? <Warehouse className="w-3.5 h-3.5" /> : <Globe className="w-3.5 h-3.5" />}
-                <span>{isGlobal ? "To Rental Yard" : "To Global Sales"}</span>
-              </button>
-            </div>
+            {/* Mobile Path Switcher — hidden for PARTNER role */}
+            {!isPartner && (
+              <div className="flex lg:hidden">
+                <button
+                  onClick={() => onPathChange(isGlobal ? 'local' : 'global')}
+                  className="px-2.5 py-1.5 rounded-xl bg-carbon-850 border border-carbon-700 text-xs font-bold text-sky-300 flex items-center gap-1.5"
+                >
+                  {isGlobal ? <Warehouse className="w-3.5 h-3.5" /> : <Globe className="w-3.5 h-3.5" />}
+                  <span>{isGlobal ? "To Rental Yard" : "To Global Sales"}</span>
+                </button>
+              </div>
+            )}
 
             {/* DB Status Badge */}
             <div className="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-carbon-900 border border-carbon-700/80 text-[11px] font-mono text-slate-300">

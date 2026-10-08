@@ -20,7 +20,7 @@ import {
 import { formatLKR } from '../../utils/formatters';
 
 export function LocalDashboard({
-  metrics,
+  metrics = {},
   alertsData,
   onSendAlert,
   onSendBatchAlerts,

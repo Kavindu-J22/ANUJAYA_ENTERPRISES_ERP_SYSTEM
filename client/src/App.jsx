@@ -248,10 +248,16 @@ export default function App() {
     const usdRate = globalConfig.usdRate || 330;
     let totalRevenue = 0;
     let totalCost = 0;
+    let totalTaxes = 0;
     let totalPaidRevenue = 0;
     let pendingReceivables = 0;
+    let pendingInvoices = 0;
+    let totalUnitsSold = 0;
 
-    (globalSales || []).filter(s => !s.cancelled).forEach(s => {
+    const validSales = (globalSales || []).filter(s => !s.cancelled);
+    const salesCount = validSales.length;
+
+    validSales.forEach(s => {
       const machine = (globalMachines || []).find(m => m.id === s.machineId) || {};
       let unitCost = s.frozenUnitCost;
       if (unitCost === undefined || unitCost === null) {
@@ -265,45 +271,95 @@ export default function App() {
 
       totalRevenue += rev;
       totalCost += cost;
+      totalTaxes += qty * (parseFloat(machine.taxLKR) || 0);
+      totalUnitsSold += qty;
 
       const paid = s.paymentStatus === 'PAID' ? rev : (parseFloat(s.paidAmount) || 0);
       totalPaidRevenue += paid;
-      pendingReceivables += Math.max(0, rev - paid);
+      const due = Math.max(0, rev - paid);
+      pendingReceivables += due;
+      if (s.paymentStatus !== 'PAID' || due > 0) {
+        pendingInvoices += 1;
+      }
     });
 
     const grossProfit = totalRevenue - totalCost;
-    const netProfit = grossProfit; // Global sales profit
+    const netProfit = grossProfit;
     const partnerShare = netProfit * 0.5;
 
-    const totalDisbursed = (globalDisbursements || []).reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0);
+    // Disbursements by partner (X = Anujaya, Y = Global)
+    const drawAnujaya = (globalDisbursements || [])
+      .filter(d => d.partner === 'X' || d.partner === 'ANUJAYA')
+      .reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0);
+    const drawGlobal = (globalDisbursements || [])
+      .filter(d => d.partner === 'Y' || d.partner === 'GLOBAL')
+      .reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0);
+    const totalDisbursed = drawAnujaya + drawGlobal;
+
+    const balAnujaya = partnerShare - drawAnujaya;
+    const balGlobal = partnerShare - drawGlobal;
+
+    const totalBal = Math.max(0, balAnujaya) + Math.max(0, balGlobal);
+    const balanceGaugeX = totalBal > 0 ? Math.round((Math.max(0, balAnujaya) / totalBal) * 100) : 50;
+    const balanceGaugeY = 100 - balanceGaugeX;
+
     const retainedConsortiumCapital = netProfit - totalDisbursed;
 
-    // Inventory Valuation
-    let inventoryValuation = 0;
+    // Inventory Valuation & Capacity
+    let remainingStockValuation = 0;
     let totalFleetCapacity = 0;
+    let totalAvailableUnits = 0;
+
     (globalMachines || []).forEach(m => {
       const cost = ((parseFloat(m.usdPrice) || 0) * usdRate) + (parseFloat(m.taxLKR) || 0);
-      const stock = parseInt(m.stock) || 0;
-      inventoryValuation += stock * cost;
-      totalFleetCapacity += stock;
+      const initialCapacity = parseInt(m.initialStock !== undefined ? m.initialStock : m.stock) || 0;
+      totalFleetCapacity += initialCapacity;
+
+      const soldForThisMachine = validSales
+        .filter(s => s.machineId === m.id)
+        .reduce((sum, s) => sum + (parseInt(s.qty) || 1), 0);
+
+      const available = Math.max(0, initialCapacity - soldForThisMachine);
+      totalAvailableUnits += available;
+      remainingStockValuation += available * cost;
     });
 
+    const inventoryValuation = remainingStockValuation;
+    const marginPct = totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(1) : "0.0";
+    const soldPct = totalFleetCapacity > 0 ? ((totalUnitsSold / totalFleetCapacity) * 100).toFixed(1) : "0.0";
     const cashReserve = (globalConfig.openingCapitalReserve || 15000000) + totalPaidRevenue - totalDisbursed;
 
     return {
+      grossRevenue: totalRevenue,
       totalRevenue,
+      totalCOGS: totalCost,
       totalCost,
+      totalTaxes,
       grossProfit,
       netProfit,
       partnerShare,
-      totalDisbursed,
-      retainedConsortiumCapital,
-      inventoryValuation,
+      salesCount,
+      totalUnitsSold,
+      marginPct,
       totalFleetCapacity,
+      totalAvailableUnits,
+      soldPct,
+      remainingStockValuation,
+      inventoryValuation,
+      totalReceivables: pendingReceivables,
+      pendingReceivables,
+      pendingInvoices,
+      drawAnujaya,
+      drawGlobal,
+      totalDisbursed,
+      balAnujaya,
+      balGlobal,
+      balanceGaugeX,
+      balanceGaugeY,
+      retainedConsortiumCapital,
       skuCount: (globalMachines || []).length,
       cashReserve,
-      totalPaidRevenue,
-      pendingReceivables
+      totalPaidRevenue
     };
   }, [globalSales, globalMachines, globalConfig, globalDisbursements]);
 
@@ -313,7 +369,8 @@ export default function App() {
 
     (globalMachines || []).forEach(m => {
       const b = (m.brand || 'Other').toUpperCase();
-      brandTotals[b] = (brandTotals[b] || 0) + (parseInt(m.stock) || 0);
+      const initial = parseInt(m.initialStock !== undefined ? m.initialStock : m.stock) || 0;
+      brandTotals[b] = (brandTotals[b] || 0) + initial;
     });
 
     // Count units sold (non-cancelled) per brand to compute available
@@ -325,8 +382,6 @@ export default function App() {
       }
     });
 
-    const maxTotal = Math.max(...Object.values(brandTotals), 1);
-
     return Object.entries(brandTotals).map(([brand, total]) => {
       const sold = brandSold[brand] || 0;
       const available = Math.max(0, total - sold);
@@ -334,6 +389,23 @@ export default function App() {
       return { brand, total, available, pct };
     }).sort((a, b) => b.total - a.total);
   }, [globalMachines, globalSales]);
+
+  const enrichedRecentSales = useMemo(() => {
+    return (globalSales || [])
+      .filter(s => !s.cancelled)
+      .slice(0, 8)
+      .map(sale => {
+        const machine = (globalMachines || []).find(m => m.id === sale.machineId);
+        const qty = parseInt(sale.qty) || 1;
+        const unitPrice = parseFloat(sale.unitPrice) || 0;
+        return {
+          ...sale,
+          machineBrand: machine?.brand || 'JUKI',
+          machineModel: machine?.model || sale.machineId,
+          totalRevenue: qty * unitPrice
+        };
+      });
+  }, [globalSales, globalMachines]);
 
   // ================= LOCAL METRICS CALCULATIONS =================
   const localMetrics = useMemo(() => {
@@ -432,17 +504,23 @@ export default function App() {
   // Global: Add/Edit Machine
   const handleSaveGlobalMachine = async (machineData) => {
     try {
-      if (selectedGlobalMachine) {
+      if (selectedGlobalMachine && selectedGlobalMachine.id) {
         const res = await api.updateGlobalMachine(selectedGlobalMachine.id, machineData);
         if (res.success) {
           setGlobalMachines(prev => prev.map(m => m.id === selectedGlobalMachine.id ? res.data : m));
-          addToast("Machinery specs updated successfully!", "success");
+          addToast(`Machinery SKU ${res.data.id || selectedGlobalMachine.id} specs updated!`, "success");
         }
       } else {
         const res = await api.addGlobalMachine(machineData);
         if (res.success) {
-          setGlobalMachines(prev => [res.data, ...prev]);
-          addToast("New machinery model registered into Global fleet!", "success");
+          setGlobalMachines(prev => {
+            const exists = prev.some(m => m.id === res.data.id);
+            if (exists) {
+              return prev.map(m => m.id === res.data.id ? res.data : m);
+            }
+            return [res.data, ...prev];
+          });
+          addToast(`New machinery SKU ${res.data.id} registered into Global fleet!`, "success");
         }
       }
       setIsGlobalMachineModalOpen(false);
@@ -468,7 +546,7 @@ export default function App() {
   // Global: Add/Edit Sale
   const handleSaveGlobalSale = async (saleData) => {
     try {
-      if (selectedGlobalSale) {
+      if (selectedGlobalSale && selectedGlobalSale.id) {
         const res = await api.updateGlobalSale(selectedGlobalSale.id, saleData);
         if (res.success) {
           setGlobalSales(prev => prev.map(s => s.id === selectedGlobalSale.id ? res.data : s));
@@ -481,11 +559,17 @@ export default function App() {
           // Decrement stock in machines
           setGlobalMachines(prev => prev.map(m => {
             if (m.id === saleData.machineId) {
-              return { ...m, stock: Math.max(0, (parseInt(m.stock) || 0) - (parseInt(saleData.qty) || 1)) };
+              const currentStock = parseInt(m.initialStock !== undefined ? m.initialStock : m.stock) || 0;
+              const newStock = Math.max(0, currentStock - (parseInt(saleData.qty) || 1));
+              return { ...m, stock: newStock, initialStock: newStock };
             }
             return m;
           }));
-          addToast(`Sale recorded! Invoice #${res.data.invoiceNo} generated.`, "success");
+          addToast(`Sale recorded! Invoice #${res.data.id || res.data.invoiceNo} generated.`, "success");
+
+          // Preview generated Official Tax Invoice
+          const machine = globalMachines.find(m => m.id === saleData.machineId);
+          setGlobalTaxInvoiceData({ sale: res.data, machine });
         }
       }
       setIsGlobalSaleModalOpen(false);
@@ -1006,402 +1090,514 @@ export default function App() {
         onRecalculateStock={() => addToast("Stock valuation automatically refreshed against spot rate.", "info")}
       />
 
-      {/* Main Content Area */}
-      <main className="flex-1 max-w-[1920px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      {/* Main Container with Vertical Sidebar */}
+      <div className="flex-1 flex flex-col md:flex-row w-full max-w-[1920px] mx-auto min-h-[calc(100vh-73px)]">
         
-        {/* Navigation Tabs Bar */}
-        <div className="glass-card p-2 rounded-2xl border border-carbon-700/80 flex items-center justify-between overflow-x-auto shadow-lg no-print">
+        {/* ================= VERTICAL SIDEBAR ================= */}
+        <aside className="w-full md:w-64 lg:w-72 shrink-0 bg-carbon-900/90 backdrop-blur-2xl border-r border-b md:border-b-0 border-carbon-800/80 p-4 lg:p-5 flex flex-col justify-between md:sticky md:top-[73px] md:h-[calc(100vh-73px)] overflow-y-auto no-print z-20 space-y-6">
+          <div className="space-y-6">
+            
+            {/* Sidebar Header Section */}
+            <div className="px-2 pt-1">
+              <div className="flex items-center justify-between text-[11px] font-mono uppercase font-bold text-slate-400 tracking-wider pb-2 border-b border-carbon-800/80">
+                <span className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  {isGlobal ? 'Consortium Fleet' : 'Central Rental Yard'}
+                </span>
+                <button
+                  onClick={fetchAllData}
+                  title="Refresh All Database Records"
+                  className="p-1 rounded-lg hover:bg-carbon-800 text-slate-400 hover:text-sky-400 transition"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-sky-400' : ''}`} />
+                </button>
+              </div>
+            </div>
+
+            {/* Navigation Tabs - VERTICAL SIDEBAR */}
+            <nav className="space-y-1 font-mono text-xs">
+              {isGlobal ? (
+                // ================= GLOBAL PATH VERTICAL SIDEBAR ITEMS =================
+                <>
+                  <button
+                    onClick={() => setActiveGlobalTab('dashboard')}
+                    className={`w-full px-3.5 py-3 rounded-xl font-bold transition flex items-center justify-between text-left group ${
+                      activeGlobalTab === 'dashboard'
+                        ? 'bg-gradient-to-r from-sky-600/30 to-emerald-600/20 text-white border-l-4 border-sky-400 shadow-md shadow-sky-950/40'
+                        : 'text-slate-400 hover:text-white hover:bg-carbon-800/60 border-l-4 border-transparent'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <LayoutDashboard className={`w-4 h-4 ${activeGlobalTab === 'dashboard' ? 'text-sky-400' : 'text-slate-400 group-hover:text-sky-400'}`} />
+                      <span>Executive Dashboard</span>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => setActiveGlobalTab('inventory')}
+                    className={`w-full px-3.5 py-3 rounded-xl font-bold transition flex items-center justify-between text-left group ${
+                      activeGlobalTab === 'inventory'
+                        ? 'bg-gradient-to-r from-sky-600/30 to-emerald-600/20 text-white border-l-4 border-sky-400 shadow-md shadow-sky-950/40'
+                        : 'text-slate-400 hover:text-white hover:bg-carbon-800/60 border-l-4 border-transparent'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Boxes className={`w-4 h-4 ${activeGlobalTab === 'inventory' ? 'text-emerald-400' : 'text-slate-400 group-hover:text-emerald-400'}`} />
+                      <span>Fleet Warehouse</span>
+                    </div>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-carbon-800 border border-carbon-700 text-emerald-300 font-bold">
+                      {globalMachines.length}
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={() => setActiveGlobalTab('ledger')}
+                    className={`w-full px-3.5 py-3 rounded-xl font-bold transition flex items-center justify-between text-left group ${
+                      activeGlobalTab === 'ledger'
+                        ? 'bg-gradient-to-r from-sky-600/30 to-emerald-600/20 text-white border-l-4 border-sky-400 shadow-md shadow-sky-950/40'
+                        : 'text-slate-400 hover:text-white hover:bg-carbon-800/60 border-l-4 border-transparent'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Receipt className={`w-4 h-4 ${activeGlobalTab === 'ledger' ? 'text-amber-400' : 'text-slate-400 group-hover:text-amber-400'}`} />
+                      <span>Sales & Invoices</span>
+                    </div>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-carbon-800 border border-carbon-700 text-amber-300 font-bold">
+                      {(globalSales || []).filter(s => !s.cancelled).length}
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={() => setActiveGlobalTab('customers')}
+                    className={`w-full px-3.5 py-3 rounded-xl font-bold transition flex items-center justify-between text-left group ${
+                      activeGlobalTab === 'customers'
+                        ? 'bg-gradient-to-r from-sky-600/30 to-emerald-600/20 text-white border-l-4 border-sky-400 shadow-md shadow-sky-950/40'
+                        : 'text-slate-400 hover:text-white hover:bg-carbon-800/60 border-l-4 border-transparent'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Users className={`w-4 h-4 ${activeGlobalTab === 'customers' ? 'text-purple-400' : 'text-slate-400 group-hover:text-purple-400'}`} />
+                      <span>Apparel Clients</span>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => setActiveGlobalTab('settlement')}
+                    className={`w-full px-3.5 py-3 rounded-xl font-bold transition flex items-center justify-between text-left group ${
+                      activeGlobalTab === 'settlement'
+                        ? 'bg-gradient-to-r from-sky-600/30 to-emerald-600/20 text-white border-l-4 border-sky-400 shadow-md shadow-sky-950/40'
+                        : 'text-slate-400 hover:text-white hover:bg-carbon-800/60 border-l-4 border-transparent'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Scale className={`w-4 h-4 ${activeGlobalTab === 'settlement' ? 'text-teal-400' : 'text-slate-400 group-hover:text-teal-400'}`} />
+                      <span>50/50 Equity Audit</span>
+                    </div>
+                  </button>
+                </>
+              ) : (
+                // ================= LOCAL RENTAL VERTICAL SIDEBAR ITEMS =================
+                <>
+                  <button
+                    onClick={() => setActiveLocalTab('dashboard')}
+                    className={`w-full px-3.5 py-3 rounded-xl font-bold transition flex items-center justify-between text-left group ${
+                      activeLocalTab === 'dashboard'
+                        ? 'bg-gradient-to-r from-emerald-600/30 to-teal-600/20 text-white border-l-4 border-emerald-400 shadow-md'
+                        : 'text-slate-400 hover:text-white hover:bg-carbon-800/60 border-l-4 border-transparent'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <LayoutDashboard className={`w-4 h-4 ${activeLocalTab === 'dashboard' ? 'text-emerald-400' : 'text-slate-400'}`} />
+                      <span>Rental Operations</span>
+                    </div>
+                    {alertsData?.counts?.total > 0 && (
+                      <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+                    )}
+                  </button>
+
+                  <button
+                    onClick={() => setActiveLocalTab('yard_warehouse')}
+                    className={`w-full px-3.5 py-3 rounded-xl font-bold transition flex items-center justify-between text-left group ${
+                      activeLocalTab === 'yard_warehouse'
+                        ? 'bg-gradient-to-r from-emerald-600/30 to-teal-600/20 text-white border-l-4 border-emerald-400 shadow-md'
+                        : 'text-slate-400 hover:text-white hover:bg-carbon-800/60 border-l-4 border-transparent'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Warehouse className={`w-4 h-4 ${activeLocalTab === 'yard_warehouse' ? 'text-teal-400' : 'text-slate-400'}`} />
+                      <span>Kosgama Fleet</span>
+                    </div>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-carbon-800 border border-carbon-700 text-teal-300 font-bold">
+                      {localMachines.length}
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={() => setActiveLocalTab('customers')}
+                    className={`w-full px-3.5 py-3 rounded-xl font-bold transition flex items-center justify-between text-left group ${
+                      activeLocalTab === 'customers'
+                        ? 'bg-gradient-to-r from-emerald-600/30 to-teal-600/20 text-white border-l-4 border-emerald-400 shadow-md'
+                        : 'text-slate-400 hover:text-white hover:bg-carbon-800/60 border-l-4 border-transparent'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Users className={`w-4 h-4 ${activeLocalTab === 'customers' ? 'text-sky-400' : 'text-slate-400'}`} />
+                      <span>Garment Clients</span>
+                    </div>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-carbon-800 border border-carbon-700 text-sky-300 font-bold">
+                      {localCustomers.length}
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={() => setActiveLocalTab('payments')}
+                    className={`w-full px-3.5 py-3 rounded-xl font-bold transition flex items-center justify-between text-left group ${
+                      activeLocalTab === 'payments'
+                        ? 'bg-gradient-to-r from-emerald-600/30 to-teal-600/20 text-white border-l-4 border-emerald-400 shadow-md'
+                        : 'text-slate-400 hover:text-white hover:bg-carbon-800/60 border-l-4 border-transparent'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <CreditCard className={`w-4 h-4 ${activeLocalTab === 'payments' ? 'text-emerald-400' : 'text-slate-400'}`} />
+                      <span>Collections Ledger</span>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => setActiveLocalTab('yard_returns')}
+                    className={`w-full px-3.5 py-3 rounded-xl font-bold transition flex items-center justify-between text-left group ${
+                      activeLocalTab === 'yard_returns'
+                        ? 'bg-gradient-to-r from-emerald-600/30 to-teal-600/20 text-white border-l-4 border-emerald-400 shadow-md'
+                        : 'text-slate-400 hover:text-white hover:bg-carbon-800/60 border-l-4 border-transparent'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <RotateCcw className={`w-4 h-4 ${activeLocalTab === 'yard_returns' ? 'text-amber-400' : 'text-slate-400'}`} />
+                      <span>Equipment Returns</span>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => setActiveLocalTab('expenses')}
+                    className={`w-full px-3.5 py-3 rounded-xl font-bold transition flex items-center justify-between text-left group ${
+                      activeLocalTab === 'expenses'
+                        ? 'bg-gradient-to-r from-emerald-600/30 to-teal-600/20 text-white border-l-4 border-emerald-400 shadow-md'
+                        : 'text-slate-400 hover:text-white hover:bg-carbon-800/60 border-l-4 border-transparent'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <TrendingUp className={`w-4 h-4 ${activeLocalTab === 'expenses' ? 'text-purple-400' : 'text-slate-400'}`} />
+                      <span>Operating Expenses</span>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => setActiveLocalTab('partners')}
+                    className={`w-full px-3.5 py-3 rounded-xl font-bold transition flex items-center justify-between text-left group ${
+                      activeLocalTab === 'partners'
+                        ? 'bg-gradient-to-r from-emerald-600/30 to-teal-600/20 text-white border-l-4 border-emerald-400 shadow-md'
+                        : 'text-slate-400 hover:text-white hover:bg-carbon-800/60 border-l-4 border-transparent'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Building2 className={`w-4 h-4 ${activeLocalTab === 'partners' ? 'text-orange-400' : 'text-slate-400'}`} />
+                      <span>Sourcing Partners</span>
+                    </div>
+                  </button>
+                </>
+              )}
+            </nav>
+
+            {/* Quick Live Snapshot Widget in Sidebar */}
+            <div className="p-3.5 rounded-2xl bg-carbon-950/80 border border-carbon-800/80 space-y-2 font-mono text-xs">
+              <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-bold">
+                {isGlobal ? 'Consortium Quick Status' : 'Yard Active Month'}
+              </span>
+              {isGlobal ? (
+                <>
+                  <div className="flex justify-between items-center text-slate-300">
+                    <span className="text-[11px] text-slate-400">Total Models:</span>
+                    <span className="font-bold text-white">{globalMachines.length} SKU</span>
+                  </div>
+                  <div className="flex justify-between items-center text-slate-300">
+                    <span className="text-[11px] text-slate-400">Spot USD Rate:</span>
+                    <span className="font-bold text-amber-300">{globalConfig.usdRate || 330} LKR</span>
+                  </div>
+                  <div className="flex justify-between items-center text-slate-300">
+                    <span className="text-[11px] text-slate-400">Total Sold:</span>
+                    <span className="font-bold text-emerald-400">{globalMetrics.totalUnitsSold || 0} Sets</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex justify-between items-center text-slate-300">
+                    <span className="text-[11px] text-slate-400">Billing Cycle:</span>
+                    <span className="font-bold text-white">{localConfig.activeMonth || '2026-03'}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-slate-300">
+                    <span className="text-[11px] text-slate-400">Active Rentals:</span>
+                    <span className="font-bold text-emerald-400">{localMetrics.totalActiveMachines || 0} Sets</span>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Sidebar Footer */}
+          <div className="pt-4 border-t border-carbon-800/80 text-[10px] font-mono text-slate-500 flex items-center justify-between">
+            <span>Terminal: {currentUser?.role || 'Guest'}</span>
+            <span className="text-emerald-400 font-bold">Active</span>
+          </div>
+        </aside>
+
+        {/* ================= MAIN CONTENT VIEWPORT ================= */}
+        <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 space-y-6 overflow-y-auto">
           {isGlobal ? (
-            // ================= GLOBAL PATH TABS =================
-            <div className="flex items-center gap-1.5 min-w-max">
-              <button
-                onClick={() => setActiveGlobalTab('dashboard')}
-                className={`px-4 py-2 rounded-xl text-xs font-bold font-mono transition flex items-center gap-2 ${
-                  activeGlobalTab === 'dashboard'
-                    ? 'bg-gradient-to-r from-sky-600 to-emerald-600 text-white shadow-md'
-                    : 'text-slate-400 hover:text-white hover:bg-carbon-800'
-                }`}
-              >
-                <LayoutDashboard className="w-4 h-4 text-sky-400" />
-                <span>Executive Dashboard</span>
-              </button>
+            // ================= GLOBAL PATH VIEWS =================
+            <div>
+              {activeGlobalTab === 'dashboard' && (
+                <GlobalDashboard
+                  metrics={globalMetrics}
+                  recentSales={enrichedRecentSales}
+                  brandBreakdown={globalBrandBreakdown}
+                  onResetBaseline={handleResetGlobalBaseline}
+                  onOpenSaleModal={() => { setSelectedGlobalSale(null); setIsGlobalSaleModalOpen(true); }}
+                  onOpenMachineModal={() => { setSelectedGlobalMachine(null); setIsGlobalMachineModalOpen(true); }}
+                  onPrintInvoice={(saleItem) => {
+                    const saleObj = typeof saleItem === 'string'
+                      ? globalSales.find(s => s.id === saleItem)
+                      : saleItem;
+                    if (saleObj) {
+                      const machine = globalMachines.find(m => m.id === saleObj.machineId);
+                      setGlobalTaxInvoiceData({ sale: saleObj, machine });
+                    }
+                  }}
+                  currentUser={currentUser}
+                  currentLang={currentLang}
+                  usdRate={globalConfig.usdRate || 330}
+                />
+              )}
 
-              <button
-                onClick={() => setActiveGlobalTab('inventory')}
-                className={`px-4 py-2 rounded-xl text-xs font-bold font-mono transition flex items-center gap-2 ${
-                  activeGlobalTab === 'inventory'
-                    ? 'bg-gradient-to-r from-sky-600 to-emerald-600 text-white shadow-md'
-                    : 'text-slate-400 hover:text-white hover:bg-carbon-800'
-                }`}
-              >
-                <Boxes className="w-4 h-4 text-emerald-400" />
-                <span>Machinery Fleet Warehouse ({globalMachines.length})</span>
-              </button>
+              {activeGlobalTab === 'inventory' && (
+                <GlobalMachineryMaster
+                  machines={globalMachines}
+                  sales={globalSales}
+                  usdRate={globalConfig.usdRate || 330}
+                  onOpenAddModal={() => { setSelectedGlobalMachine(null); setIsGlobalMachineModalOpen(true); }}
+                  onOpenEditModal={(m) => { setSelectedGlobalMachine(m); setIsGlobalMachineModalOpen(true); }}
+                  onDeleteMachine={handleDeleteGlobalMachine}
+                  onPrefillSale={(m) => {
+                    setSelectedGlobalSale({ machineId: m.id, unitPrice: m.wholesalePrice || m.retailPrice });
+                    setIsGlobalSaleModalOpen(true);
+                  }}
+                  currentUser={currentUser}
+                />
+              )}
 
-              <button
-                onClick={() => setActiveGlobalTab('ledger')}
-                className={`px-4 py-2 rounded-xl text-xs font-bold font-mono transition flex items-center gap-2 ${
-                  activeGlobalTab === 'ledger'
-                    ? 'bg-gradient-to-r from-sky-600 to-emerald-600 text-white shadow-md'
-                    : 'text-slate-400 hover:text-white hover:bg-carbon-800'
-                }`}
-              >
-                <Receipt className="w-4 h-4 text-amber-400" />
-                <span>Sales Ledger & Commercial Invoices</span>
-              </button>
+              {activeGlobalTab === 'ledger' && (
+                <GlobalSalesLedger
+                  sales={globalSales}
+                  machines={globalMachines}
+                  usdRate={globalConfig.usdRate || 330}
+                  onOpenSaleModal={() => { setSelectedGlobalSale(null); setIsGlobalSaleModalOpen(true); }}
+                  onOpenEditSaleModal={(s) => { setSelectedGlobalSale(s); setIsGlobalSaleModalOpen(true); }}
+                  onDeleteSale={handleDeleteGlobalSale}
+                  onPrintInvoice={(saleItem) => {
+                    const saleObj = typeof saleItem === 'string'
+                      ? globalSales.find(s => s.id === saleItem)
+                      : saleItem;
+                    if (saleObj) {
+                      const machine = globalMachines.find(m => m.id === saleObj.machineId);
+                      setGlobalTaxInvoiceData({ sale: saleObj, machine });
+                    }
+                  }}
+                  currentUser={currentUser}
+                />
+              )}
 
-              <button
-                onClick={() => setActiveGlobalTab('customers')}
-                className={`px-4 py-2 rounded-xl text-xs font-bold font-mono transition flex items-center gap-2 ${
-                  activeGlobalTab === 'customers'
-                    ? 'bg-gradient-to-r from-sky-600 to-emerald-600 text-white shadow-md'
-                    : 'text-slate-400 hover:text-white hover:bg-carbon-800'
-                }`}
-              >
-                <Users className="w-4 h-4 text-purple-400" />
-                <span>Apparel Client Accounts</span>
-              </button>
+              {activeGlobalTab === 'customers' && (
+                <GlobalApparelClients
+                  sales={globalSales}
+                  onPrintInvoice={(saleItem) => {
+                    const saleObj = typeof saleItem === 'string'
+                      ? globalSales.find(s => s.id === saleItem)
+                      : saleItem;
+                    if (saleObj) {
+                      const machine = globalMachines.find(m => m.id === saleObj.machineId);
+                      setGlobalTaxInvoiceData({ sale: saleObj, machine });
+                    }
+                  }}
+                />
+              )}
 
-              <button
-                onClick={() => setActiveGlobalTab('settlement')}
-                className={`px-4 py-2 rounded-xl text-xs font-bold font-mono transition flex items-center gap-2 ${
-                  activeGlobalTab === 'settlement'
-                    ? 'bg-gradient-to-r from-sky-600 to-emerald-600 text-white shadow-md'
-                    : 'text-slate-400 hover:text-white hover:bg-carbon-800'
-                }`}
-              >
-                <Scale className="w-4 h-4 text-teal-400" />
-                <span>50/50 Equity Settlement & Capital</span>
-              </button>
+              {activeGlobalTab === 'settlement' && (
+                <GlobalPartnerSettlement
+                  metrics={globalMetrics}
+                  disbursements={globalDisbursements}
+                  onOpenDisburseModal={() => setIsGlobalDisburseModalOpen(true)}
+                  currentUser={currentUser}
+                  usdRate={globalConfig.usdRate || 330}
+                />
+              )}
             </div>
           ) : (
-            // ================= LOCAL RENTAL PATH TABS =================
-            <div className="flex items-center gap-1.5 min-w-max">
-              <button
-                onClick={() => setActiveLocalTab('dashboard')}
-                className={`px-4 py-2 rounded-xl text-xs font-bold font-mono transition flex items-center gap-2 ${
-                  activeLocalTab === 'dashboard'
-                    ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md'
-                    : 'text-slate-400 hover:text-white hover:bg-carbon-800'
-                }`}
-              >
-                <LayoutDashboard className="w-4 h-4 text-emerald-400" />
-                <span>Rental Operations & Alerts</span>
-                {alertsData?.counts?.total > 0 && (
-                  <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
-                )}
-              </button>
+            // ================= LOCAL RENTAL PATH VIEWS =================
+            <div>
+              {activeLocalTab === 'dashboard' && (
+                <LocalDashboard
+                  metrics={localMetrics}
+                  alertsData={alertsData}
+                  onSendAlert={handleSendSingleAlert}
+                  onSendBatchAlerts={handleSendBatchAlerts}
+                  onOpenAlertLogs={() => setIsLocalAlertLogsModalOpen(true)}
+                  activeMonth={localConfig.activeMonth || '2026-03'}
+                  allMonths={localConfig.allMonths || ['2026-01', '2026-02', '2026-03']}
+                  onSwitchMonth={handleSwitchLocalMonth}
+                  onCreateNewMonth={handleCreateNewLocalMonth}
+                  onOpenNewCustomerModal={() => {
+                    setLocalCustomerModalMode('ADD');
+                    setSelectedLocalCustomer(null);
+                    setIsLocalCustomerModalOpen(true);
+                  }}
+                  onOpenNewPaymentModal={() => {
+                    setLocalPaymentModalMode('ADD');
+                    setSelectedLocalPayment(null);
+                    setPrefilledPaymentCustomer(null);
+                    setIsLocalPaymentModalOpen(true);
+                  }}
+                  onOpenQuotationModal={() => setIsLocalQuotationModalOpen(true)}
+                  systemLang={currentLang}
+                />
+              )}
 
-              <button
-                onClick={() => setActiveLocalTab('yard_warehouse')}
-                className={`px-4 py-2 rounded-xl text-xs font-bold font-mono transition flex items-center gap-2 ${
-                  activeLocalTab === 'yard_warehouse'
-                    ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md'
-                    : 'text-slate-400 hover:text-white hover:bg-carbon-800'
-                }`}
-              >
-                <Warehouse className="w-4 h-4 text-teal-400" />
-                <span>Kosgama Yard Fleet Master ({localMachines.length})</span>
-              </button>
+              {activeLocalTab === 'yard_warehouse' && (
+                <LocalMachineryMaster
+                  machines={localMachines}
+                  customers={localCustomers}
+                  onOpenAddModal={() => { setSelectedLocalYardMachine(null); setIsLocalYardMachineModalOpen(true); }}
+                  onOpenEditModal={(m) => { setSelectedLocalYardMachine(m); setIsLocalYardMachineModalOpen(true); }}
+                  onDeleteMachine={handleDeleteLocalYardMachine}
+                  onQuickAssignCustomer={() => {
+                    setLocalCustomerModalMode('ADD');
+                    setIsLocalCustomerModalOpen(true);
+                  }}
+                />
+              )}
 
-              <button
-                onClick={() => setActiveLocalTab('customers')}
-                className={`px-4 py-2 rounded-xl text-xs font-bold font-mono transition flex items-center gap-2 ${
-                  activeLocalTab === 'customers'
-                    ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md'
-                    : 'text-slate-400 hover:text-white hover:bg-carbon-800'
-                }`}
-              >
-                <Users className="w-4 h-4 text-sky-400" />
-                <span>Garment Client Directory ({localCustomers.length})</span>
-              </button>
+              {activeLocalTab === 'customers' && (
+                <LocalCustomerDirectory
+                  customers={localCustomers}
+                  payments={localPayments}
+                  activeMonth={localConfig.activeMonth || '2026-03'}
+                  allMonths={localConfig.allMonths || ['2026-01', '2026-02', '2026-03']}
+                  onOpenNewCustomer={() => {
+                    setLocalCustomerModalMode('ADD');
+                    setSelectedLocalCustomer(null);
+                    setIsLocalCustomerModalOpen(true);
+                  }}
+                  onOpenEditCustomer={(c) => {
+                    setLocalCustomerModalMode('EDIT');
+                    setSelectedLocalCustomer(c);
+                    setIsLocalCustomerModalOpen(true);
+                  }}
+                  onOpenPaymentModal={(c) => {
+                    setLocalPaymentModalMode('ADD');
+                    setPrefilledPaymentCustomer(c);
+                    setSelectedLocalPayment(null);
+                    setIsLocalPaymentModalOpen(true);
+                  }}
+                  onOpenReturnModal={(c) => {
+                    setSelectedReturnCustomer(c);
+                    setPrefilledReturnRental(null);
+                    setIsLocalReturnModalOpen(true);
+                  }}
+                  onRollbackReturn={handleRollbackMachineReturn}
+                  onToggleArchive={handleToggleArchiveLocalCustomer}
+                  onDeleteCustomer={handleDeleteLocalCustomer}
+                  onPrintDoc={(docData) => setLocalDocModalData(docData)}
+                />
+              )}
 
-              <button
-                onClick={() => setActiveLocalTab('payments')}
-                className={`px-4 py-2 rounded-xl text-xs font-bold font-mono transition flex items-center gap-2 ${
-                  activeLocalTab === 'payments'
-                    ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md'
-                    : 'text-slate-400 hover:text-white hover:bg-carbon-800'
-                }`}
-              >
-                <CreditCard className="w-4 h-4 text-emerald-400" />
-                <span>Rent Collections Ledger</span>
-              </button>
+              {activeLocalTab === 'payments' && (
+                <LocalPaymentsLedger
+                  payments={localPayments}
+                  customers={localCustomers}
+                  activeMonth={localConfig.activeMonth || '2026-03'}
+                  onOpenNewPayment={() => {
+                    setLocalPaymentModalMode('ADD');
+                    setSelectedLocalPayment(null);
+                    setPrefilledPaymentCustomer(null);
+                    setIsLocalPaymentModalOpen(true);
+                  }}
+                  onOpenEditPayment={(pay) => {
+                    setLocalPaymentModalMode('EDIT');
+                    setSelectedLocalPayment(pay);
+                    setIsLocalPaymentModalOpen(true);
+                  }}
+                  onDeletePayment={handleDeleteLocalPayment}
+                  onPrintReceipt={(docData) => setLocalDocModalData(docData)}
+                />
+              )}
 
-              <button
-                onClick={() => setActiveLocalTab('yard_returns')}
-                className={`px-4 py-2 rounded-xl text-xs font-bold font-mono transition flex items-center gap-2 ${
-                  activeLocalTab === 'yard_returns'
-                    ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md'
-                    : 'text-slate-400 hover:text-white hover:bg-carbon-800'
-                }`}
-              >
-                <RotateCcw className="w-4 h-4 text-amber-400" />
-                <span>Equipment Returns & Inspection</span>
-              </button>
+              {activeLocalTab === 'yard_returns' && (
+                <LocalReturnsWorkflow
+                  customers={localCustomers}
+                  onRollbackReturn={handleRollbackMachineReturn}
+                  onPrintReturnNote={(docData) => setLocalDocModalData(docData)}
+                />
+              )}
 
-              <button
-                onClick={() => setActiveLocalTab('expenses')}
-                className={`px-4 py-2 rounded-xl text-xs font-bold font-mono transition flex items-center gap-2 ${
-                  activeLocalTab === 'expenses'
-                    ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md'
-                    : 'text-slate-400 hover:text-white hover:bg-carbon-800'
-                }`}
-              >
-                <TrendingUp className="w-4 h-4 text-purple-400" />
-                <span>Yard Expenses & Wages</span>
-              </button>
+              {activeLocalTab === 'expenses' && (
+                <LocalExpensesLedger
+                  expenses={localExpenses}
+                  onOpenNewExpense={() => { setSelectedLocalExpense(null); setIsLocalExpenseModalOpen(true); }}
+                  onOpenEditExpense={(e) => { setSelectedLocalExpense(e); setIsLocalExpenseModalOpen(true); }}
+                  onDeleteExpense={handleDeleteLocalExpense}
+                />
+              )}
 
-              <button
-                onClick={() => setActiveLocalTab('partners')}
-                className={`px-4 py-2 rounded-xl text-xs font-bold font-mono transition flex items-center gap-2 ${
-                  activeLocalTab === 'partners'
-                    ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md'
-                    : 'text-slate-400 hover:text-white hover:bg-carbon-800'
-                }`}
-              >
-                <Building2 className="w-4 h-4 text-orange-400" />
-                <span>Sourcing Partners & Spares</span>
-              </button>
+              {activeLocalTab === 'partners' && (
+                <LocalSourcingPartners
+                  partners={localPartners}
+                  onOpenNewPartner={() => { setSelectedLocalPartner(null); setIsLocalPartnerModalOpen(true); }}
+                  onOpenEditPartner={(p) => { setSelectedLocalPartner(p); setIsLocalPartnerModalOpen(true); }}
+                  onDeletePartner={handleDeleteLocalPartner}
+                  onOpenPurchaseModal={(p) => { setSelectedPartnerForPurchase(p); setIsLocalPurchaseModalOpen(true); }}
+                  onOpenReturnModal={(p) => { setSelectedPartnerForReturn(p); setIsLocalPartnerReturnModalOpen(true); }}
+                  onOpenPaymentModal={(p) => { setSelectedPartnerForPayment(p); setIsLocalPartnerPaymentModalOpen(true); }}
+                  onDeletePurchase={handleDeletePartnerPurchase}
+                  onDeleteReturn={handleDeletePartnerReturn}
+                  onPrintDoc={(docData) => setLocalDocModalData(docData)}
+                />
+              )}
             </div>
           )}
-
-          {/* Quick Refresh */}
-          <button
-            onClick={fetchAllData}
-            title="Refresh All Database Records"
-            className="p-2 rounded-xl bg-carbon-800 hover:bg-carbon-700 text-slate-300 hover:text-white transition ml-3"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-sky-400' : ''}`} />
-          </button>
-        </div>
-
-        {/* ================= ACTIVE VIEW RENDERING ================= */}
-        {isGlobal ? (
-          // ================= GLOBAL PATH VIEWS =================
-          <div>
-            {activeGlobalTab === 'dashboard' && (
-              <GlobalDashboard
-                metrics={globalMetrics}
-                recentSales={(globalSales || []).filter(s => !s.cancelled).slice(0, 6)}
-                brandBreakdown={globalBrandBreakdown}
-                onResetBaseline={handleResetGlobalBaseline}
-                onOpenSaleModal={() => { setSelectedGlobalSale(null); setIsGlobalSaleModalOpen(true); }}
-                onOpenMachineModal={() => { setSelectedGlobalMachine(null); setIsGlobalMachineModalOpen(true); }}
-                onPrintInvoice={(sale) => {
-                  const machine = globalMachines.find(m => m.id === sale.machineId);
-                  setGlobalTaxInvoiceData({ sale, machine });
-                }}
-                currentUser={currentUser}
-                currentLang={currentLang}
-                usdRate={globalConfig.usdRate || 330}
-              />
-            )}
-
-            {activeGlobalTab === 'inventory' && (
-              <GlobalMachineryMaster
-                machines={globalMachines}
-                sales={globalSales}
-                usdRate={globalConfig.usdRate || 330}
-                onOpenAddModal={() => { setSelectedGlobalMachine(null); setIsGlobalMachineModalOpen(true); }}
-                onOpenEditModal={(m) => { setSelectedGlobalMachine(m); setIsGlobalMachineModalOpen(true); }}
-                onDeleteMachine={handleDeleteGlobalMachine}
-                onPrefillSale={(m) => {
-                  setSelectedGlobalSale({ machineId: m.id, unitPrice: m.wholesalePrice || m.retailPrice });
-                  setIsGlobalSaleModalOpen(true);
-                }}
-                currentUser={currentUser}
-              />
-            )}
-
-            {activeGlobalTab === 'ledger' && (
-              <GlobalSalesLedger
-                sales={globalSales}
-                machines={globalMachines}
-                usdRate={globalConfig.usdRate || 330}
-                onOpenSaleModal={() => { setSelectedGlobalSale(null); setIsGlobalSaleModalOpen(true); }}
-                onOpenEditSaleModal={(s) => { setSelectedGlobalSale(s); setIsGlobalSaleModalOpen(true); }}
-                onDeleteSale={handleDeleteGlobalSale}
-                onPrintInvoice={(sale) => {
-                  const machine = globalMachines.find(m => m.id === sale.machineId);
-                  setGlobalTaxInvoiceData({ sale, machine });
-                }}
-                currentUser={currentUser}
-              />
-            )}
-
-            {activeGlobalTab === 'customers' && (
-              <GlobalApparelClients
-                sales={globalSales}
-                onPrintInvoice={(sale) => {
-                  const machine = globalMachines.find(m => m.id === sale.machineId);
-                  setGlobalTaxInvoiceData({ sale, machine });
-                }}
-              />
-            )}
-
-            {activeGlobalTab === 'settlement' && (
-              <GlobalPartnerSettlement
-                metrics={globalMetrics}
-                disbursements={globalDisbursements}
-                onOpenDisburseModal={() => setIsGlobalDisburseModalOpen(true)}
-                currentUser={currentUser}
-                usdRate={globalConfig.usdRate || 330}
-              />
-            )}
-          </div>
-        ) : (
-          // ================= LOCAL RENTAL PATH VIEWS =================
-          <div>
-            {activeLocalTab === 'dashboard' && (
-              <LocalDashboard
-                metrics={localMetrics}
-                alertsData={alertsData}
-                onSendAlert={handleSendSingleAlert}
-                onSendBatchAlerts={handleSendBatchAlerts}
-                onOpenAlertLogs={() => setIsLocalAlertLogsModalOpen(true)}
-                activeMonth={localConfig.activeMonth || '2026-03'}
-                allMonths={localConfig.allMonths || ['2026-01', '2026-02', '2026-03']}
-                onSwitchMonth={handleSwitchLocalMonth}
-                onCreateNewMonth={handleCreateNewLocalMonth}
-                onOpenNewCustomerModal={() => {
-                  setLocalCustomerModalMode('ADD');
-                  setSelectedLocalCustomer(null);
-                  setIsLocalCustomerModalOpen(true);
-                }}
-                onOpenNewPaymentModal={() => {
-                  setLocalPaymentModalMode('ADD');
-                  setSelectedLocalPayment(null);
-                  setPrefilledPaymentCustomer(null);
-                  setIsLocalPaymentModalOpen(true);
-                }}
-                onOpenQuotationModal={() => setIsLocalQuotationModalOpen(true)}
-                systemLang={currentLang}
-              />
-            )}
-
-            {activeLocalTab === 'yard_warehouse' && (
-              <LocalMachineryMaster
-                machines={localMachines}
-                customers={localCustomers}
-                onOpenAddModal={() => { setSelectedLocalYardMachine(null); setIsLocalYardMachineModalOpen(true); }}
-                onOpenEditModal={(m) => { setSelectedLocalYardMachine(m); setIsLocalYardMachineModalOpen(true); }}
-                onDeleteMachine={handleDeleteLocalYardMachine}
-                onQuickAssignCustomer={() => {
-                  setLocalCustomerModalMode('ADD');
-                  setIsLocalCustomerModalOpen(true);
-                }}
-              />
-            )}
-
-            {activeLocalTab === 'customers' && (
-              <LocalCustomerDirectory
-                customers={localCustomers}
-                payments={localPayments}
-                activeMonth={localConfig.activeMonth || '2026-03'}
-                allMonths={localConfig.allMonths || ['2026-01', '2026-02', '2026-03']}
-                onOpenNewCustomer={() => {
-                  setLocalCustomerModalMode('ADD');
-                  setSelectedLocalCustomer(null);
-                  setIsLocalCustomerModalOpen(true);
-                }}
-                onOpenEditCustomer={(c) => {
-                  setLocalCustomerModalMode('EDIT');
-                  setSelectedLocalCustomer(c);
-                  setIsLocalCustomerModalOpen(true);
-                }}
-                onOpenPaymentModal={(c) => {
-                  setLocalPaymentModalMode('ADD');
-                  setPrefilledPaymentCustomer(c);
-                  setSelectedLocalPayment(null);
-                  setIsLocalPaymentModalOpen(true);
-                }}
-                onOpenReturnModal={(c) => {
-                  setSelectedReturnCustomer(c);
-                  setPrefilledReturnRental(null);
-                  setIsLocalReturnModalOpen(true);
-                }}
-                onRollbackReturn={handleRollbackMachineReturn}
-                onToggleArchive={handleToggleArchiveLocalCustomer}
-                onDeleteCustomer={handleDeleteLocalCustomer}
-                onPrintDoc={(docData) => setLocalDocModalData(docData)}
-              />
-            )}
-
-            {activeLocalTab === 'payments' && (
-              <LocalPaymentsLedger
-                payments={localPayments}
-                customers={localCustomers}
-                activeMonth={localConfig.activeMonth || '2026-03'}
-                onOpenNewPayment={() => {
-                  setLocalPaymentModalMode('ADD');
-                  setSelectedLocalPayment(null);
-                  setPrefilledPaymentCustomer(null);
-                  setIsLocalPaymentModalOpen(true);
-                }}
-                onOpenEditPayment={(pay) => {
-                  setLocalPaymentModalMode('EDIT');
-                  setSelectedLocalPayment(pay);
-                  setIsLocalPaymentModalOpen(true);
-                }}
-                onDeletePayment={handleDeleteLocalPayment}
-                onPrintReceipt={(docData) => setLocalDocModalData(docData)}
-              />
-            )}
-
-            {activeLocalTab === 'yard_returns' && (
-              <LocalReturnsWorkflow
-                customers={localCustomers}
-                onRollbackReturn={handleRollbackMachineReturn}
-                onPrintReturnNote={(docData) => setLocalDocModalData(docData)}
-              />
-            )}
-
-            {activeLocalTab === 'expenses' && (
-              <LocalExpensesLedger
-                expenses={localExpenses}
-                onOpenNewExpense={() => { setSelectedLocalExpense(null); setIsLocalExpenseModalOpen(true); }}
-                onOpenEditExpense={(e) => { setSelectedLocalExpense(e); setIsLocalExpenseModalOpen(true); }}
-                onDeleteExpense={handleDeleteLocalExpense}
-              />
-            )}
-
-            {activeLocalTab === 'partners' && (
-              <LocalSourcingPartners
-                partners={localPartners}
-                onOpenNewPartner={() => { setSelectedLocalPartner(null); setIsLocalPartnerModalOpen(true); }}
-                onOpenEditPartner={(p) => { setSelectedLocalPartner(p); setIsLocalPartnerModalOpen(true); }}
-                onDeletePartner={handleDeleteLocalPartner}
-                onOpenPurchaseModal={(p) => { setSelectedPartnerForPurchase(p); setIsLocalPurchaseModalOpen(true); }}
-                onOpenReturnModal={(p) => { setSelectedPartnerForReturn(p); setIsLocalPartnerReturnModalOpen(true); }}
-                onOpenPaymentModal={(p) => { setSelectedPartnerForPayment(p); setIsLocalPartnerPaymentModalOpen(true); }}
-                onDeletePurchase={handleDeletePartnerPurchase}
-                onDeleteReturn={handleDeletePartnerReturn}
-                onPrintDoc={(docData) => setLocalDocModalData(docData)}
-              />
-            )}
-          </div>
-        )}
-      </main>
+        </main>
+      </div>
 
       {/* ================= MODAL CONTAINERS ================= */}
       {/* Global Modals */}
       <GlobalSaleModal
         isOpen={isGlobalSaleModalOpen}
+        initialData={selectedGlobalSale}
         sale={selectedGlobalSale}
         machines={globalMachines}
         usdRate={globalConfig.usdRate || 330}
         currentUser={currentUser}
         onClose={() => setIsGlobalSaleModalOpen(false)}
         onSave={handleSaveGlobalSale}
+        onSubmit={handleSaveGlobalSale}
       />
 
       <GlobalMachineModal
         isOpen={isGlobalMachineModalOpen}
+        initialData={selectedGlobalMachine}
         machine={selectedGlobalMachine}
+        machines={globalMachines}
         usdRate={globalConfig.usdRate || 330}
         onClose={() => setIsGlobalMachineModalOpen(false)}
         onSave={handleSaveGlobalMachine}
+        onSubmit={handleSaveGlobalMachine}
       />
 
       <GlobalDisburseModal
@@ -1409,6 +1605,7 @@ export default function App() {
         metrics={globalMetrics}
         onClose={() => setIsGlobalDisburseModalOpen(false)}
         onSave={handleSaveGlobalDisbursement}
+        onSubmit={handleSaveGlobalDisbursement}
       />
 
       {globalTaxInvoiceData && (
