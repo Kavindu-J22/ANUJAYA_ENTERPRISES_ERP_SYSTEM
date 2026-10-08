@@ -749,7 +749,9 @@
           "startDate": "2026-06-08",
           "isProratedFirstMonth": false,
           "deliveryStatus": "Handovered",
-          "deliveredDate": "2026-10-08"
+          "deliveredDate": "2026-10-08",
+          "returnDetails": null,
+          "returnDate": null
         }
       ],
       "_id": "6ac80ed27dbb9642a7757524",

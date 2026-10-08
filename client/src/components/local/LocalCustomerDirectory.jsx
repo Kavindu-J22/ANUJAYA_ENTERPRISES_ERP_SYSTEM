@@ -559,6 +559,16 @@ export function LocalCustomerDirectory({
     setNewSerialNo('');
   };
 
+  // Current real-world month & year (for real-time standing, completely independent of selectedMonth/selectedYear)
+  const realNow = useMemo(() => {
+    const d = new Date();
+    return {
+      year: d.getFullYear(),
+      month: d.getMonth()
+    };
+  }, []);
+  const realNowMonthStr = useMemo(() => `${MONTH_NAMES[realNow.month]} ${realNow.year}`, [realNow]);
+
   // Use locally-selected month/year so isFutureItem reflects UI selection immediately
   const currentYM = useMemo(() => ({
     year: selectedYear,
@@ -567,6 +577,7 @@ export function LocalCustomerDirectory({
 
   const enrichedCustomers = useMemo(() => {
     return (customers || []).map(c => {
+      // 1. Selected cycle snapshot (reflects top month/year selector)
       const selectedMonthStr = `${selectedMonth} ${selectedYear}`;
       const arrearsData = calculateCustomerArrearsBreakdown(c, payments, selectedMonthStr);
       const arrears = arrearsData.netPreviousArrears;
@@ -581,6 +592,17 @@ export function LocalCustomerDirectory({
       const currentBalance = arrears + monthlyRent - paid;
       const isOverdue = currentBalance > 0;
 
+      // 2. Real-Time All-Time Standing (Live - month filter has zero effect)
+      const allTimePaid = (payments || [])
+        .filter(p => p.customerId === c.id)
+        .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+
+      const realArrearsData = calculateCustomerArrearsBreakdown(c, payments, realNowMonthStr);
+      const realNowRent = c.isArchived ? 0 : (c.rentals || []).filter(r => isMachineRentedInMonth(r, realNow))
+        .reduce((sum, r) => sum + (Number(r.rentRate) || 0), 0);
+      const totalAllTimeCharges = Number(realArrearsData.carriedBase || 0) + Number(realArrearsData.totalPreviousRent || 0) + realNowRent;
+      const allTimeBalanceDue = totalAllTimeCharges - allTimePaid;
+
       return {
         ...c,
         arrearsData,
@@ -588,10 +610,12 @@ export function LocalCustomerDirectory({
         arrears,
         paid,
         currentBalance,
-        isOverdue
+        isOverdue,
+        allTimePaid,
+        allTimeBalanceDue
       };
     });
-  }, [customers, payments, selectedMonth, selectedYear, currentYM]);
+  }, [customers, payments, selectedMonth, selectedYear, currentYM, realNow, realNowMonthStr]);
 
   const filteredCustomers = useMemo(() => {
     return enrichedCustomers.filter(c => {
@@ -774,39 +798,78 @@ export function LocalCustomerDirectory({
                     </div>
                   </div>
 
-                  {/* Financial Metrics Pill */}
-                  <div className="flex flex-wrap items-center gap-3 bg-carbon-900/90 p-3 rounded-2xl border border-carbon-700 font-mono text-xs shadow-inner">
-                    <div>
-                      <div className="flex items-center gap-1.5 mb-0.5">
-                        <span className="text-[10px] text-slate-500 uppercase font-bold">Opening / Prev. Arrears</span>
-                        <button
-                          type="button"
-                          onClick={() => setViewingArrearsCustomer({ customer, arrearsData: customer.arrearsData })}
-                          className="px-1.5 py-0.5 rounded bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 text-[9px] font-bold border border-amber-500/40 transition flex items-center gap-1 cursor-pointer"
-                          title="Click to view previous months arrears breakdown"
-                        >
-                          <span>Breakdown</span>
-                          <span className="text-[8px]">🔍</span>
-                        </button>
+                  {/* Financial Metrics Containers (Live Overall Standing + Selected Cycle Snapshot) */}
+                  <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3">
+                    {/* 1. Real-Time Overall Standing (Live - Unaffected by Month Selection) */}
+                    <div className="bg-gradient-to-br from-carbon-900 via-sky-950/40 to-carbon-900 p-3 rounded-2xl border border-sky-500/40 font-mono text-xs shadow-lg">
+                      <div className="flex items-center justify-between gap-3 pb-1.5 mb-1.5 border-b border-sky-500/20">
+                        <span className="text-[9px] uppercase font-black text-sky-400 flex items-center gap-1.5 tracking-wider">
+                          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                          <span>Live Account Standing</span>
+                        </span>
+                        <span className="text-[8px] text-slate-400 font-mono bg-sky-950/80 px-1.5 py-0.5 rounded border border-sky-500/20">
+                          Month Select Unaffected
+                        </span>
                       </div>
-                      <span className="font-bold text-amber-300">{formatLKR(customer.arrears)}</span>
+                      <div className="flex items-center gap-3">
+                        <div>
+                          <span className="text-[9px] text-slate-400 uppercase block font-bold">Currently Totally Paid</span>
+                          <span className="font-black text-sky-300 text-xs">{formatLKR(customer.allTimePaid)}</span>
+                        </div>
+                        <div className="h-6 w-[1px] bg-sky-500/20"></div>
+                        <div>
+                          <span className="text-[9px] text-slate-400 uppercase block font-bold">Current Net Balance Due</span>
+                          <span className={`font-black text-xs ${customer.allTimeBalanceDue > 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
+                            {formatLKR(customer.allTimeBalanceDue)}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="h-6 w-[1px] bg-carbon-700"></div>
-                    <div>
-                      <span className="text-[10px] text-slate-500 uppercase block font-bold">Monthly Rent ({selectedMonth} {selectedYear})</span>
-                      <span className="font-bold text-white">{formatLKR(customer.monthlyRent)}</span>
-                    </div>
-                    <div className="h-6 w-[1px] bg-carbon-700"></div>
-                    <div>
-                      <span className="text-[10px] text-slate-500 uppercase block font-bold">Paid ({selectedMonth} {selectedYear})</span>
-                      <span className="font-bold text-sky-400">{formatLKR(customer.paid)}</span>
-                    </div>
-                    <div className="h-6 w-[1px] bg-carbon-700"></div>
-                    <div>
-                      <span className="text-[10px] text-slate-500 uppercase block font-bold">Net Balance Due</span>
-                      <span className={`font-black text-sm ${customer.currentBalance > 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
-                        {formatLKR(customer.currentBalance)}
-                      </span>
+
+                    {/* 2. Billing Cycle Snapshot Pill */}
+                    <div className="bg-carbon-900/90 p-3 rounded-2xl border border-carbon-700 font-mono text-xs shadow-inner">
+                      <div className="flex items-center justify-between gap-3 pb-1.5 mb-1.5 border-b border-carbon-800">
+                        <span className="text-[9px] uppercase font-bold text-amber-400 flex items-center gap-1 tracking-wider">
+                          <span>Billing Cycle Snapshot</span>
+                        </span>
+                        <span className="text-[9px] text-amber-300/80 font-mono bg-amber-950/60 px-1.5 py-0.5 rounded border border-amber-800/40">
+                          {selectedMonth} {selectedYear}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div>
+                          <div className="flex items-center gap-1 mb-0.5">
+                            <span className="text-[9px] text-slate-500 uppercase font-bold">Prior Arrears</span>
+                            <button
+                              type="button"
+                              onClick={() => setViewingArrearsCustomer({ customer, arrearsData: customer.arrearsData })}
+                              className="px-1 py-0.5 rounded bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 text-[8px] font-bold border border-amber-500/40 transition flex items-center gap-0.5 cursor-pointer"
+                              title="Click to view previous months arrears breakdown"
+                            >
+                              <span>Breakdown</span>
+                              <span className="text-[7px]">🔍</span>
+                            </button>
+                          </div>
+                          <span className="font-bold text-amber-300 text-xs">{formatLKR(customer.arrears)}</span>
+                        </div>
+                        <div className="h-6 w-[1px] bg-carbon-700"></div>
+                        <div>
+                          <span className="text-[9px] text-slate-500 uppercase block font-bold">Rent</span>
+                          <span className="font-bold text-white text-xs">{formatLKR(customer.monthlyRent)}</span>
+                        </div>
+                        <div className="h-6 w-[1px] bg-carbon-700"></div>
+                        <div>
+                          <span className="text-[9px] text-slate-500 uppercase block font-bold">Paid</span>
+                          <span className="font-bold text-sky-400 text-xs">{formatLKR(customer.paid)}</span>
+                        </div>
+                        <div className="h-6 w-[1px] bg-carbon-700"></div>
+                        <div>
+                          <span className="text-[9px] text-slate-500 uppercase block font-bold">Cycle Balance Due</span>
+                          <span className={`font-black text-xs ${customer.currentBalance > 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
+                            {formatLKR(customer.currentBalance)}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>

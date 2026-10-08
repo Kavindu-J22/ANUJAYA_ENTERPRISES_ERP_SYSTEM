@@ -121,9 +121,12 @@ export function LocalDocumentsModal({
       .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
   }, [customer, payments, activeInvoiceYM]);
 
-  const carriedArrears = Number(arrearsData.carriedBase || 0);
-  const prevMonthsArrears = Math.max(0, (arrearsData.totalPreviousRent || 0) - (arrearsData.totalPreviousPaid || 0));
-  const totalBalanceDue = (carriedArrears + prevMonthsArrears + currentMonthRent) - currentMonthPaid;
+  const carriedBase = Number(arrearsData.carriedBase || 0);
+  const totalPrevRent = Number(arrearsData.totalPreviousRent || 0);
+  const totalPrevPaid = Number(arrearsData.totalPreviousPaid || 0);
+  const netCycles = totalPrevRent - totalPrevPaid;
+  const netPriorArrears = Number(arrearsData.netPreviousArrears ?? (carriedBase + netCycles));
+  const totalBalanceDue = netPriorArrears + currentMonthRent - currentMonthPaid;
 
   // Delivery Note items
   const deliveryRentals = useMemo(() => {
@@ -320,8 +323,8 @@ export function LocalDocumentsModal({
                       <Clock className="w-3.5 h-3.5 text-amber-700" />
                       <span>Previous Months Arrears Breakdown (Prior Billing Cycles)</span>
                     </span>
-                    <span className="font-black text-amber-800">
-                      Total Prior Arrears: {formatLKR(prevMonthsArrears)}
+                    <span className="font-black text-amber-900">
+                      Total Prior Arrears: {formatLKR(netPriorArrears)}
                     </span>
                   </div>
                   <table className="w-full text-left text-[11px] font-mono border-t border-amber-200">
@@ -341,7 +344,9 @@ export function LocalDocumentsModal({
                           <td className="py-1 text-center text-slate-600">{b.machineCount}</td>
                           <td className="py-1 text-right">{formatLKR(b.monthRent)}</td>
                           <td className="py-1 text-right text-sky-800">{formatLKR(b.monthPaid)}</td>
-                          <td className="py-1 text-right font-bold text-amber-900">{formatLKR(b.netArrears)}</td>
+                          <td className={`py-1 text-right font-bold ${b.netArrears > 0 ? 'text-amber-900' : 'text-emerald-700'}`}>
+                            {formatLKR(b.netArrears)}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -361,25 +366,37 @@ export function LocalDocumentsModal({
                 </div>
 
                 <div className="w-full sm:w-80 space-y-1.5 text-right font-mono text-xs bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                  <div className="flex justify-between py-1 border-b border-slate-200">
-                    <span className="text-slate-600">Carried Arrears (Base):</span>
-                    <span className="font-bold text-slate-900">{formatLKR(carriedArrears)}</span>
+                  {carriedBase > 0 && (
+                    <div className="flex justify-between py-1 border-b border-slate-200 text-slate-600">
+                      <span>Carried Arrears (Base):</span>
+                      <span className="font-bold text-slate-900">{formatLKR(carriedBase)}</span>
+                    </div>
+                  )}
+                  {arrearsData.breakdown?.length > 0 && (
+                    <div className="flex justify-between py-1 border-b border-slate-200 text-slate-600">
+                      <span>Prior Billing Cycles (Rent - Paid):</span>
+                      <span className={`font-bold ${netCycles < 0 ? 'text-emerald-700' : 'text-amber-700'}`}>
+                        {netCycles < 0 ? `- ${formatLKR(Math.abs(netCycles))}` : formatLKR(netCycles)}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex justify-between py-1 border-b border-slate-200 font-bold bg-amber-50/70 px-1 rounded">
+                    <span className="text-amber-900">Total Prior Arrears (Balance B/F):</span>
+                    <span className={`${netPriorArrears > 0 ? 'text-amber-800' : netPriorArrears < 0 ? 'text-emerald-700' : 'text-slate-900'}`}>
+                      {formatLKR(netPriorArrears)}
+                    </span>
                   </div>
-                  <div className="flex justify-between py-1 border-b border-slate-200">
-                    <span className="text-slate-600">Previous Months Arrears:</span>
-                    <span className="font-bold text-amber-700">{formatLKR(prevMonthsArrears)}</span>
-                  </div>
-                  <div className="flex justify-between py-1 border-b border-slate-200">
-                    <span className="text-slate-600">Current Rent ({activeInvoiceMonth}):</span>
+                  <div className="flex justify-between py-1 border-b border-slate-200 text-slate-600">
+                    <span>Current Rent ({activeInvoiceMonth}):</span>
                     <span className="font-bold text-slate-900">{formatLKR(currentMonthRent)}</span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-slate-200 text-sky-700">
                     <span>Total Paid ({activeInvoiceMonth}):</span>
                     <span className="font-bold">- {formatLKR(currentMonthPaid)}</span>
                   </div>
-                  <div className="flex justify-between py-2 text-base font-black border-t-2 border-slate-900 text-rose-700">
-                    <span>Total Balance Due:</span>
-                    <span>{formatLKR(totalBalanceDue)}</span>
+                  <div className={`flex justify-between py-2 text-base font-black border-t-2 border-slate-900 ${totalBalanceDue > 0 ? 'text-rose-700' : totalBalanceDue < 0 ? 'text-emerald-700' : 'text-slate-900'}`}>
+                    <span>{totalBalanceDue < 0 ? 'Advance / Excess Paid:' : 'Total Balance Due:'}</span>
+                    <span>{totalBalanceDue < 0 ? `- ${formatLKR(Math.abs(totalBalanceDue))}` : formatLKR(totalBalanceDue)}</span>
                   </div>
                 </div>
               </div>
