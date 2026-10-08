@@ -519,38 +519,14 @@
       "paymentStatus": "PAID",
       "paidAmount": 78000,
       "warranty": "1-Year Comprehensive Warranty (Motor & PCB)",
-      "cancelled": false,
+      "cancelled": true,
       "_id": "6ac7787aaf2c3f8376dd8a33",
       "createdAt": "2026-10-08T11:03:22.800Z",
       "updatedAt": "2026-10-08T11:03:22.800Z",
       "__v": 0
     }
   ],
-  "globalDisbursements": [
-    {
-      "id": "DIS-022479",
-      "date": "2026-10-08",
-      "partner": "Y",
-      "amount": 40000,
-      "memo": "Consortium Capital Draw",
-      "_id": "6ac7a9c680cbd9eb9d5a2ec3",
-      "createdAt": "2026-10-08T14:33:42.487Z",
-      "updatedAt": "2026-10-08T14:33:42.487Z",
-      "__v": 0,
-      "notes": "Consortium Capital Draw"
-    },
-    {
-      "id": "DIS-915768",
-      "date": "2026-10-08",
-      "partner": "X",
-      "amount": 50000,
-      "memo": "Consortium Capital Draw",
-      "_id": "6ac799bbaf2c3f8376dd8a36",
-      "createdAt": "2026-10-08T13:25:15.765Z",
-      "updatedAt": "2026-10-08T13:25:15.765Z",
-      "__v": 0
-    }
-  ],
+  "globalDisbursements": [],
   "globalConfig": {
     "usdRate": 330,
     "lang": "en"

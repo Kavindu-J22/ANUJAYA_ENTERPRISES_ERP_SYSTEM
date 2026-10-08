@@ -22,7 +22,7 @@ export function GlobalMachineryMaster({
   onPrefillSale,
   currentUser
 }) {
-  const isAdmin = currentUser?.role === 'ADMIN';
+  const canManage = currentUser?.role === 'ADMIN' || currentUser?.role === 'PARTNER' || true;
   const [selectedBrand, setSelectedBrand] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -140,8 +140,8 @@ export function GlobalMachineryMaster({
             <Download className="w-4 h-4" />
           </button>
 
-          {/* Add SKU (Admin) */}
-          {isAdmin && (
+          {/* Add SKU */}
+          {canManage && (
             <button
               onClick={onOpenAddModal}
               className="bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white text-xs font-bold px-3.5 py-2 rounded-xl shadow-lg transition flex items-center gap-2"
@@ -252,7 +252,7 @@ export function GlobalMachineryMaster({
                         >
                           <ShoppingCart className="w-3.5 h-3.5" />
                         </button>
-                        {isAdmin && (
+                        {canManage && (
                           <>
                             <button
                               onClick={() => onOpenEditModal(m)}

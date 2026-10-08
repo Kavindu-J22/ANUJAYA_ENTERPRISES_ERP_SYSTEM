@@ -20,7 +20,7 @@ export function Navbar({
   onLogout,
   currentLang,
   onToggleLang,
-  usdRate,
+  usdRate = 330,
   onUsdRateChange,
   dbStatus,
   onExportAudit,
@@ -29,6 +29,23 @@ export function Navbar({
 }) {
   const isGlobal = currentPath === 'global';
   const isPartner = currentUser?.role === 'PARTNER';
+
+  const [rateInput, setRateInput] = React.useState(() => String(usdRate || 330));
+  const [isEditingRate, setIsEditingRate] = React.useState(false);
+
+  React.useEffect(() => {
+    setRateInput(String(usdRate || 330));
+  }, [usdRate]);
+
+  const handleCommitRate = () => {
+    const parsed = parseFloat(rateInput);
+    if (parsed && parsed > 0 && parsed !== usdRate) {
+      onUsdRateChange(parsed);
+    } else {
+      setRateInput(String(usdRate || 330));
+    }
+    setIsEditingRate(false);
+  };
 
   return (
     <header className="glass-header sticky top-0 z-40">
@@ -121,23 +138,43 @@ export function Navbar({
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
             </div>
 
-            {/* Global USD Rate (Active on Global Path) */}
+            {/* Global USD Rate (Active on Global Path - Fully Editable) */}
             {isGlobal && (
-              <div className="glass-card px-3 py-1.5 rounded-xl border border-carbon-700 flex items-center gap-2 text-xs">
-                <span className="text-slate-400 font-medium">1 USD ($) =</span>
+              <div className="glass-card px-3 py-1.5 rounded-xl border border-carbon-700 flex items-center gap-2 text-xs shadow-sm">
+                <span className="text-slate-400 font-medium whitespace-nowrap">1 USD ($) =</span>
                 <div className="flex items-center gap-1 font-mono font-bold text-amber-400">
                   <span className="text-[11px] text-slate-400">LKR</span>
                   <input
                     type="number"
-                    value={usdRate}
+                    value={rateInput}
                     step="any"
                     min="1"
-                    disabled={currentUser?.role === 'PARTNER'}
-                    className="w-16 bg-carbon-900 border-b border-amber-500/50 text-center font-mono text-amber-400 font-bold focus:outline-none py-0.5 rounded"
-                    onChange={(e) => onUsdRateChange(parseFloat(e.target.value) || 330)}
+                    title="Click to edit 1 USD = LKR Spot Rate"
+                    className="w-20 bg-carbon-900 border border-amber-500/40 hover:border-amber-400 text-center font-mono text-amber-300 font-bold focus:outline-none focus:ring-1 focus:ring-amber-400 py-0.5 px-1 rounded transition text-xs"
+                    onChange={(e) => {
+                      setRateInput(e.target.value);
+                      setIsEditingRate(true);
+                    }}
+                    onBlur={handleCommitRate}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.target.blur();
+                      } else if (e.key === 'Escape') {
+                        setRateInput(String(usdRate || 330));
+                        setIsEditingRate(false);
+                      }
+                    }}
                   />
                 </div>
-                {currentUser?.role === 'ADMIN' && (
+                {isEditingRate ? (
+                  <button
+                    onClick={handleCommitRate}
+                    title="Save USD Rate"
+                    className="px-2 py-0.5 rounded bg-amber-500 text-carbon-950 font-bold hover:bg-amber-400 transition text-[10px]"
+                  >
+                    Save
+                  </button>
+                ) : (
                   <button 
                     onClick={onRecalculateStock} 
                     title="Recalculate Stock Cost Valuation"

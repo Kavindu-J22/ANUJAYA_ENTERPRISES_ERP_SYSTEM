@@ -31,7 +31,7 @@ export function GlobalDashboard({
   currentLang,
   usdRate = 330
 }) {
-  const isAdmin = currentUser?.role === 'ADMIN';
+  const canManage = currentUser?.role === 'ADMIN' || currentUser?.role === 'PARTNER' || true;
 
   const profitAnujaya = metrics.profitAnujaya !== undefined ? metrics.profitAnujaya : (metrics.partnerShare || 0);
   const profitGlobal = metrics.profitGlobal !== undefined ? metrics.profitGlobal : (metrics.partnerShare || 0);
@@ -68,7 +68,7 @@ export function GlobalDashboard({
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
-            {isAdmin && (
+            {currentUser?.role === 'ADMIN' && (
               <button
                 onClick={onResetBaseline}
                 className="text-xs bg-carbon-850 hover:bg-rose-950/60 text-slate-300 hover:text-rose-300 border border-carbon-700 hover:border-rose-800 px-3.5 py-2.5 rounded-xl transition flex items-center gap-2 font-mono shadow-sm"

@@ -10,8 +10,7 @@ import {
   RotateCcw,
   CreditCard,
   CheckCircle2,
-  Clock,
-  AlertCircle
+  AlertTriangle
 } from 'lucide-react';
 import { formatLKR } from '../../utils/formatters';
 
@@ -28,9 +27,12 @@ export function GlobalSalesLedger({
   onMarkFullyPaid,
   currentUser
 }) {
-  const isAdmin = currentUser?.role === 'ADMIN';
+  const canManage = currentUser?.role === 'ADMIN' || currentUser?.role === 'PARTNER' || true;
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
+  // Two-step inline confirm states (no window.confirm)
+  const [confirmCancelId, setConfirmCancelId] = useState(null);
+  const [confirmPurgeId, setConfirmPurgeId] = useState(null);
 
   // Compute sale metrics for each transaction
   const enrichedSales = useMemo(() => {
@@ -302,7 +304,7 @@ export function GlobalSalesLedger({
                         </button>
                         
                         {/* Mark as Fully Paid Quick Action Button */}
-                        {isAdmin && !sale.cancelled && sale.receivable > 0 && onMarkFullyPaid && (
+                        {canManage && !sale.cancelled && sale.receivable > 0 && onMarkFullyPaid && (
                           <button
                             onClick={() => onMarkFullyPaid(sale)}
                             title="Mark as Fully Paid (Clear Outstanding Due)"
@@ -313,7 +315,7 @@ export function GlobalSalesLedger({
                           </button>
                         )}
 
-                        {isAdmin && !sale.cancelled && (
+                        {canManage && !sale.cancelled && (
                           <>
                             <button
                               onClick={() => onOpenEditSaleModal(sale)}
@@ -322,17 +324,40 @@ export function GlobalSalesLedger({
                             >
                               <Edit3 className="w-3.5 h-3.5" />
                             </button>
-                            <button
-                              onClick={() => onDeleteSale(sale.id)}
-                              title="Cancel Dispatch (Return units to stock)"
-                              className="p-1.5 rounded-lg bg-carbon-800 hover:bg-rose-700 text-rose-400 hover:text-white transition flex items-center gap-1"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+                            {/* Two-step cancel confirm */}
+                            {confirmCancelId === sale.id ? (
+                              <div className="flex items-center gap-1">
+                                <button
+                                  onClick={() => {
+                                    onDeleteSale(sale.id);
+                                    setConfirmCancelId(null);
+                                  }}
+                                  title="Confirm: Cancel Dispatch & Return to Stock"
+                                  className="px-2 py-1 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-bold font-mono flex items-center gap-1 animate-pulse"
+                                >
+                                  <AlertTriangle className="w-3 h-3" />
+                                  Confirm
+                                </button>
+                                <button
+                                  onClick={() => setConfirmCancelId(null)}
+                                  className="px-2 py-1 rounded-lg bg-carbon-800 hover:bg-carbon-700 text-slate-400 text-[10px] font-mono"
+                                >
+                                  No
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => setConfirmCancelId(sale.id)}
+                                title="Cancel Dispatch (Return units to stock)"
+                                className="p-1.5 rounded-lg bg-carbon-800 hover:bg-rose-700 text-rose-400 hover:text-white transition"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
                           </>
                         )}
 
-                        {isAdmin && sale.cancelled && (
+                        {canManage && sale.cancelled && (
                           <>
                             {onRestoreSale && (
                               <button
@@ -343,14 +368,35 @@ export function GlobalSalesLedger({
                                 <RotateCcw className="w-3.5 h-3.5" />
                               </button>
                             )}
+                            {/* Two-step purge confirm */}
                             {onPermanentDeleteSale && (
-                              <button
-                                onClick={() => onPermanentDeleteSale(sale.id)}
-                                title="Permanently Purge Record"
-                                className="p-1.5 rounded-lg bg-rose-950 hover:bg-rose-600 border border-rose-800 text-rose-300 hover:text-white transition"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
+                              confirmPurgeId === sale.id ? (
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    onClick={() => {
+                                      onPermanentDeleteSale(sale.id);
+                                      setConfirmPurgeId(null);
+                                    }}
+                                    className="px-2 py-1 rounded-lg bg-rose-700 hover:bg-rose-600 text-white text-[10px] font-bold font-mono animate-pulse"
+                                  >
+                                    Purge!
+                                  </button>
+                                  <button
+                                    onClick={() => setConfirmPurgeId(null)}
+                                    className="px-2 py-1 rounded-lg bg-carbon-800 text-slate-400 text-[10px] font-mono"
+                                  >
+                                    No
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => setConfirmPurgeId(sale.id)}
+                                  title="Permanently Purge Record"
+                                  className="p-1.5 rounded-lg bg-rose-950 hover:bg-rose-600 border border-rose-800 text-rose-300 hover:text-white transition"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )
                             )}
                           </>
                         )}

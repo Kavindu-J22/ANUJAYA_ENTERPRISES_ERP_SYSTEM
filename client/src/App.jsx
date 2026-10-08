@@ -647,7 +647,6 @@ export default function App() {
   };
 
   const handleDeleteGlobalSale = async (id) => {
-    if (!window.confirm("Cancel this sale transaction and return all units back to warehouse stock?")) return;
     try {
       const res = await api.updateGlobalSale(id, { cancelled: true });
       if (res.success) {
@@ -676,7 +675,6 @@ export default function App() {
   };
 
   const handlePermanentDeleteGlobalSale = async (id) => {
-    if (!window.confirm(`Permanently purge sale #${id} from the database? This action cannot be undone.`)) return;
     try {
       const res = await api.deleteGlobalSale(id);
       if (res.success) {
@@ -777,7 +775,6 @@ export default function App() {
   };
 
   const handleDeleteGlobalDisbursement = async (id) => {
-    if (!window.confirm(`Remove capital draw #${id} and restore equity to partner balance?`)) return;
     try {
       const res = await api.deleteGlobalDisbursement(id);
       if (res.success) {

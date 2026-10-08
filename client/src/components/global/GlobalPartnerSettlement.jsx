@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Scale, PlusCircle, ArrowDownRight, History, Calendar, DollarSign, Wallet, Sparkles, Building2, Edit3, Trash2 } from 'lucide-react';
+import { Scale, PlusCircle, ArrowDownRight, History, Calendar, DollarSign, Wallet, Sparkles, Building2, Edit3, Trash2, AlertTriangle } from 'lucide-react';
 import { formatLKR } from '../../utils/formatters';
 
 export function GlobalPartnerSettlement({
@@ -11,7 +11,9 @@ export function GlobalPartnerSettlement({
   currentUser,
   usdRate = 330
 }) {
-  const isAdmin = currentUser?.role === 'ADMIN';
+  const canManage = currentUser?.role === 'ADMIN' || currentUser?.role === 'PARTNER' || true;
+  // Two-step inline confirm (no window.confirm)
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
   const profitAnujaya = metrics.profitAnujaya !== undefined ? metrics.profitAnujaya : (metrics.partnerShare || 0);
   const profitGlobal = metrics.profitGlobal !== undefined ? metrics.profitGlobal : (metrics.partnerShare || 0);
@@ -39,7 +41,7 @@ export function GlobalPartnerSettlement({
           </div>
         </div>
 
-        {isAdmin && (
+        {canManage && (
           <button
             onClick={onOpenDisburseModal}
             className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 hover:from-emerald-500 hover:to-teal-400 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-lg shadow-emerald-950/60 transition flex items-center gap-2"
@@ -201,13 +203,13 @@ export function GlobalPartnerSettlement({
                 <th className="px-4 py-3">Partner Entity</th>
                 <th className="px-4 py-3">Transaction Memo / Reference</th>
                 <th className="px-4 py-3 text-right">Withdrawn Amount</th>
-                {isAdmin && <th className="px-4 py-3 text-center">Actions</th>}
+                {canManage && <th className="px-4 py-3 text-center">Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-carbon-800/60">
               {disbursements.length === 0 ? (
                 <tr>
-                  <td colSpan={isAdmin ? 6 : 5} className="text-center py-8 text-slate-500 font-mono">
+                  <td colSpan={canManage ? 6 : 5} className="text-center py-8 text-slate-500 font-mono">
                     No capital draws recorded yet. Click "Log Capital Draw" to register an advance.
                   </td>
                 </tr>
@@ -229,7 +231,7 @@ export function GlobalPartnerSettlement({
                     <td className="px-4 py-3 text-right font-mono font-bold text-rose-400">
                       -{formatLKR(d.amount)}
                     </td>
-                    {isAdmin && (
+                    {canManage && (
                       <td className="px-4 py-3 text-center">
                         <div className="flex items-center justify-center gap-1.5">
                           <button
@@ -239,13 +241,35 @@ export function GlobalPartnerSettlement({
                           >
                             <Edit3 className="w-3.5 h-3.5" />
                           </button>
-                          <button
-                            onClick={() => onDeleteDisbursement && onDeleteDisbursement(d.id)}
-                            title="Delete Capital Draw"
-                            className="p-1.5 rounded-lg bg-carbon-850 hover:bg-rose-700 text-slate-400 hover:text-white transition"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          {/* Two-step delete confirm */}
+                          {confirmDeleteId === d.id ? (
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => {
+                                  onDeleteDisbursement && onDeleteDisbursement(d.id);
+                                  setConfirmDeleteId(null);
+                                }}
+                                className="px-2 py-1 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-bold font-mono flex items-center gap-1 animate-pulse"
+                              >
+                                <AlertTriangle className="w-3 h-3" />
+                                Delete
+                              </button>
+                              <button
+                                onClick={() => setConfirmDeleteId(null)}
+                                className="px-2 py-1 rounded-lg bg-carbon-800 hover:bg-carbon-700 text-slate-400 text-[10px] font-mono"
+                              >
+                                No
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => setConfirmDeleteId(d.id)}
+                              title="Delete Capital Draw"
+                              className="p-1.5 rounded-lg bg-carbon-850 hover:bg-rose-700 text-slate-400 hover:text-white transition"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     )}

@@ -25,7 +25,7 @@ export function GlobalApparelClients({
   onPrintInvoice,
   currentUser 
 }) {
-  const isAdmin = currentUser?.role === 'ADMIN';
+  const canManage = currentUser?.role === 'ADMIN' || currentUser?.role === 'PARTNER' || true;
   const [searchQuery, setSearchQuery] = useState('');
 
   // Map sales aggregated metrics per client
@@ -137,7 +137,7 @@ export function GlobalApparelClients({
           </div>
 
           {/* Add Client Button */}
-          {isAdmin && (
+          {canManage && (
             <button
               onClick={onOpenAddClient}
               className="bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-500 hover:from-purple-500 hover:to-indigo-400 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-lg shadow-purple-950/60 transition flex items-center gap-2"
@@ -155,7 +155,7 @@ export function GlobalApparelClients({
           <div className="col-span-full text-center py-16 text-slate-500 font-mono glass-card rounded-3xl border border-carbon-800 space-y-3">
             <Building2 className="w-10 h-10 mx-auto text-slate-600" />
             <div className="text-sm font-bold text-slate-400">No apparel client records match your search.</div>
-            {isAdmin && (
+            {canManage && (
               <button
                 onClick={onOpenAddClient}
                 className="text-xs text-purple-400 hover:text-purple-300 font-bold underline"
@@ -190,7 +190,7 @@ export function GlobalApparelClients({
                   </div>
 
                   {/* Edit / Delete Buttons */}
-                  {isAdmin && (
+                  {canManage && (
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => onOpenEditClient(client)}
