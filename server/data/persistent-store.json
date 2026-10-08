@@ -727,74 +727,35 @@
   ],
   "localCustomers": [
     {
-      "id": "c_1",
-      "code": "CUST-001",
-      "name": "DM Product",
-      "nic": "REG-001",
-      "phone": "071-0962669",
-      "email": "dmproductgarments@gmail.com",
-      "address": "DM Product Factory, Avissawella Road",
-      "baseOpeningBalance": 266000,
+      "id": "c_1791493865432",
+      "code": "CUST-355",
+      "name": "test 3",
+      "nic": "REG-CLIENT",
+      "phone": "00712915150",
+      "email": "test@gmail.com",
+      "address": "test loc",
+      "baseOpeningBalance": 200000,
       "isArchived": false,
       "billingCycleDay": 5,
       "rentals": [
         {
-          "machineId": "m_1_1",
-          "machineCode": "M-700-14P",
-          "model": "Pegasus M-700 Overlock (Fleet of 14)",
-          "serialNumber": "SN-M700-01-14",
-          "rentRate": 56000,
-          "status": "Active",
-          "accessories": "Complete Set",
-          "startDate": "2026-08-01",
-          "isProratedFirstMonth": false,
-          "returnDetails": null
-        },
-        {
-          "machineId": "m_1_2",
-          "machineCode": "W-500-3P",
-          "model": "W-500 Flatlock Industrial (3 pcs)",
-          "serialNumber": "SN-W500-01-03",
-          "rentRate": 18000,
-          "status": "Active",
-          "accessories": "Stand, Table, Motor",
-          "startDate": "2026-08-01",
-          "isProratedFirstMonth": false,
-          "returnDetails": null
-        },
-        {
-          "machineId": "m_1_3",
-          "machineCode": "C007JD-2P",
-          "model": "C007JD HEM Cutter Specialty (2 pcs)",
-          "serialNumber": "SN-C007-01-02",
-          "rentRate": 30000,
-          "status": "Active",
-          "accessories": "Complete Set",
-          "startDate": "2026-08-01",
-          "isProratedFirstMonth": false,
-          "returnDetails": null
-        },
-        {
-          "machineId": "m_1791484702050",
+          "machineId": "m_1791493954472",
           "machineCode": "JK-8700",
           "model": "JUKI DDL-8700 High-Speed Lockstitch",
-          "serialNumber": "sntt",
+          "serialNumber": "srt",
           "rentRate": 4500,
+          "status": "Active",
           "accessories": "Complete Stand, Table, Servo Motor",
-          "startDate": "2026-10-08",
-          "isProratedFirstMonth": false,
-          "status": "Active"
+          "startDate": "2026-07-08",
+          "isProratedFirstMonth": true,
+          "deliveryStatus": "Handovered",
+          "deliveredDate": "2026-10-08"
         }
       ],
-      "_id": "6ac75f76e664b6eb2494df26",
-      "__v": 0,
-      "createdAt": "2026-10-08T09:16:38.565Z",
-      "updatedAt": "2026-10-08T17:18:23.277Z",
-      "monthlyRent": 0,
-      "arrears": 266000,
-      "paid": 370000,
-      "currentBalance": -104000,
-      "isOverdue": false
+      "_id": "6ac806e9d3d6e981fd0ecc3f",
+      "createdAt": "2026-10-08T21:11:05.442Z",
+      "updatedAt": "2026-10-08T21:11:05.442Z",
+      "__v": 0
     },
     {
       "id": "c_2",
@@ -1587,6 +1548,48 @@
   ],
   "localPayments": [
     {
+      "id": "pay_1791494194996",
+      "month": "July 2026",
+      "customerId": "c_1791493865432",
+      "customerName": "test 3",
+      "amount": 4500,
+      "date": "2026-10-08",
+      "method": "BOC Ruwanwella Transfer",
+      "refNo": "REC-188772",
+      "_id": "6ac80833d3d6e981fd0ecc40",
+      "createdAt": "2026-10-08T21:16:35.003Z",
+      "updatedAt": "2026-10-08T21:16:35.003Z",
+      "__v": 0
+    },
+    {
+      "id": "pay_1791493572348",
+      "month": "October 2026",
+      "customerId": "c_2",
+      "customerName": "Serandib Fashion",
+      "amount": 83000,
+      "date": "2026-10-08",
+      "method": "BOC Ruwanwella Transfer",
+      "refNo": "REC-566855",
+      "_id": "6ac805c4d3d6e981fd0ecc3e",
+      "createdAt": "2026-10-08T21:06:12.355Z",
+      "updatedAt": "2026-10-08T21:06:12.355Z",
+      "__v": 0
+    },
+    {
+      "id": "pay_1791493508100",
+      "month": "September 2026",
+      "customerId": "c_2",
+      "customerName": "Serandib Fashion",
+      "amount": 83000,
+      "date": "2026-10-08",
+      "method": "BOC Ruwanwella Transfer",
+      "refNo": "REC-500752",
+      "_id": "6ac80584d3d6e981fd0ecc3d",
+      "createdAt": "2026-10-08T21:05:08.116Z",
+      "updatedAt": "2026-10-08T21:05:08.116Z",
+      "__v": 0
+    },
+    {
       "id": "pay_1791476078228",
       "month": "August 2026",
       "customerId": "c_1",
@@ -1783,7 +1786,7 @@
     }
   ],
   "localConfig": {
-    "activeMonth": "August 2026",
+    "activeMonth": "October 2026",
     "allMonths": [
       "August 2026",
       "September 2026",

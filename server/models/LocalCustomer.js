@@ -10,6 +10,8 @@ const RentalItemSchema = new mongoose.Schema({
   accessories: { type: String, default: "Complete Set" },
   startDate: { type: String, default: "2026-08-01" },
   isProratedFirstMonth: { type: Boolean, default: false },
+  deliveryStatus: { type: String, enum: ['Ongoing', 'Handovered'], default: 'Ongoing' },
+  deliveredDate: { type: String, default: null },
   returnDetails: {
     slipNo: String,
     returnDate: String,

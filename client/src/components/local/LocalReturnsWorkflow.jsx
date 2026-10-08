@@ -1,12 +1,15 @@
-import React, { useMemo } from 'react';
-import { RotateCcw, Printer, ArrowUpRight, CheckCircle2, AlertCircle } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { RotateCcw, Printer, ArrowUpRight, CheckCircle2, AlertCircle, PlusCircle } from 'lucide-react';
 import { formatLKR } from '../../utils/formatters';
 
 export function LocalReturnsWorkflow({
   customers,
+  onOpenReturnModal,
   onRollbackReturn,
   onPrintReturnNote
 }) {
+  const [confirmRollbackId, setConfirmRollbackId] = useState(null);
+
   // Aggregate all returned machines across all customers
   const allReturns = useMemo(() => {
     const list = [];
@@ -25,14 +28,26 @@ export function LocalReturnsWorkflow({
   return (
     <section className="space-y-6 animate-fadeIn">
       {/* Header */}
-      <div className="glass-card p-6 rounded-3xl border border-carbon-700/80 shadow-xl">
-        <h2 className="font-display font-black text-xl text-white tracking-tight flex items-center gap-2">
-          <RotateCcw className="w-5 h-5 text-amber-400" />
-          <span>Central Yard Machinery Returns & De-Hire Workflow</span>
-        </h2>
-        <p className="text-xs text-slate-400 mt-0.5 font-mono">
-          Inspection Reports, Relieved Monthly Rent Deductions & Return Slips
-        </p>
+      <div className="glass-card p-6 rounded-3xl border border-carbon-700/80 shadow-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 className="font-display font-black text-xl text-white tracking-tight flex items-center gap-2">
+            <RotateCcw className="w-5 h-5 text-amber-400" />
+            <span>Central Yard Machinery Returns & De-Hire Workflow</span>
+          </h2>
+          <p className="text-xs text-slate-400 mt-0.5 font-mono">
+            Inspection Reports, Relieved Monthly Rent Deductions & Return Slips
+          </p>
+        </div>
+
+        {onOpenReturnModal && (
+          <button
+            onClick={() => onOpenReturnModal()}
+            className="px-4 py-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-bold text-xs rounded-xl transition flex items-center gap-2 shadow-lg"
+          >
+            <PlusCircle className="w-4 h-4" />
+            <span>Process Yard Return</span>
+          </button>
+        )}
       </div>
 
       {/* Table */}
@@ -84,19 +99,50 @@ export function LocalReturnsWorkflow({
                     <td className="px-4 py-3 text-center">
                       <div className="flex items-center justify-center gap-1.5">
                         <button
-                          onClick={() => onPrintReturnNote(customer, rental, returnDetails)}
+                          onClick={() => onPrintReturnNote({
+                            type: 'RETURN',
+                            customer,
+                            returnedMachines: [{
+                              model: rental.model,
+                              serialNumber: rental.serialNumber,
+                              rentRate: rental.rentRate
+                            }],
+                            meta: returnDetails
+                          })}
                           title="Print Yard Machinery Return Note"
                           className="p-1.5 rounded-lg bg-carbon-800 hover:bg-sky-600 text-slate-300 hover:text-white transition"
                         >
                           <Printer className="w-3.5 h-3.5" />
                         </button>
-                        <button
-                          onClick={() => onRollbackReturn(customer.id, rental.machineId)}
-                          title="Rollback / Restore to Active Customer Fleet"
-                          className="px-2 py-1 rounded bg-carbon-800 hover:bg-emerald-700 text-slate-300 hover:text-white text-[10px] transition"
-                        >
-                          Restore Active
-                        </button>
+                        
+                        {confirmRollbackId === rental.machineId ? (
+                          <div className="flex items-center gap-1 animate-fadeIn">
+                            <button
+                              onClick={() => {
+                                setConfirmRollbackId(null);
+                                onRollbackReturn(customer.id, rental.machineId);
+                              }}
+                              className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[10px] font-bold"
+                              title="Confirm Reactivate"
+                            >
+                              Confirm?
+                            </button>
+                            <button
+                              onClick={() => setConfirmRollbackId(null)}
+                              className="px-1.5 py-1 bg-carbon-700 hover:bg-carbon-600 text-slate-300 rounded text-[10px]"
+                            >
+                              No
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setConfirmRollbackId(rental.machineId)}
+                            title="Rollback / Restore to Active Customer Fleet"
+                            className="px-2 py-1 rounded bg-carbon-800 hover:bg-emerald-700 text-slate-300 hover:text-white text-[10px] transition font-bold"
+                          >
+                            Restore Active
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

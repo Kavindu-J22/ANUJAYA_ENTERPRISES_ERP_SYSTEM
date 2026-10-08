@@ -954,6 +954,41 @@ export default function App() {
     }
   };
 
+  const handleUpdateCustomerRental = async (customerId, updatedRental) => {
+    try {
+      const customer = localCustomers.find(c => c.id === customerId);
+      if (!customer) return;
+      const updatedRentals = (customer.rentals || []).map(r =>
+        r.machineId === updatedRental.machineId ? updatedRental : r
+      );
+      const res = await api.updateLocalCustomer(customerId, { rentals: updatedRentals });
+      if (res.success) {
+        setLocalCustomers(prev => prev.map(c => c.id === customerId ? res.data : c));
+        addToast(`Fleet item ${updatedRental.model || ''} updated!`, "success");
+        api.getAlertsOverview().then(r => r.success && setAlertsData(r.data));
+      }
+    } catch {
+      addToast("Failed to update fleet item", "error");
+    }
+  };
+
+  const handleDeleteCustomerRental = async (customerId, machineId) => {
+    try {
+      const customer = localCustomers.find(c => c.id === customerId);
+      if (!customer) return;
+      const deletedItem = (customer.rentals || []).find(r => r.machineId === machineId);
+      const updatedRentals = (customer.rentals || []).filter(r => r.machineId !== machineId);
+      const res = await api.updateLocalCustomer(customerId, { rentals: updatedRentals });
+      if (res.success) {
+        setLocalCustomers(prev => prev.map(c => c.id === customerId ? res.data : c));
+        addToast(`Machinery ${deletedItem?.model || ''} removed from fleet & restocked to Central Yard!`, "info");
+        api.getAlertsOverview().then(r => r.success && setAlertsData(r.data));
+      }
+    } catch {
+      addToast("Failed to remove fleet machine", "error");
+    }
+  };
+
   // Local: Payments
   const handleSaveLocalPayment = async (payData) => {
     try {
@@ -997,11 +1032,16 @@ export default function App() {
   // Local: Machine Returns
   const handleConfirmMachineReturn = async (returnData) => {
     try {
-      const customer = localCustomers.find(c => c.id === returnData.customerId);
-      if (!customer) return;
+      const custId = returnData.customerId || returnData.customer?.id;
+      const customer = localCustomers.find(c => c.id === custId);
+      if (!customer) {
+        addToast("Customer record not found for return", "error");
+        return;
+      }
 
+      const mId = returnData.machineId || returnData.selectedMachineId;
       const updatedRentals = (customer.rentals || []).map(r => {
-        if (r.machineId === returnData.machineId) {
+        if (r.machineId === mId || (mId === 'CUSTOM' && r.model === returnData.model)) {
           return {
             ...r,
             status: 'Returned',
@@ -1021,11 +1061,11 @@ export default function App() {
 
         // Open official Return Note print modal automatically
         setLocalDocModalData({
-          type: 'RETURN_NOTE',
+          type: 'RETURN',
           customer,
           returnedMachines: [{
-            model: returnData.model,
-            serialNumber: returnData.serialNumber,
+            model: returnData.model || returnData.customModel,
+            serialNumber: returnData.serialNumber || returnData.customSerial,
             rentRate: returnData.deductAmount
           }],
           meta: returnData
@@ -1039,7 +1079,6 @@ export default function App() {
   };
 
   const handleRollbackMachineReturn = async (customerId, machineId) => {
-    if (!window.confirm("Rollback this returned machine and reactivate its monthly hire?")) return;
     try {
       const customer = localCustomers.find(c => c.id === customerId);
       if (!customer) return;
@@ -1692,6 +1731,8 @@ export default function App() {
                   allMonths={localConfig.allMonths || ['August 2026', 'September 2026', 'October 2026', 'November 2026']}
                   onSwitchMonth={handleSwitchLocalMonth}
                   onAssignMachine={handleAssignCustomerMachine}
+                  onUpdateRental={handleUpdateCustomerRental}
+                  onDeleteRental={handleDeleteCustomerRental}
                   onOpenNewCustomer={() => {
                     setLocalCustomerModalMode('ADD');
                     setSelectedLocalCustomer(null);
@@ -1708,9 +1749,9 @@ export default function App() {
                     setSelectedLocalPayment(null);
                     setIsLocalPaymentModalOpen(true);
                   }}
-                  onOpenReturnModal={(c) => {
-                    setSelectedReturnCustomer(c);
-                    setPrefilledReturnRental(null);
+                  onOpenReturnModal={(c, r) => {
+                    setSelectedReturnCustomer(c || null);
+                    setPrefilledReturnRental(r || null);
                     setIsLocalReturnModalOpen(true);
                   }}
                   onRollbackReturn={handleRollbackMachineReturn}
@@ -1744,6 +1785,11 @@ export default function App() {
               {activeLocalTab === 'yard_returns' && (
                 <LocalReturnsWorkflow
                   customers={localCustomers}
+                  onOpenReturnModal={() => {
+                    setSelectedReturnCustomer(null);
+                    setPrefilledReturnRental(null);
+                    setIsLocalReturnModalOpen(true);
+                  }}
                   onRollbackReturn={handleRollbackMachineReturn}
                   onPrintReturnNote={(docData) => setLocalDocModalData(docData)}
                 />
@@ -1851,6 +1897,7 @@ export default function App() {
 
       <LocalReturnModal
         isOpen={isLocalReturnModalOpen}
+        customers={localCustomers}
         customer={selectedReturnCustomer}
         prefilledRental={prefilledReturnRental}
         onClose={() => setIsLocalReturnModalOpen(false)}

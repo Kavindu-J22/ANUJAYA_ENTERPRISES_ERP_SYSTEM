@@ -543,7 +543,9 @@ const store = {
 
   async updateLocalMachine(id, data) {
     if (isDbActive()) {
-      const updated = await LocalMachine.findOneAndUpdate({ id }, data, { new: true }).lean();
+      const updated = await LocalMachine.findOneAndUpdate(
+        { id }, { $set: data }, { returnDocument: 'after', runValidators: false }
+      ).lean();
       const s = loadLocalStore();
       const idx = s.localMachines.findIndex(x => x.id === id);
       if (idx !== -1) s.localMachines[idx] = { ...s.localMachines[idx], ...data };
@@ -579,6 +581,14 @@ const store = {
   },
 
   async addLocalCustomer(cust) {
+    if (!cust.id) cust.id = "c_" + Date.now();
+    if (!cust.code) {
+      const s = loadLocalStore();
+      const count = (s.localCustomers || []).length + 1;
+      cust.code = `CUST-${String(count).padStart(3, '0')}`;
+    }
+    if (!Array.isArray(cust.rentals)) cust.rentals = [];
+
     if (isDbActive()) {
       const created = await LocalCustomer.create(cust);
       const s = loadLocalStore();
@@ -594,7 +604,13 @@ const store = {
 
   async updateLocalCustomer(id, data) {
     if (isDbActive()) {
-      const updated = await LocalCustomer.findOneAndUpdate({ id }, data, { new: true }).lean();
+      // Use explicit $set so Mongoose correctly persists embedded arrays (rentals, etc.)
+      const updated = await LocalCustomer.findOneAndUpdate(
+        { id },
+        { $set: data },
+        { returnDocument: 'after', runValidators: false }
+      ).lean();
+      // Also update flat-file store as fallback/cache
       const s = loadLocalStore();
       const idx = s.localCustomers.findIndex(x => x.id === id);
       if (idx !== -1) s.localCustomers[idx] = { ...s.localCustomers[idx], ...data };
@@ -645,7 +661,9 @@ const store = {
 
   async updateLocalPayment(id, data) {
     if (isDbActive()) {
-      const updated = await LocalPayment.findOneAndUpdate({ id }, data, { new: true }).lean();
+      const updated = await LocalPayment.findOneAndUpdate(
+        { id }, { $set: data }, { returnDocument: 'after', runValidators: false }
+      ).lean();
       const s = loadLocalStore();
       const idx = s.localPayments.findIndex(x => x.id === id);
       if (idx !== -1) s.localPayments[idx] = { ...s.localPayments[idx], ...data };
@@ -696,7 +714,9 @@ const store = {
 
   async updateLocalPartner(id, data) {
     if (isDbActive()) {
-      const updated = await LocalPartner.findOneAndUpdate({ id }, data, { new: true }).lean();
+      const updated = await LocalPartner.findOneAndUpdate(
+        { id }, { $set: data }, { returnDocument: 'after', runValidators: false }
+      ).lean();
       const s = loadLocalStore();
       const idx = s.localPartners.findIndex(x => x.id === id);
       if (idx !== -1) s.localPartners[idx] = { ...s.localPartners[idx], ...data };
@@ -747,7 +767,9 @@ const store = {
 
   async updateLocalExpense(id, data) {
     if (isDbActive()) {
-      const updated = await LocalExpense.findOneAndUpdate({ id }, data, { new: true }).lean();
+      const updated = await LocalExpense.findOneAndUpdate(
+        { id }, { $set: data }, { returnDocument: 'after', runValidators: false }
+      ).lean();
       const s = loadLocalStore();
       const idx = s.localExpenses.findIndex(x => x.id === id);
       if (idx !== -1) s.localExpenses[idx] = { ...s.localExpenses[idx], ...data };
@@ -788,7 +810,9 @@ const store = {
 
   async updateLocalConfig(data) {
     if (isDbActive()) {
-      const updated = await LocalConfig.findOneAndUpdate({}, data, { new: true, upsert: true }).lean();
+      const updated = await LocalConfig.findOneAndUpdate(
+        {}, { $set: data }, { returnDocument: 'after', upsert: true, runValidators: false }
+      ).lean();
       const s = loadLocalStore();
       s.localConfig = { ...s.localConfig, ...data };
       saveLocalStore();
