@@ -891,8 +891,10 @@
           "rentRate": 20000,
           "status": "Active",
           "accessories": "Table, Stand, Motor",
-          "startDate": "2026-08-01",
+          "startDate": "2026-09-01",
           "isProratedFirstMonth": false,
+          "deliveryStatus": "Handovered",
+          "deliveredDate": "2026-10-08",
           "returnDetails": null
         },
         {
@@ -905,6 +907,8 @@
           "accessories": "Table, Stand, Motor",
           "startDate": "2026-08-01",
           "isProratedFirstMonth": false,
+          "deliveryStatus": "Ongoing",
+          "deliveredDate": null,
           "returnDetails": null
         },
         {
@@ -913,11 +917,123 @@
           "model": "M900, Zole, W500, Juki BH, Dbl Needle (6 Units)",
           "serialNumber": "SN-MIX-06",
           "rentRate": 29800,
-          "status": "Active",
+          "status": "Returned",
           "accessories": "Complete Units",
           "startDate": "2026-08-01",
           "isProratedFirstMonth": false,
-          "returnDetails": null
+          "deliveryStatus": "Handovered",
+          "deliveredDate": "2026-10-08",
+          "returnDetails": {
+            "customer": {
+              "_id": "6ac75f76e664b6eb2494df28",
+              "id": "c_3",
+              "code": "CUST-003",
+              "name": "Sumith Dabadeniya",
+              "nic": "REG-003",
+              "phone": "071-5327669",
+              "email": "sumithdabadeniya@gmail.com",
+              "address": "Sumith Dabadeniya Yard, Dabadeniya",
+              "baseOpeningBalance": 29000,
+              "isArchived": false,
+              "billingCycleDay": 5,
+              "rentals": [
+                {
+                  "machineId": "m_3_1",
+                  "machineCode": "JK-4TH",
+                  "model": "Jack 4-Thread Overlock (4 Units)",
+                  "serialNumber": "SN-JK-04",
+                  "rentRate": 20000,
+                  "status": "Active",
+                  "accessories": "Table, Stand, Motor",
+                  "startDate": "2026-09-01",
+                  "isProratedFirstMonth": false,
+                  "deliveryStatus": "Handovered",
+                  "deliveredDate": "2026-10-08",
+                  "returnDetails": null
+                },
+                {
+                  "machineId": "m_3_2",
+                  "machineCode": "PEG-M700",
+                  "model": "Pegasus M700 Overlock (3 Units)",
+                  "serialNumber": "SN-M700-03",
+                  "rentRate": 15000,
+                  "status": "Active",
+                  "accessories": "Table, Stand, Motor",
+                  "startDate": "2026-08-01",
+                  "isProratedFirstMonth": false,
+                  "deliveryStatus": "Ongoing",
+                  "deliveredDate": null,
+                  "returnDetails": null
+                },
+                {
+                  "machineId": "m_3_3",
+                  "machineCode": "SPECIAL-MIX",
+                  "model": "M900, Zole, W500, Juki BH, Dbl Needle (6 Units)",
+                  "serialNumber": "SN-MIX-06",
+                  "rentRate": 29800,
+                  "status": "Active",
+                  "accessories": "Complete Units",
+                  "startDate": "2026-08-01",
+                  "isProratedFirstMonth": false,
+                  "deliveryStatus": "Handovered",
+                  "deliveredDate": "2026-10-08",
+                  "returnDetails": null
+                }
+              ],
+              "__v": 0,
+              "createdAt": "2026-10-08T09:16:38.566Z",
+              "updatedAt": "2026-10-08T22:24:58.646Z",
+              "arrearsData": {
+                "breakdown": [
+                  {
+                    "monthLabel": "August 2026",
+                    "year": 2026,
+                    "month": 7,
+                    "machineCount": 2,
+                    "monthRent": 44800,
+                    "monthPaid": 0,
+                    "netArrears": 44800
+                  },
+                  {
+                    "monthLabel": "September 2026",
+                    "year": 2026,
+                    "month": 8,
+                    "machineCount": 3,
+                    "monthRent": 64800,
+                    "monthPaid": 0,
+                    "netArrears": 64800
+                  }
+                ],
+                "carriedBase": 29000,
+                "totalPreviousRent": 109600,
+                "totalPreviousPaid": 0,
+                "netPreviousArrears": 138600
+              },
+              "monthlyRent": 64800,
+              "arrears": 138600,
+              "paid": 0,
+              "currentBalance": 203400,
+              "isOverdue": true,
+              "allTimePaid": 0,
+              "allTimeBalanceDue": 203400
+            },
+            "customerId": "c_3",
+            "machineId": "m_3_3",
+            "selectedMachineId": "m_3_3",
+            "model": "M900, Zole, W500, Juki BH, Dbl Needle (6 Units)",
+            "machineCode": "SPECIAL-MIX",
+            "serialNumber": "SN-MIX-06",
+            "customModel": "M900, Zole, W500, Juki BH, Dbl Needle (6 Units)",
+            "customCode": "SPECIAL-MIX",
+            "customSerial": "SN-MIX-06",
+            "deductAmount": 29800,
+            "returnDate": "2026-10-08",
+            "slipNo": "RET-01242",
+            "condition": "Good / Operational",
+            "remarks": "Motor, Table & Stand verified intact at Kosgama Central Yard.",
+            "inspector": "Kosgama Yard Head"
+          },
+          "returnDate": "2026-10-08"
         }
       ]
     },

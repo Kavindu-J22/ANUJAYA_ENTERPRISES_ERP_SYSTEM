@@ -1471,7 +1471,7 @@ export default function App() {
                   >
                     <div className="flex items-center gap-3">
                       <Users className={`w-4 h-4 ${activeLocalTab === 'customers' ? 'text-sky-400' : 'text-slate-400'}`} />
-                      <span>Garment Clients</span>
+                      <span> Clients & Fleet Directory</span>
                     </div>
                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-carbon-800 border border-carbon-700 text-sky-300 font-bold">
                       {localCustomers.length}
