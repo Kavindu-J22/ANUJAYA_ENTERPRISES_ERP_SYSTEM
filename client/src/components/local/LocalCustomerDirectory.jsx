@@ -76,13 +76,37 @@ export function compareYM(a, b) {
 export function paymentBelongsToYM(p, ym) {
   if (p.month) {
     const pYM = getYearMonth(p.month);
-    if (pYM.year === ym.year && pYM.month === ym.month) return true;
+    return (pYM.year === ym.year && pYM.month === ym.month);
   }
   if (p.date) {
     const pDateYM = getDateYearMonth(p.date);
-    if (pDateYM.year === ym.year && pDateYM.month === ym.month) return true;
+    return (pDateYM.year === ym.year && pDateYM.month === ym.month);
   }
   return false;
+}
+
+export function isMachineRentedInMonth(rental, ym) {
+  if (!rental) return false;
+  // 1. Must have started on or before this month
+  const rYM = getDateYearMonth(rental.startDate || '2026-01-01');
+  if (compareYM(rYM, ym) > 0) return false;
+
+  // 2. Check return date if returned
+  const retDate = rental.returnDate || rental.returnDetails?.returnDate;
+  if (retDate) {
+    const retYM = getDateYearMonth(retDate);
+    // If returned in a previous month, not rented in this month (e.g. returned 2026-06-07 is not billed in July 2026)
+    if (compareYM(retYM, ym) < 0) return false;
+    // If returned during or after this month, it was actively rented during this month!
+    return true;
+  }
+
+  // If status is returned without recorded date, exclude
+  if (rental.status === 'Returned') {
+    return false;
+  }
+
+  return rental.status === 'Active';
 }
 
 export function calculateCustomerArrearsBreakdown(customer, payments, activeMonth) {
@@ -118,15 +142,7 @@ export function calculateCustomerArrearsBreakdown(customer, payments, activeMont
     const ym = { year: curY, month: curM };
     const monthLabel = `${MONTH_NAMES[curM]} ${curY}`;
 
-    const monthRentals = (customer.rentals || []).filter(r => {
-      const rYM = getDateYearMonth(r.startDate || '2026-01-01');
-      if (compareYM(rYM, ym) > 0) return false;
-      if (r.status === 'Returned' && r.returnDetails?.returnDate) {
-        const retYM = getDateYearMonth(r.returnDetails.returnDate);
-        if (compareYM(retYM, ym) < 0) return false;
-      }
-      return true;
-    });
+    const monthRentals = (customer.rentals || []).filter(r => isMachineRentedInMonth(r, ym));
 
     const monthRent = monthRentals.reduce((sum, r) => sum + (Number(r.rentRate) || 0), 0);
     const monthPaid = (payments || []).filter(p => p.customerId === customer.id && paymentBelongsToYM(p, ym))
@@ -551,15 +567,13 @@ export function LocalCustomerDirectory({
 
   const enrichedCustomers = useMemo(() => {
     return (customers || []).map(c => {
-      const arrearsData = calculateCustomerArrearsBreakdown(c, payments, activeMonth);
+      const selectedMonthStr = `${selectedMonth} ${selectedYear}`;
+      const arrearsData = calculateCustomerArrearsBreakdown(c, payments, selectedMonthStr);
       const arrears = arrearsData.netPreviousArrears;
 
-      // Current Month Rent: only active rentals whose startDate <= currentYM
-      const monthlyRent = c.isArchived ? 0 : (c.rentals || []).filter(r => {
-        if (r.status !== 'Active') return false;
-        const rYM = getDateYearMonth(r.startDate || '2026-01-01');
-        return compareYM(rYM, currentYM) <= 0;
-      }).reduce((sum, r) => sum + (Number(r.rentRate) || 0), 0);
+      // Current Month Rent: all machines actively rented during currentYM (includes machines returned during or after this month)
+      const monthlyRent = c.isArchived ? 0 : (c.rentals || []).filter(r => isMachineRentedInMonth(r, currentYM))
+        .reduce((sum, r) => sum + (Number(r.rentRate) || 0), 0);
 
       const paid = (payments || []).filter(p => p.customerId === c.id && paymentBelongsToYM(p, currentYM))
         .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
@@ -577,7 +591,7 @@ export function LocalCustomerDirectory({
         isOverdue
       };
     });
-  }, [customers, payments, activeMonth, currentYM]);
+  }, [customers, payments, selectedMonth, selectedYear, currentYM]);
 
   const filteredCustomers = useMemo(() => {
     return enrichedCustomers.filter(c => {
@@ -779,12 +793,12 @@ export function LocalCustomerDirectory({
                     </div>
                     <div className="h-6 w-[1px] bg-carbon-700"></div>
                     <div>
-                      <span className="text-[10px] text-slate-500 uppercase block font-bold">Monthly Rent ({activeMonth})</span>
+                      <span className="text-[10px] text-slate-500 uppercase block font-bold">Monthly Rent ({selectedMonth} {selectedYear})</span>
                       <span className="font-bold text-white">{formatLKR(customer.monthlyRent)}</span>
                     </div>
                     <div className="h-6 w-[1px] bg-carbon-700"></div>
                     <div>
-                      <span className="text-[10px] text-slate-500 uppercase block font-bold">Paid ({activeMonth})</span>
+                      <span className="text-[10px] text-slate-500 uppercase block font-bold">Paid ({selectedMonth} {selectedYear})</span>
                       <span className="font-bold text-sky-400">{formatLKR(customer.paid)}</span>
                     </div>
                     <div className="h-6 w-[1px] bg-carbon-700"></div>
@@ -917,10 +931,26 @@ export function LocalCustomerDirectory({
                                     {isFutureItem ? (
                                       <span 
                                         className="px-2 py-0.5 rounded text-[9px] font-bold bg-carbon-800 text-slate-300 border border-carbon-700 block text-center"
-                                        title={`Starts ${r.startDate} — Not billed in ${activeMonth}`}
+                                        title={`Starts ${r.startDate} — Not billed in ${selectedMonth} ${selectedYear}`}
                                       >
                                         Inactive for {selectedMonth}
                                         <span className="block text-[8px] text-sky-400">Starts {r.startDate}</span>
+                                      </span>
+                                    ) : (r.status === 'Returned' && (r.returnDate || r.returnDetails?.returnDate) && compareYM(getDateYearMonth(r.returnDate || r.returnDetails?.returnDate), currentYM) < 0) ? (
+                                      <span 
+                                        className="px-2 py-0.5 rounded text-[9px] font-bold bg-carbon-900 text-slate-400 border border-carbon-700 block text-center"
+                                        title={`Returned on ${r.returnDate || r.returnDetails?.returnDate} — Excluded from ${selectedMonth} ${selectedYear}`}
+                                      >
+                                        Returned ({r.returnDate || r.returnDetails?.returnDate})
+                                        <span className="block text-[8px] text-amber-500">Not Billed in {selectedMonth}</span>
+                                      </span>
+                                    ) : (r.status === 'Returned' && (r.returnDate || r.returnDetails?.returnDate) && compareYM(getDateYearMonth(r.returnDate || r.returnDetails?.returnDate), currentYM) === 0) ? (
+                                      <span 
+                                        className="px-2 py-0.5 rounded text-[9px] font-bold bg-amber-950 text-amber-300 border border-amber-800 block text-center"
+                                        title={`Returned on ${r.returnDate || r.returnDetails?.returnDate} — Billed for ${selectedMonth} ${selectedYear}`}
+                                      >
+                                        Returned ({r.returnDate || r.returnDetails?.returnDate})
+                                        <span className="block text-[8px] text-emerald-400">Billed for {selectedMonth}</span>
                                       </span>
                                     ) : (
                                       <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
@@ -961,14 +991,41 @@ export function LocalCustomerDirectory({
 
                                       {/* Return or Restore */}
                                       {r.status === 'Returned' ? (
-                                        <button
-                                          type="button"
-                                          onClick={() => onRollbackReturn(customer.id, r.machineId)}
-                                          title="Restore back to Active Fleet"
-                                          className="px-2 py-1 rounded bg-carbon-800 hover:bg-emerald-700 text-slate-300 hover:text-white text-[10px] transition font-bold"
-                                        >
-                                          Restore
-                                        </button>
+                                        <div className="flex items-center gap-1">
+                                          <button
+                                            type="button"
+                                            onClick={() => onPrintDoc({
+                                              type: 'RETURN',
+                                              customer,
+                                              returnedMachines: [{
+                                                model: r.model,
+                                                serialNumber: r.serialNumber,
+                                                rentRate: r.rentRate
+                                              }],
+                                              meta: {
+                                                slipNo: r.returnDetails?.slipNo || `RET-${r.machineCode || 'MCH'}-${Date.now().toString().slice(-4)}`,
+                                                returnDate: r.returnDate || r.returnDetails?.returnDate || new Date().toISOString().slice(0, 10),
+                                                condition: r.returnDetails?.condition || 'Operational',
+                                                remarks: r.returnDetails?.remarks || 'Kosgama Yard Return - Restocked to Central Warehouse',
+                                                receivedBy: r.returnDetails?.receivedBy || 'Yard Supervisor',
+                                                deductAmount: r.returnDetails?.deductAmount || r.rentRate
+                                              }
+                                            })}
+                                            title="View & Print Official Return Note"
+                                            className="px-2 py-1 rounded bg-amber-950/70 hover:bg-amber-600 text-amber-300 hover:text-white border border-amber-800 text-[10px] transition font-bold flex items-center gap-1"
+                                          >
+                                            <Printer className="w-3 h-3 text-amber-400" />
+                                            <span>Return Note</span>
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => onRollbackReturn(customer.id, r.machineId)}
+                                            title="Restore back to Active Fleet"
+                                            className="px-2 py-1 rounded bg-carbon-800 hover:bg-emerald-700 text-slate-300 hover:text-white text-[10px] transition font-bold"
+                                          >
+                                            Restore
+                                          </button>
+                                        </div>
                                       ) : (
                                         <button
                                           type="button"
@@ -1026,79 +1083,108 @@ export function LocalCustomerDirectory({
                   </div>
                 </div>
 
-                {/* Operations & Document Buttons */}
-                <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-carbon-700/60">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <button
-                      onClick={() => onOpenPaymentModal(customer)}
-                      className="px-3 py-1.5 rounded-xl bg-emerald-600/30 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/50 text-xs font-bold transition flex items-center gap-1.5"
-                    >
-                      <CreditCard className="w-3.5 h-3.5" />
-                      <span>Record Payment</span>
-                    </button>
-                    <button
-                      onClick={() => onOpenReturnModal(customer)}
-                      className="px-3 py-1.5 rounded-xl bg-amber-600/30 hover:bg-amber-600 text-amber-300 hover:text-white border border-amber-500/50 text-xs font-bold transition flex items-center gap-1.5"
-                    >
-                      <RotateCcw className="w-3.5 h-3.5" />
-                      <span>Yard Return</span>
-                    </button>
-                  </div>
+                 {/* Operations & Document Buttons */}
+                 <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-carbon-700/60">
+                   <div className="flex flex-wrap items-center gap-2">
+                     <button
+                       onClick={() => onOpenPaymentModal(customer, `${selectedMonth} ${selectedYear}`)}
+                       className="px-3 py-1.5 rounded-xl bg-emerald-600/30 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/50 text-xs font-bold transition flex items-center gap-1.5"
+                     >
+                       <CreditCard className="w-3.5 h-3.5" />
+                       <span>Record Payment</span>
+                     </button>
+                     <button
+                       onClick={() => onOpenReturnModal(customer)}
+                       className="px-3 py-1.5 rounded-xl bg-amber-600/30 hover:bg-amber-600 text-amber-300 hover:text-white border border-amber-500/50 text-xs font-bold transition flex items-center gap-1.5"
+                     >
+                       <RotateCcw className="w-3.5 h-3.5" />
+                       <span>Yard Return</span>
+                     </button>
+                   </div>
 
-                  {/* Print Document Triggers & Management */}
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <button
-                      onClick={() => onPrintDoc({ 
-                        type: 'INVOICE', 
-                        customer, 
-                        month: activeMonth, 
-                        payments, 
-                        arrearsData: customer.arrearsData 
-                      })}
-                      className="px-2.5 py-1.5 rounded-lg bg-carbon-850 hover:bg-sky-600 border border-carbon-700 text-slate-300 hover:text-white text-xs font-bold transition flex items-center gap-1"
-                      title="Print Monthly Rent Invoice"
-                    >
-                      <FileText className="w-3 h-3 text-sky-400" />
-                      <span>Invoice</span>
-                    </button>
-                    <button
-                      onClick={() => onPrintDoc({ 
-                        type: 'STATEMENT', 
-                        customer, 
-                        payments, 
-                        activeMonth, 
-                        arrearsData: customer.arrearsData 
-                      })}
-                      className="px-2.5 py-1.5 rounded-lg bg-carbon-850 hover:bg-emerald-600 border border-carbon-700 text-slate-300 hover:text-white text-xs font-bold transition flex items-center gap-1"
-                      title="Print Full Rental Statement of Account"
-                    >
-                      <Printer className="w-3 h-3 text-emerald-400" />
-                      <span>Statement</span>
-                    </button>
-                    <button
-                      onClick={() => onPrintDoc({ 
-                        type: 'AGREEMENT', 
-                        customer,
-                        activeMonth 
-                      })}
-                      className="px-2.5 py-1.5 rounded-lg bg-carbon-850 hover:bg-indigo-600 border border-carbon-700 text-slate-300 hover:text-white text-xs font-bold transition flex items-center gap-1"
-                      title="Print Formal Rental Agreement (Fully Editable)"
-                    >
-                      <FileCheck className="w-3 h-3 text-indigo-400" />
-                      <span>Agreement</span>
-                    </button>
-                    <button
-                      onClick={() => onPrintDoc({ 
-                        type: 'DELIVERY', 
-                        customer, 
-                        handoveredOnly: true 
-                      })}
-                      className="px-2.5 py-1.5 rounded-lg bg-carbon-850 hover:bg-teal-600 border border-carbon-700 text-slate-300 hover:text-white text-xs font-bold transition flex items-center gap-1"
-                      title="Print Full Delivery Note (Handovered Units Only)"
-                    >
-                      <Truck className="w-3 h-3 text-teal-400" />
-                      <span>Delivery</span>
-                    </button>
+                   {/* Print Document Triggers & Management */}
+                   <div className="flex flex-wrap items-center gap-1.5">
+                     <button
+                       onClick={() => onPrintDoc({ 
+                         type: 'INVOICE', 
+                         customer, 
+                         month: `${selectedMonth} ${selectedYear}`, 
+                         payments, 
+                         arrearsData: customer.arrearsData 
+                       })}
+                       className="px-2.5 py-1.5 rounded-lg bg-carbon-850 hover:bg-sky-600 border border-carbon-700 text-slate-300 hover:text-white text-xs font-bold transition flex items-center gap-1"
+                       title="Print Monthly Rent Invoice"
+                     >
+                       <FileText className="w-3 h-3 text-sky-400" />
+                       <span>Invoice</span>
+                     </button>
+                     <button
+                       onClick={() => onPrintDoc({ 
+                         type: 'STATEMENT', 
+                         customer, 
+                         payments, 
+                         activeMonth: `${selectedMonth} ${selectedYear}`, 
+                         arrearsData: customer.arrearsData 
+                       })}
+                       className="px-2.5 py-1.5 rounded-lg bg-carbon-850 hover:bg-emerald-600 border border-carbon-700 text-slate-300 hover:text-white text-xs font-bold transition flex items-center gap-1"
+                       title="Print Full Rental Statement of Account"
+                     >
+                       <Printer className="w-3 h-3 text-emerald-400" />
+                       <span>Statement</span>
+                     </button>
+                     <button
+                       onClick={() => onPrintDoc({ 
+                         type: 'AGREEMENT', 
+                         customer,
+                         activeMonth: `${selectedMonth} ${selectedYear}` 
+                       })}
+                       className="px-2.5 py-1.5 rounded-lg bg-carbon-850 hover:bg-indigo-600 border border-carbon-700 text-slate-300 hover:text-white text-xs font-bold transition flex items-center gap-1"
+                       title="Print Formal Rental Agreement (Fully Editable)"
+                     >
+                       <FileCheck className="w-3 h-3 text-indigo-400" />
+                       <span>Agreement</span>
+                     </button>
+                     <button
+                       onClick={() => onPrintDoc({ 
+                         type: 'DELIVERY', 
+                         customer, 
+                         handoveredOnly: true 
+                       })}
+                       className="px-2.5 py-1.5 rounded-lg bg-carbon-850 hover:bg-teal-600 border border-carbon-700 text-slate-300 hover:text-white text-xs font-bold transition flex items-center gap-1"
+                       title="Print Full Delivery Note (Handovered Units Only)"
+                     >
+                       <Truck className="w-3 h-3 text-teal-400" />
+                       <span>Delivery</span>
+                     </button>
+                     {(customer.rentals || []).some(r => r.status === 'Returned') && (
+                       <button
+                         onClick={() => {
+                           const returnedList = (customer.rentals || []).filter(r => r.status === 'Returned');
+                           onPrintDoc({
+                             type: 'RETURN',
+                             customer,
+                             returnedMachines: returnedList.map(r => ({
+                               model: r.model,
+                               serialNumber: r.serialNumber,
+                               rentRate: r.rentRate
+                             })),
+                             meta: {
+                               slipNo: `RET-${customer.code}-${Date.now().toString().slice(-4)}`,
+                               returnDate: returnedList[0]?.returnDate || returnedList[0]?.returnDetails?.returnDate || new Date().toISOString().slice(0, 10),
+                               condition: 'Kosgama Central Yard Returned',
+                               remarks: `Return Note for ${returnedList.length} de-hired machine(s)`,
+                               receivedBy: 'Yard Supervisor',
+                               deductAmount: returnedList.reduce((s, r) => s + (Number(r.rentRate) || 0), 0)
+                             }
+                           });
+                         }}
+                         className="px-2.5 py-1.5 rounded-lg bg-carbon-850 hover:bg-amber-600 border border-amber-700/60 text-slate-300 hover:text-white text-xs font-bold transition flex items-center gap-1"
+                         title="Print / View Official Yard Return Note"
+                       >
+                         <RotateCcw className="w-3 h-3 text-amber-400" />
+                         <span>Return Note</span>
+                       </button>
+                     )}
 
                     <button
                       onClick={() => onOpenEditCustomer(customer)}

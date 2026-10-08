@@ -727,6 +727,68 @@
   ],
   "localCustomers": [
     {
+      "id": "c_1791495890843",
+      "code": "CUST-685",
+      "name": "test 7",
+      "nic": "REG-CLIENT t",
+      "phone": "0715424517",
+      "email": "test7@gmail.com",
+      "address": "ttt",
+      "baseOpeningBalance": 15000,
+      "isArchived": false,
+      "billingCycleDay": 5,
+      "rentals": [
+        {
+          "machineId": "m_1791495913541",
+          "machineCode": "JK-9000",
+          "model": "JUKI DDL-9000 BMS Auto-Trimmer Lockstitch",
+          "serialNumber": "ser",
+          "rentRate": 4500,
+          "status": "Active",
+          "accessories": "Complete Set with Auto Thread Trimmer",
+          "startDate": "2026-06-08",
+          "isProratedFirstMonth": false,
+          "deliveryStatus": "Handovered",
+          "deliveredDate": "2026-10-08"
+        }
+      ],
+      "_id": "6ac80ed27dbb9642a7757524",
+      "createdAt": "2026-10-08T21:44:50.851Z",
+      "updatedAt": "2026-10-08T21:44:50.851Z",
+      "__v": 0
+    },
+    {
+      "id": "c_1791495482857",
+      "code": "CUST-267",
+      "name": "test 3",
+      "nic": "REG-CLIENT",
+      "phone": "0712915150",
+      "email": "test@gmail.com",
+      "address": "test Location",
+      "baseOpeningBalance": 200000,
+      "isArchived": false,
+      "billingCycleDay": 5,
+      "rentals": [
+        {
+          "machineId": "m_1791495529775",
+          "machineCode": "JK-8700",
+          "model": "JUKI DDL-8700 High-Speed Lockstitch",
+          "serialNumber": "str",
+          "rentRate": 4500,
+          "status": "Active",
+          "accessories": "Complete Stand, Table, Servo Motor",
+          "startDate": "2026-07-08",
+          "isProratedFirstMonth": false,
+          "deliveryStatus": "Handovered",
+          "deliveredDate": "2026-10-08"
+        }
+      ],
+      "_id": "6ac80d3a7dbb9642a7757521",
+      "createdAt": "2026-10-08T21:38:02.898Z",
+      "updatedAt": "2026-10-08T21:38:02.898Z",
+      "__v": 0
+    },
+    {
       "id": "c_1791493865432",
       "code": "CUST-355",
       "name": "test 3",
@@ -1547,6 +1609,48 @@
     }
   ],
   "localPayments": [
+    {
+      "id": "pay_1791495988733",
+      "month": "September 2026",
+      "customerId": "c_1791495890843",
+      "customerName": "test 7",
+      "amount": 33000,
+      "date": "2026-10-08",
+      "method": "BOC Ruwanwella Transfer",
+      "refNo": "REC-973710",
+      "_id": "6ac80f347dbb9642a7757525",
+      "createdAt": "2026-10-08T21:46:28.740Z",
+      "updatedAt": "2026-10-08T21:46:28.740Z",
+      "__v": 0
+    },
+    {
+      "id": "pay_1791495666425",
+      "month": "October 2026",
+      "customerId": "c_1791495482857",
+      "customerName": "test 3",
+      "amount": 213500,
+      "date": "2026-10-08",
+      "method": "BOC Ruwanwella Transfer",
+      "refNo": "REC-660423",
+      "_id": "6ac80df27dbb9642a7757523",
+      "createdAt": "2026-10-08T21:41:06.432Z",
+      "updatedAt": "2026-10-08T21:41:06.432Z",
+      "__v": 0
+    },
+    {
+      "id": "pay_1791495586097",
+      "month": "July 2026",
+      "customerId": "c_1791495482857",
+      "customerName": "test 3",
+      "amount": 4500,
+      "date": "2026-10-08",
+      "method": "BOC Ruwanwella Transfer",
+      "refNo": "REC-565314",
+      "_id": "6ac80da27dbb9642a7757522",
+      "createdAt": "2026-10-08T21:39:46.107Z",
+      "updatedAt": "2026-10-08T21:39:46.107Z",
+      "__v": 0
+    },
     {
       "id": "pay_1791494194996",
       "month": "July 2026",

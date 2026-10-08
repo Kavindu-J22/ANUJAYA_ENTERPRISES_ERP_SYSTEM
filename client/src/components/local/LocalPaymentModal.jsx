@@ -19,6 +19,32 @@ export function LocalPaymentModal({
   const [method, setMethod] = useState(initialData?.method || 'BOC Ruwanwella Transfer');
   const [refNo, setRefNo] = useState(initialData?.refNo || "REC-" + Date.now().toString().slice(-6));
   const [date, setDate] = useState(initialData?.date || new Date().toISOString().slice(0, 10));
+  const [paymentMonth, setPaymentMonth] = useState(initialData?.month || activeMonth || 'August 2026');
+
+  useEffect(() => {
+    if (initialData) {
+      setCustomerId(initialData.customerId || '');
+      setAmount(initialData.amount || '');
+      setMethod(initialData.method || 'BOC Ruwanwella Transfer');
+      setRefNo(initialData.refNo || "REC-" + Date.now().toString().slice(-6));
+      setDate(initialData.date || new Date().toISOString().slice(0, 10));
+      setPaymentMonth(initialData.month || activeMonth || 'August 2026');
+    } else if (prefilledCustomer) {
+      setCustomerId(prefilledCustomer.id || '');
+      setAmount('');
+      setMethod('BOC Ruwanwella Transfer');
+      setRefNo("REC-" + Date.now().toString().slice(-6));
+      setDate(new Date().toISOString().slice(0, 10));
+      setPaymentMonth(activeMonth || 'August 2026');
+    } else {
+      setCustomerId(customers[0]?.id || '');
+      setAmount('');
+      setMethod('BOC Ruwanwella Transfer');
+      setRefNo("REC-" + Date.now().toString().slice(-6));
+      setDate(new Date().toISOString().slice(0, 10));
+      setPaymentMonth(activeMonth || 'August 2026');
+    }
+  }, [isOpen, initialData, prefilledCustomer, activeMonth]);
 
   const selectedCustomer = customers.find(c => c.id === customerId);
 
@@ -27,6 +53,8 @@ export function LocalPaymentModal({
     const parsedAmount = parseFloat(amount);
     if (!parsedAmount || parsedAmount <= 0) return;
 
+    const targetMonth = (paymentMonth || activeMonth || 'August 2026').trim();
+
     const payload = {
       customerId,
       customerName: selectedCustomer ? selectedCustomer.name : 'Garment Client',
@@ -34,7 +62,7 @@ export function LocalPaymentModal({
       method,
       refNo: refNo.trim() || `REC-${Date.now().toString().slice(-6)}`,
       date,
-      month: activeMonth
+      month: targetMonth
     };
 
     if (mode === 'EDIT' && initialData) {
@@ -58,7 +86,7 @@ export function LocalPaymentModal({
               <span>{mode === 'ADD' ? 'Record Rent Payment Collection' : 'Edit Payment Details'}</span>
             </h3>
             <p className="text-xs text-slate-400 mt-0.5 font-mono">
-              Cycle: <span className="text-emerald-400 font-bold">{activeMonth}</span>
+              Target Month: <span className="text-emerald-400 font-bold">{paymentMonth}</span>
             </p>
           </div>
           <button onClick={onClose} className="p-2 rounded-xl bg-carbon-850 hover:bg-carbon-800 text-slate-400 hover:text-white transition">
@@ -81,6 +109,21 @@ export function LocalPaymentModal({
                 </option>
               ))}
             </select>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-slate-300 font-bold uppercase text-[10px] font-mono flex justify-between">
+              <span>Target Billing Cycle / Month</span>
+              <span className="text-emerald-400 font-normal">Applies exclusively to this month</span>
+            </label>
+            <input
+              type="text"
+              required
+              value={paymentMonth}
+              onChange={(e) => setPaymentMonth(e.target.value)}
+              placeholder="e.g. June 2026"
+              className="w-full p-3 rounded-xl bg-carbon-900 border border-carbon-700 text-sky-400 font-mono font-bold text-xs focus:outline-none focus:border-sky-500"
+            />
           </div>
 
           <div className="space-y-1.5">

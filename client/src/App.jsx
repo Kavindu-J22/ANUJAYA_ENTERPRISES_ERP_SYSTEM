@@ -37,7 +37,7 @@ import { GlobalClientModal } from './components/global/GlobalClientModal';
 // Local Components & Modals
 import { LocalDashboard } from './components/local/LocalDashboard';
 import { LocalMachineryMaster } from './components/local/LocalMachineryMaster';
-import { LocalCustomerDirectory } from './components/local/LocalCustomerDirectory';
+import { LocalCustomerDirectory, isMachineRentedInMonth, getYearMonth, paymentBelongsToYM } from './components/local/LocalCustomerDirectory';
 import { LocalPaymentsLedger } from './components/local/LocalPaymentsLedger';
 import { LocalReturnsWorkflow } from './components/local/LocalReturnsWorkflow';
 import { LocalExpensesLedger } from './components/local/LocalExpensesLedger';
@@ -160,6 +160,7 @@ export default function App() {
   const [localPaymentModalMode, setLocalPaymentModalMode] = useState('ADD');
   const [selectedLocalPayment, setSelectedLocalPayment] = useState(null);
   const [prefilledPaymentCustomer, setPrefilledPaymentCustomer] = useState(null);
+  const [paymentModalActiveMonth, setPaymentModalActiveMonth] = useState('');
 
   const [isLocalReturnModalOpen, setIsLocalReturnModalOpen] = useState(false);
   const [selectedReturnCustomer, setSelectedReturnCustomer] = useState(null);
@@ -477,6 +478,7 @@ export default function App() {
   const localMetrics = useMemo(() => {
     const activeMonth = localConfig.activeMonth || '2026-03';
     const allMonths = localConfig.allMonths || ['2026-01', '2026-02', '2026-03'];
+    const activeYM = getYearMonth(activeMonth);
     const mIdx = allMonths.indexOf(activeMonth);
 
     let totalActiveMachines = 0;
@@ -485,7 +487,7 @@ export default function App() {
     let totalArrears = 0;
 
     (localCustomers || []).filter(c => !c.isArchived).forEach(c => {
-      const activeRentals = (c.rentals || []).filter(r => r.status === 'Active');
+      const activeRentals = (c.rentals || []).filter(r => isMachineRentedInMonth(r, activeYM));
       if (activeRentals.length > 0) {
         activeClients += 1;
         totalActiveMachines += activeRentals.length;
@@ -499,8 +501,9 @@ export default function App() {
       if (mIdx > 0) {
         for (let i = 0; i < mIdx; i++) {
           const prevMonth = allMonths[i];
-          const prevRent = (c.rentals || []).filter(r => r.status === 'Active').reduce((s, r) => s + (Number(r.rentRate) || 0), 0);
-          const prevPaid = (localPayments || []).filter(p => p.customerId === c.id && p.month === prevMonth)
+          const prevYM = getYearMonth(prevMonth);
+          const prevRent = (c.rentals || []).filter(r => isMachineRentedInMonth(r, prevYM)).reduce((s, r) => s + (Number(r.rentRate) || 0), 0);
+          const prevPaid = (localPayments || []).filter(p => p.customerId === c.id && paymentBelongsToYM(p, prevYM))
             .reduce((s, p) => s + (Number(p.amount) || 0), 0);
           prevBal = Math.max(0, prevBal + prevRent - prevPaid);
         }
@@ -508,7 +511,7 @@ export default function App() {
       totalArrears += prevBal;
     });
 
-    const totalPaid = (localPayments || []).filter(p => p.month === activeMonth)
+    const totalPaid = (localPayments || []).filter(p => paymentBelongsToYM(p, activeYM))
       .reduce((s, p) => s + (Number(p.amount) || 0), 0);
 
     const totalReceivables = Math.max(0, totalMonthlyIncome + totalArrears - totalPaid);
@@ -1743,10 +1746,11 @@ export default function App() {
                     setSelectedLocalCustomer(c);
                     setIsLocalCustomerModalOpen(true);
                   }}
-                  onOpenPaymentModal={(c) => {
+                  onOpenPaymentModal={(c, monthOverride) => {
                     setLocalPaymentModalMode('ADD');
                     setPrefilledPaymentCustomer(c);
                     setSelectedLocalPayment(null);
+                    setPaymentModalActiveMonth(monthOverride || localConfig.activeMonth || 'August 2026');
                     setIsLocalPaymentModalOpen(true);
                   }}
                   onOpenReturnModal={(c, r) => {
@@ -1888,7 +1892,7 @@ export default function App() {
         isOpen={isLocalPaymentModalOpen}
         customers={localCustomers}
         prefilledCustomer={prefilledPaymentCustomer}
-        activeMonth={localConfig.activeMonth || '2026-03'}
+        activeMonth={paymentModalActiveMonth || localConfig.activeMonth || 'August 2026'}
         initialData={selectedLocalPayment}
         mode={localPaymentModalMode}
         onClose={() => setIsLocalPaymentModalOpen(false)}

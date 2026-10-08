@@ -8,7 +8,8 @@ import {
   getDateYearMonth, 
   compareYM, 
   paymentBelongsToYM,
-  calculateCustomerArrearsBreakdown 
+  calculateCustomerArrearsBreakdown,
+  isMachineRentedInMonth
 } from './LocalCustomerDirectory';
 
 export function LocalDocumentsModal({
@@ -104,14 +105,10 @@ export function LocalDocumentsModal({
     return { breakdown: [], carriedBase: 0, totalPreviousRent: 0, totalPreviousPaid: 0, netPreviousArrears: 0 };
   }, [passedArrearsData, customer, payments, activeInvoiceMonth]);
 
-  // Filter rentals for Invoice: only active rentals whose startDate <= activeInvoiceYM
+  // Filter rentals for Invoice: machines rented during activeInvoiceYM (excludes only if returned before this month)
   const invoiceRentals = useMemo(() => {
     if (!customer?.rentals) return [];
-    return customer.rentals.filter(r => {
-      if (r.status !== 'Active') return false;
-      const rYM = getDateYearMonth(r.startDate || '2026-01-01');
-      return compareYM(rYM, activeInvoiceYM) <= 0;
-    });
+    return customer.rentals.filter(r => isMachineRentedInMonth(r, activeInvoiceYM));
   }, [customer, activeInvoiceYM]);
 
   const currentMonthRent = useMemo(() => {

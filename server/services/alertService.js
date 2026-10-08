@@ -14,8 +14,36 @@ function getDaysInMonth(year, monthIndex) {
   return new Date(year, monthIndex + 1, 0).getDate();
 }
 
+function isMachineRentedInTargetMonth(rental, targetMonth) {
+  if (!rental) return false;
+  const { year: tYear, monthIndex: tMonthIndex } = parseMonthYear(targetMonth);
+  const targetYM = { year: tYear, month: tMonthIndex };
+
+  if (rental.startDate) {
+    const [sYear, sMonth] = rental.startDate.split("-").map(Number);
+    const startYM = { year: sYear, month: sMonth - 1 };
+    if (startYM.year > targetYM.year || (startYM.year === targetYM.year && startYM.month > targetYM.month)) {
+      return false;
+    }
+  }
+
+  const retDate = rental.returnDate || rental.returnDetails?.returnDate;
+  if (retDate) {
+    const [rYear, rMonth] = retDate.split("-").map(Number);
+    const retYM = { year: rYear, month: rMonth - 1 };
+    // If returned in a previous month, excluded
+    if (retYM.year < targetYM.year || (retYM.year === targetYM.year && retYM.month < targetYM.month)) {
+      return false;
+    }
+    return true;
+  }
+
+  if (rental.status === "Returned") return false;
+  return rental.status === "Active";
+}
+
 function calculateMachineRentForMonth(rental, targetMonth) {
-  if (!rental || rental.status !== "Active") return 0;
+  if (!rental) return 0;
   const baseMonthly = Number(rental.rentRate || 0);
   if (!rental.startDate || !rental.isProratedFirstMonth) return baseMonthly;
 
@@ -32,7 +60,7 @@ function calculateMachineRentForMonth(rental, targetMonth) {
 
 function getActiveRentForCustomerInMonth(c, targetMonth) {
   if (!c || c.isArchived || !Array.isArray(c.rentals)) return 0;
-  return c.rentals.filter(r => r && r.status === "Active")
+  return c.rentals.filter(r => isMachineRentedInTargetMonth(r, targetMonth))
     .reduce((sum, r) => sum + calculateMachineRentForMonth(r, targetMonth), 0);
 }
 

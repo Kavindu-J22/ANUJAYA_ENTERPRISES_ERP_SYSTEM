@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { CreditCard, Search, PlusCircle, Printer, Edit3, Trash2, Calendar } from 'lucide-react';
 import { formatLKR } from '../../utils/formatters';
+import { getYearMonth, paymentBelongsToYM } from './LocalCustomerDirectory';
 
 export function LocalPaymentsLedger({
   payments,
@@ -14,7 +15,8 @@ export function LocalPaymentsLedger({
   const [searchQuery, setSearchQuery] = useState('');
 
   const monthlyPayments = useMemo(() => {
-    return (payments || []).filter(p => p.month === activeMonth);
+    const ym = getYearMonth(activeMonth);
+    return (payments || []).filter(p => paymentBelongsToYM(p, ym));
   }, [payments, activeMonth]);
 
   const filteredPayments = useMemo(() => {

@@ -53,98 +53,123 @@
 @media print {
   @page {
     size: A4 portrait;
-    margin: 12mm 10mm;
+    margin: 10mm 10mm;
   }
 
-  /* --- Reset entire body for print --- */
-  html, body {
+  /* --- Reset entire document for print --- */
+  html, body, #root {
     background: #ffffff !important;
     color: #000000 !important;
     height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
     overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    position: static !important;
   }
 
-  /* --- Hide everything by default --- */
+  /* --- Hide all default application UI elements --- */
   body * {
     visibility: hidden !important;
   }
 
-  /* --- UN-hide the printable document and ALL its children --- */
+  /* Hide no-print elements and prevent them from taking layout space */
+  .no-print,
+  .no-print * {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  /* --- Modal container & wrappers: neutralize fixed/overflow so they don't clip or repeat --- */
+  .fixed,
+  [class*="fixed"],
+  .fixed.inset-0,
+  .overflow-hidden,
+  .overflow-y-auto,
+  .overflow-x-auto,
+  [class*="overflow-"] {
+    position: static !important;
+    overflow: visible !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    box-shadow: none !important;
+    border: none !important;
+    height: auto !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    transform: none !important;
+  }
+
+  .shadow-2xl,
+  .rounded-2xl,
+  .rounded-3xl,
+  .rounded-xl {
+    box-shadow: none !important;
+  }
+
+  /* --- UN-HIDE the printable document and ALL its children --- */
   #printable-document,
   #printable-document * {
     visibility: visible !important;
+    overflow: visible !important;
   }
 
-  /* --- Make the fixed modal overlay NOT a fixed container during print ---
-       Without this the browser treats the viewport as a single page and
-       repeats it. Setting position:static lets content flow naturally. --- */
+  /* --- PRINTABLE DOCUMENT FLOW:
+       Use position: absolute at top:0, left:0 so it starts at the top of Page 1.
+       CRITICAL: DO NOT use position: fixed! In paged media (print), position: fixed
+       is repeated on EVERY SINGLE PAGE at top:0, which causes:
+       1) the document header to cover the content of page 2, and
+       2) the browser to repeatedly print the same page in an infinite loop.
+       position: absolute lets the document flow naturally from page 1 to page 2, 3... --- */
   #printable-document {
-    position: fixed !important;
+    position: absolute !important;
     left: 0 !important;
     top: 0 !important;
     width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
     height: auto !important;
     margin: 0 !important;
-    padding: 8mm 12mm !important;
+    padding: 0 !important;
     background: #ffffff !important;
     color: #0f172a !important;
     box-shadow: none !important;
     border: none !important;
     border-radius: 0 !important;
-    overflow: visible !important;
     display: block !important;
     font-size: 10pt !important;
     line-height: 1.4 !important;
     z-index: 999999 !important;
   }
 
-  /* --- CRITICAL: The fixed overlay must not clip or contain --- */
-  .fixed.inset-0 {
-    position: static !important;
-    overflow: visible !important;
-    background: transparent !important;
-    backdrop-filter: none !important;
-  }
-
-  /* --- Allow overflow-x-auto wrappers to show all content --- */
-  #printable-document [class*="overflow-x-auto"],
-  #printable-document [class*="overflow"] {
-    overflow: visible !important;
-  }
-
-  /* --- Tables: never break mid-row --- */
+  /* --- Tables: clean page breaking --- */
   #printable-document table {
     width: 100% !important;
     border-collapse: collapse !important;
     page-break-inside: auto !important;
+    break-inside: auto !important;
   }
   #printable-document tr {
     page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
   #printable-document thead {
     display: table-header-group !important;
   }
 
-  /* --- Section blocks: try to keep together --- */
-  #printable-document .space-y-6 > div,
-  #printable-document .space-y-5 > div,
-  #printable-document .space-y-4 > div {
-    page-break-inside: avoid !important;
-  }
-
-  /* --- Summary/financial boxes: never split --- */
+  /* --- Keep section boxes together where appropriate --- */
   #printable-document .grid {
     page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 
-  /* --- Signature footer: keep together --- */
+  #printable-document .break-inside-avoid,
   #printable-document .pt-10 {
     page-break-inside: avoid !important;
-  }
-
-  /* --- Hide UI controls --- */
-  .no-print {
-    display: none !important;
+    break-inside: avoid !important;
   }
 }
 
