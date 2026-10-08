@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 
 const {
   GLOBAL_MACHINES_BASELINE,
+  GLOBAL_CLIENTS_BASELINE,
   LOCAL_MACHINES_BASELINE,
   LOCAL_CUSTOMERS_BASELINE,
   LOCAL_PARTNERS_BASELINE,
@@ -12,6 +13,7 @@ const {
 } = require('./seeds');
 
 const GlobalMachine = require('../models/GlobalMachine');
+const GlobalClient = require('../models/GlobalClient');
 const GlobalSale = require('../models/GlobalSale');
 const GlobalDisbursement = require('../models/GlobalDisbursement');
 const GlobalConfig = require('../models/GlobalConfig');
@@ -30,6 +32,7 @@ const STORE_FILE = path.join(__dirname, 'persistent-store.json');
 function getInitialStore() {
   return {
     globalMachines: JSON.parse(JSON.stringify(GLOBAL_MACHINES_BASELINE)),
+    globalClients: JSON.parse(JSON.stringify(GLOBAL_CLIENTS_BASELINE)),
     globalSales: [],
     globalDisbursements: [],
     globalConfig: { usdRate: 330.00, lang: 'en' },
@@ -77,6 +80,10 @@ function loadLocalStore() {
     if (fs.existsSync(STORE_FILE)) {
       const raw = fs.readFileSync(STORE_FILE, 'utf-8');
       inMemoryStore = JSON.parse(raw);
+      if (!inMemoryStore.globalClients) {
+        inMemoryStore.globalClients = JSON.parse(JSON.stringify(GLOBAL_CLIENTS_BASELINE));
+        saveLocalStore();
+      }
     } else {
       inMemoryStore = getInitialStore();
       saveLocalStore();
@@ -109,6 +116,12 @@ async function seedMongoIfEmpty() {
     if (gCount === 0) {
       console.log("Seeding MongoDB with Global Machines...");
       await GlobalMachine.insertMany(GLOBAL_MACHINES_BASELINE);
+    }
+
+    const gcCount = await GlobalClient.countDocuments();
+    if (gcCount === 0) {
+      console.log("Seeding MongoDB with Global Clients...");
+      await GlobalClient.insertMany(GLOBAL_CLIENTS_BASELINE);
     }
 
     const lmCount = await LocalMachine.countDocuments();
@@ -255,9 +268,98 @@ const store = {
     }
     const s = loadLocalStore();
     s.globalMachines = JSON.parse(JSON.stringify(GLOBAL_MACHINES_BASELINE));
+    s.globalClients = JSON.parse(JSON.stringify(GLOBAL_CLIENTS_BASELINE));
     s.globalSales = [];
     s.globalDisbursements = [];
     s.globalConfig = { usdRate: 330.00, lang: 'en' };
+    saveLocalStore();
+    return true;
+  },
+
+  // Global Clients (Apparel Manufacturing Clients)
+  async getGlobalClients() {
+    if (isDbActive()) {
+      try {
+        return await GlobalClient.find().sort({ code: 1 }).lean();
+      } catch (err) {
+        console.warn("Mongo getGlobalClients failed:", err.message);
+      }
+    }
+    return loadLocalStore().globalClients || [];
+  },
+
+  async addGlobalClient(data) {
+    if (!data.id) {
+      data.id = `gc_${Date.now()}`;
+    }
+    if (!data.code) {
+      const s = loadLocalStore();
+      const existingNums = (s.globalClients || []).map(c => {
+        const match = String(c.code || '').match(/GC-(\d+)/i);
+        return match ? parseInt(match[1], 10) : 0;
+      });
+      const maxNum = existingNums.length > 0 ? Math.max(...existingNums, 0) : 0;
+      data.code = `GC-${String(maxNum + 1).padStart(2, '0')}`;
+    }
+    if (isDbActive()) {
+      try {
+        const created = await GlobalClient.create(data);
+        const s = loadLocalStore();
+        s.globalClients = s.globalClients || [];
+        s.globalClients.push(created.toObject());
+        saveLocalStore();
+        return created;
+      } catch (err) {
+        console.warn("Mongo addGlobalClient failed:", err.message);
+      }
+    }
+    const s = loadLocalStore();
+    s.globalClients = s.globalClients || [];
+    const idx = s.globalClients.findIndex(x => x.id === data.id);
+    if (idx !== -1) {
+      s.globalClients[idx] = { ...s.globalClients[idx], ...data };
+    } else {
+      s.globalClients.push(data);
+    }
+    saveLocalStore();
+    return data;
+  },
+
+  async updateGlobalClient(id, data) {
+    if (isDbActive()) {
+      try {
+        const updated = await GlobalClient.findOneAndUpdate({ id }, data, { returnDocument: 'after', new: true }).lean();
+        const s = loadLocalStore();
+        s.globalClients = s.globalClients || [];
+        const idx = s.globalClients.findIndex(x => x.id === id);
+        if (idx !== -1) s.globalClients[idx] = { ...s.globalClients[idx], ...data, id };
+        saveLocalStore();
+        if (updated) return updated;
+      } catch (err) {
+        console.warn("Mongo updateGlobalClient failed:", err.message);
+      }
+    }
+    const s = loadLocalStore();
+    s.globalClients = s.globalClients || [];
+    const idx = s.globalClients.findIndex(x => x.id === id);
+    if (idx !== -1) {
+      s.globalClients[idx] = { ...s.globalClients[idx], ...data, id };
+      saveLocalStore();
+      return s.globalClients[idx];
+    }
+    return null;
+  },
+
+  async deleteGlobalClient(id) {
+    if (isDbActive()) {
+      try {
+        await GlobalClient.findOneAndDelete({ id });
+      } catch (err) {
+        console.warn("Mongo deleteGlobalClient failed:", err.message);
+      }
+    }
+    const s = loadLocalStore();
+    s.globalClients = (s.globalClients || []).filter(x => x.id !== id);
     saveLocalStore();
     return true;
   },

@@ -12,6 +12,8 @@ const GlobalSaleSchema = new mongoose.Schema({
   customer: { type: String, default: "Apparel Manufacturer" },
   phone: { type: String, default: "" },
   region: { type: String, default: "Colombo / Western Province" },
+  clientId: { type: String, default: "" },
+  profitAllocation: { type: String, default: "CONSORTIUM_50_50" },
   payment: { type: String, default: "Bank Wire / SLIPS" },
   paymentStatus: { type: String, enum: ['PAID', 'PARTIAL', 'CREDIT'], default: 'PAID' },
   paidAmount: { type: Number, default: 0 },

@@ -1,5 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { X, ShoppingCart, Calculator, AlertCircle, CheckCircle2 } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { 
+  X, 
+  ShoppingCart, 
+  Calculator, 
+  AlertCircle, 
+  CheckCircle2, 
+  Building2, 
+  PlusCircle, 
+  Lock, 
+  Unlock, 
+  Scale, 
+  Sparkles,
+  Search
+} from 'lucide-react';
 import { formatLKR } from '../../utils/formatters';
 
 export function GlobalSaleModal({
@@ -9,10 +22,12 @@ export function GlobalSaleModal({
   sale = null, // alternate prop name from App.jsx
   prefilledMachineId = null,
   machines = [],
+  clients = [],
   usdRate = 330,
   onClose,
   onSubmit,
-  onSave // alternate callback prop name from App.jsx
+  onSave, // alternate callback prop name from App.jsx
+  onOpenAddClientModal
 }) {
   if (!isOpen) return null;
 
@@ -22,9 +37,17 @@ export function GlobalSaleModal({
   const [machineId, setMachineId] = useState(() => activeData?.machineId || prefilledMachineId || (machines[0]?.id || ''));
   const [qty, setQty] = useState(() => activeData?.qty || 1);
   const [unitPrice, setUnitPrice] = useState(() => activeData?.unitPrice || 0);
+  
+  // Client selection state
+  const [clientId, setClientId] = useState(() => activeData?.clientId || '');
   const [customer, setCustomer] = useState(() => activeData?.customer || '');
   const [phone, setPhone] = useState(() => activeData?.phone || '');
   const [region, setRegion] = useState(() => activeData?.region || 'Colombo / Western Province');
+  const [isClientLocked, setIsClientLocked] = useState(true);
+
+  // Profit sharing allocation state
+  const [profitAllocation, setProfitAllocation] = useState(() => activeData?.profitAllocation || 'CONSORTIUM_50_50');
+
   const [payment, setPayment] = useState(() => activeData?.payment || 'Bank Wire / SLIPS');
   const [paymentStatus, setPaymentStatus] = useState(() => activeData?.paymentStatus || 'PAID');
   const [paidAmount, setPaidAmount] = useState(() => activeData?.paidAmount || 0);
@@ -42,9 +65,15 @@ export function GlobalSaleModal({
       
       const targetMachine = machines.find(m => m.id === targetMachineId);
       setUnitPrice(activeData?.unitPrice || targetMachine?.wholesalePrice || targetMachine?.retailPrice || 0);
+      
+      const targetClientId = activeData?.clientId || '';
+      setClientId(targetClientId);
       setCustomer(activeData?.customer || '');
       setPhone(activeData?.phone || '');
       setRegion(activeData?.region || 'Colombo / Western Province');
+      setIsClientLocked(Boolean(targetClientId || activeData?.customer));
+
+      setProfitAllocation(activeData?.profitAllocation || 'CONSORTIUM_50_50');
       setPayment(activeData?.payment || 'Bank Wire / SLIPS');
       setPaymentStatus(activeData?.paymentStatus || 'PAID');
       setPaidAmount(activeData?.paidAmount || 0);
@@ -55,10 +84,26 @@ export function GlobalSaleModal({
     }
   }, [isOpen, activeData, prefilledMachineId, machines]);
 
+  // Handle client selection from registered clients
+  const handleClientSelect = (selectedId) => {
+    setClientId(selectedId);
+    if (!selectedId) {
+      setIsClientLocked(false);
+      return;
+    }
+    const found = clients.find(c => c.id === selectedId);
+    if (found) {
+      setCustomer(found.name);
+      setPhone(found.phone || '');
+      setRegion(found.address || found.region || 'Western Province');
+      setIsClientLocked(true);
+    }
+  };
+
   const selectedMachine = machines.find(m => m.id === machineId);
 
-  // Compute selected machine metrics
-  const machineMetrics = React.useMemo(() => {
+  // Compute selected machine landed cost metrics
+  const machineMetrics = useMemo(() => {
     if (!selectedMachine) return { totalCostLKR: 0, wholesalePrice: 0, retailPrice: 0, availableStock: 0 };
     const baseCost = (parseFloat(selectedMachine.usdPrice) || 0) * usdRate;
     const totalCostLKR = baseCost + (parseFloat(selectedMachine.taxLKR) || 0);
@@ -82,6 +127,18 @@ export function GlobalSaleModal({
   const totalCost = (parseInt(qty) || 0) * machineMetrics.totalCostLKR;
   const netProfit = totalRevenue - totalCost;
 
+  // Realized profit breakdown based on profit allocation
+  const { shareAnujaya, shareGlobal } = useMemo(() => {
+    if (profitAllocation === 'GLOBAL_100') {
+      return { shareAnujaya: 0, shareGlobal: netProfit };
+    }
+    if (profitAllocation === 'ANUJAYA_100') {
+      return { shareAnujaya: netProfit, shareGlobal: 0 };
+    }
+    // Default 50/50
+    return { shareAnujaya: netProfit * 0.5, shareGlobal: netProfit * 0.5 };
+  }, [profitAllocation, netProfit]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
     setError('');
@@ -98,6 +155,10 @@ export function GlobalSaleModal({
       setError('Unit price must be greater than zero.');
       return;
     }
+    if (!customer.trim()) {
+      setError('Please select or specify an Apparel Client.');
+      return;
+    }
 
     const assignedId = activeData?.id || `INV-${Math.floor(100000 + Math.random() * 900000)}`;
 
@@ -110,9 +171,11 @@ export function GlobalSaleModal({
       frozenExchangeRate: usdRate,
       frozenUnitCost: machineMetrics.totalCostLKR,
       serialNumbers: serialNumbers.trim(),
-      customer: customer.trim() || 'Apparel Manufacturer',
+      clientId: clientId || '',
+      customer: customer.trim(),
       phone: phone.trim(),
       region,
+      profitAllocation,
       payment,
       paymentStatus,
       paidAmount: paymentStatus === 'PAID' ? totalRevenue : (parseFloat(paidAmount) || 0),
@@ -127,18 +190,18 @@ export function GlobalSaleModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+    <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto selection:bg-emerald-500 selection:text-white">
       <div className="glass-card max-w-2xl w-full p-6 sm:p-8 rounded-3xl border border-carbon-700/80 shadow-2xl space-y-6 my-8">
         
         {/* Header */}
-        <div className="flex justify-between items-center pb-4 border-b border-carbon-700">
+        <div className="flex justify-between items-center pb-4 border-b border-carbon-700/80">
           <div>
             <h3 className="font-display font-black text-lg sm:text-xl text-white flex items-center gap-2">
               <ShoppingCart className="w-5 h-5 text-emerald-400" />
               <span>{effectiveMode === 'ADD' ? 'Process Machinery Dispatch & Invoice' : `Edit Dispatch: ${activeData?.id}`}</span>
             </h3>
             <p className="text-xs text-slate-400 mt-0.5 font-mono">
-              Factory Dispatch, Inventory Deduction & Tax Accounting
+              Factory Dispatch, Inventory Allocation & Profit Accounting
             </p>
           </div>
           <button onClick={onClose} className="p-2 rounded-xl bg-carbon-850 hover:bg-carbon-800 text-slate-400 hover:text-white transition">
@@ -158,16 +221,16 @@ export function GlobalSaleModal({
           {/* Machine Selection & Live Specs */}
           <div className="space-y-2">
             <label className="text-slate-300 font-bold block uppercase text-[10px] tracking-wider font-mono">
-              Machinery Model (SKU)
+              Machinery Model (SKU) *
             </label>
             <select
               value={machineId}
               onChange={(e) => {
                 setMachineId(e.target.value);
                 const m = machines.find(x => x.id === e.target.value);
-                if (m) setUnitPrice(m.wholesalePrice || 0);
+                if (m) setUnitPrice(m.wholesalePrice || m.retailPrice || 0);
               }}
-              className="w-full p-3 rounded-xl bg-carbon-900 border border-carbon-700 text-white font-mono focus:outline-none focus:border-sky-500"
+              className="w-full p-3 rounded-xl bg-carbon-900 border border-carbon-700 text-white font-mono focus:outline-none focus:border-emerald-500 shadow-inner"
             >
               <option value="">-- Choose Machinery SKU --</option>
               {machines.map(m => (
@@ -202,20 +265,20 @@ export function GlobalSaleModal({
           {/* Quantity & Unit Price */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-slate-300 font-bold uppercase text-[10px] font-mono">Quantity (Sets)</label>
+              <label className="text-slate-300 font-bold uppercase text-[10px] font-mono">Quantity (Sets) *</label>
               <input
                 type="number"
                 min={1}
                 required
                 value={qty}
                 onChange={(e) => setQty(e.target.value)}
-                className="w-full p-3 rounded-xl bg-carbon-900 border border-carbon-700 text-white font-mono font-bold focus:outline-none focus:border-sky-500"
+                className="w-full p-3 rounded-xl bg-carbon-900 border border-carbon-700 text-white font-mono font-bold focus:outline-none focus:border-emerald-500"
               />
             </div>
 
             <div className="space-y-1.5">
               <div className="flex justify-between items-center">
-                <label className="text-slate-300 font-bold uppercase text-[10px] font-mono">Unit Sale Price (LKR)</label>
+                <label className="text-slate-300 font-bold uppercase text-[10px] font-mono">Unit Sale Price (LKR) *</label>
                 {selectedMachine && (
                   <div className="flex gap-1">
                     <button
@@ -242,24 +305,84 @@ export function GlobalSaleModal({
                 required
                 value={unitPrice}
                 onChange={(e) => setUnitPrice(e.target.value)}
-                className="w-full p-3 rounded-xl bg-carbon-900 border border-carbon-700 text-white font-mono font-bold focus:outline-none focus:border-sky-500"
+                className="w-full p-3 rounded-xl bg-carbon-900 border border-carbon-700 text-white font-mono font-bold focus:outline-none focus:border-emerald-500"
               />
             </div>
           </div>
 
+          {/* Profit Sharing Allocation Selector (Requirement #4) */}
+          <div className="space-y-2 p-3.5 bg-carbon-900/90 rounded-2xl border border-carbon-700/80">
+            <div className="flex items-center justify-between">
+              <label className="text-slate-300 font-bold uppercase text-[10px] font-mono flex items-center gap-1.5">
+                <Scale className="w-3.5 h-3.5 text-amber-400" />
+                <span>Profit Sharing Allocation</span>
+              </label>
+              <span className="text-[10px] font-mono text-slate-400">
+                Determines consortium ledger reconciliation
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setProfitAllocation('CONSORTIUM_50_50')}
+                className={`p-2.5 rounded-xl border text-left transition flex items-center justify-between ${
+                  profitAllocation === 'CONSORTIUM_50_50'
+                    ? 'bg-sky-950/80 border-sky-500 text-white shadow-md'
+                    : 'bg-carbon-950 border-carbon-800 text-slate-400 hover:border-carbon-700'
+                }`}
+              >
+                <div>
+                  <span className="font-bold text-xs block text-white">50/50 Consortium Split</span>
+                  <span className="text-[10px] text-slate-400 font-mono">Standard 50% Anujaya / 50% Global</span>
+                </div>
+                {profitAllocation === 'CONSORTIUM_50_50' && <CheckCircle2 className="w-4 h-4 text-sky-400 shrink-0" />}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setProfitAllocation('GLOBAL_100')}
+                className={`p-2.5 rounded-xl border text-left transition flex items-center justify-between ${
+                  profitAllocation === 'GLOBAL_100'
+                    ? 'bg-emerald-950/80 border-emerald-500 text-white shadow-md'
+                    : 'bg-carbon-950 border-carbon-800 text-slate-400 hover:border-carbon-700'
+                }`}
+              >
+                <div>
+                  <span className="font-bold text-xs block text-emerald-300">100% Global Enterprises</span>
+                  <span className="text-[10px] text-slate-400 font-mono">100% Full Profit to Global (China)</span>
+                </div>
+                {profitAllocation === 'GLOBAL_100' && <Sparkles className="w-4 h-4 text-emerald-400 shrink-0" />}
+              </button>
+            </div>
+          </div>
+
           {/* Live Calculation Preview Card */}
-          <div className="p-4 rounded-xl bg-carbon-900/90 border border-carbon-700/80 grid grid-cols-3 gap-2 text-center font-mono">
-            <div>
-              <span className="text-slate-400 text-[11px] block">Gross Revenue:</span>
-              <span className="text-sm font-bold text-white">{formatLKR(totalRevenue)}</span>
+          <div className="p-4 rounded-xl bg-carbon-900/90 border border-carbon-700/80 space-y-2 font-mono">
+            <div className="grid grid-cols-3 gap-2 text-center pb-2 border-b border-carbon-800">
+              <div>
+                <span className="text-slate-400 text-[10px] block">Gross Revenue:</span>
+                <span className="text-xs sm:text-sm font-bold text-white">{formatLKR(totalRevenue)}</span>
+              </div>
+              <div>
+                <span className="text-slate-400 text-[10px] block">Landed Cost:</span>
+                <span className="text-xs sm:text-sm font-bold text-amber-300">{formatLKR(totalCost)}</span>
+              </div>
+              <div>
+                <span className="text-slate-400 text-[10px] block">Total Profit:</span>
+                <span className="text-xs sm:text-sm font-bold text-emerald-400">{formatLKR(netProfit)}</span>
+              </div>
             </div>
-            <div>
-              <span className="text-slate-400 text-[11px] block">Landed Cost:</span>
-              <span className="text-sm font-bold text-amber-300">{formatLKR(totalCost)}</span>
-            </div>
-            <div>
-              <span className="text-slate-400 text-[11px] block">Consortium Profit:</span>
-              <span className="text-sm font-bold text-emerald-400">{formatLKR(netProfit)}</span>
+
+            <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
+              <div className="flex justify-between bg-carbon-950/60 p-2 rounded-lg border border-carbon-800">
+                <span className="text-sky-300">Anujaya Share:</span>
+                <span className="font-bold text-white">{formatLKR(shareAnujaya)}</span>
+              </div>
+              <div className="flex justify-between bg-carbon-950/60 p-2 rounded-lg border border-carbon-800">
+                <span className="text-emerald-300">Global Share:</span>
+                <span className="font-bold text-emerald-300">{formatLKR(shareGlobal)}</span>
+              </div>
             </div>
           </div>
 
@@ -273,44 +396,112 @@ export function GlobalSaleModal({
               placeholder="e.g. SN-88214, SN-88215, SN-88216"
               value={serialNumbers}
               onChange={(e) => setSerialNumbers(e.target.value)}
-              className="w-full p-3 rounded-xl bg-carbon-900 border border-carbon-700 text-sky-300 font-mono focus:outline-none focus:border-sky-500"
+              className="w-full p-3 rounded-xl bg-carbon-900 border border-carbon-700 text-sky-300 font-mono focus:outline-none focus:border-emerald-500"
             />
           </div>
 
-          {/* Client Details */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-slate-300 font-bold uppercase text-[10px] font-mono">Apparel Client Name</label>
-              <input
-                type="text"
-                required
-                placeholder="e.g. Brandix / MAS / Serandib"
-                value={customer}
-                onChange={(e) => setCustomer(e.target.value)}
-                className="w-full p-3 rounded-xl bg-carbon-900 border border-carbon-700 text-white focus:outline-none focus:border-sky-500"
-              />
+          {/* Apparel Client Selection (Requirement #3) */}
+          <div className="space-y-3 p-4 bg-carbon-900/90 rounded-2xl border border-carbon-700/80">
+            <div className="flex justify-between items-center">
+              <label className="text-slate-300 font-bold uppercase text-[10px] font-mono flex items-center gap-1.5">
+                <Building2 className="w-3.5 h-3.5 text-purple-400" />
+                <span>Select Apparel Manufacturing Client *</span>
+              </label>
+
+              <div className="flex items-center gap-2">
+                {onOpenAddClientModal && (
+                  <button
+                    type="button"
+                    onClick={onOpenAddClientModal}
+                    className="text-[10px] font-mono text-purple-400 hover:text-purple-300 flex items-center gap-1 bg-purple-950/60 hover:bg-purple-900/80 px-2 py-0.5 rounded-md border border-purple-800 transition"
+                  >
+                    <PlusCircle className="w-3 h-3" />
+                    <span>Add New Client</span>
+                  </button>
+                )}
+                {clientId && (
+                  <button
+                    type="button"
+                    onClick={() => setIsClientLocked(!isClientLocked)}
+                    className="text-[10px] font-mono text-slate-400 hover:text-white flex items-center gap-1 bg-carbon-800 px-2 py-0.5 rounded-md transition"
+                  >
+                    {isClientLocked ? <Lock className="w-3 h-3 text-emerald-400" /> : <Unlock className="w-3 h-3 text-amber-400" />}
+                    <span>{isClientLocked ? 'Locked' : 'Unlocked'}</span>
+                  </button>
+                )}
+              </div>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-slate-300 font-bold uppercase text-[10px] font-mono">Phone / Contact</label>
-              <input
-                type="text"
-                placeholder="e.g. 077 123 4567"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="w-full p-3 rounded-xl bg-carbon-900 border border-carbon-700 text-white font-mono focus:outline-none focus:border-sky-500"
-              />
-            </div>
+            {/* Client Picker Dropdown */}
+            <select
+              value={clientId}
+              onChange={(e) => handleClientSelect(e.target.value)}
+              className="w-full p-2.5 rounded-xl bg-carbon-950 border border-carbon-700 text-white font-mono focus:outline-none focus:border-purple-500 shadow-inner"
+            >
+              <option value="">-- Choose from Registered Apparel Clients --</option>
+              {clients.map(c => (
+                <option key={c.id} value={c.id}>
+                  {c.code} | {c.name} ({c.region || 'Western'}) - {c.phone}
+                </option>
+              ))}
+            </select>
 
-            <div className="space-y-1.5">
-              <label className="text-slate-300 font-bold uppercase text-[10px] font-mono">Factory Region</label>
-              <input
-                type="text"
-                value={region}
-                onChange={(e) => setRegion(e.target.value)}
-                className="w-full p-3 rounded-xl bg-carbon-900 border border-carbon-700 text-white focus:outline-none focus:border-sky-500"
-              />
+            {/* Auto-filled details (Readonly when locked) */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+              <div className="space-y-1">
+                <label className="text-slate-400 text-[10px] font-mono uppercase">Client Company Name</label>
+                <input
+                  type="text"
+                  required
+                  readOnly={isClientLocked && Boolean(clientId)}
+                  placeholder="e.g. Brandix Apparel Solutions"
+                  value={customer}
+                  onChange={(e) => setCustomer(e.target.value)}
+                  className={`w-full p-2.5 rounded-xl border text-white font-bold focus:outline-none ${
+                    isClientLocked && Boolean(clientId)
+                      ? 'bg-carbon-950 border-carbon-800 text-purple-300 cursor-not-allowed'
+                      : 'bg-carbon-900 border-carbon-700 focus:border-purple-500'
+                  }`}
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-slate-400 text-[10px] font-mono uppercase">Phone / Contact</label>
+                <input
+                  type="text"
+                  readOnly={isClientLocked && Boolean(clientId)}
+                  placeholder="e.g. 011-4727000"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className={`w-full p-2.5 rounded-xl border font-mono text-xs focus:outline-none ${
+                    isClientLocked && Boolean(clientId)
+                      ? 'bg-carbon-950 border-carbon-800 text-sky-300 cursor-not-allowed'
+                      : 'bg-carbon-900 border-carbon-700 text-white focus:border-purple-500'
+                  }`}
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-slate-400 text-[10px] font-mono uppercase">Factory Plant / Zone</label>
+                <input
+                  type="text"
+                  readOnly={isClientLocked && Boolean(clientId)}
+                  value={region}
+                  onChange={(e) => setRegion(e.target.value)}
+                  className={`w-full p-2.5 rounded-xl border text-xs focus:outline-none ${
+                    isClientLocked && Boolean(clientId)
+                      ? 'bg-carbon-950 border-carbon-800 text-slate-300 cursor-not-allowed'
+                      : 'bg-carbon-900 border-carbon-700 text-white focus:border-purple-500'
+                  }`}
+                />
+              </div>
             </div>
+            {isClientLocked && Boolean(clientId) && (
+              <div className="text-[10px] font-mono text-emerald-400 flex items-center gap-1.5">
+                <CheckCircle2 className="w-3 h-3" />
+                <span>Client verified & auto-filled from Master Directory</span>
+              </div>
+            )}
           </div>
 
           {/* Payment & Status */}
@@ -320,7 +511,7 @@ export function GlobalSaleModal({
               <select
                 value={payment}
                 onChange={(e) => setPayment(e.target.value)}
-                className="w-full p-3 rounded-xl bg-carbon-900 border border-carbon-700 text-white font-mono focus:outline-none focus:border-sky-500"
+                className="w-full p-3 rounded-xl bg-carbon-900 border border-carbon-700 text-white font-mono focus:outline-none focus:border-emerald-500"
               >
                 <option value="Bank Wire / SLIPS">Bank Wire / SLIPS</option>
                 <option value="Direct Cash Payment">Direct Cash Payment</option>
@@ -334,7 +525,7 @@ export function GlobalSaleModal({
               <select
                 value={paymentStatus}
                 onChange={(e) => setPaymentStatus(e.target.value)}
-                className="w-full p-3 rounded-xl bg-carbon-900 border border-carbon-700 text-white font-mono focus:outline-none focus:border-sky-500"
+                className="w-full p-3 rounded-xl bg-carbon-900 border border-carbon-700 text-white font-mono focus:outline-none focus:border-emerald-500"
               >
                 <option value="PAID">Full Payment Settled (PAID)</option>
                 <option value="PARTIAL">Partial Payment / Advance</option>
@@ -344,13 +535,13 @@ export function GlobalSaleModal({
 
             {paymentStatus === 'PARTIAL' ? (
               <div className="space-y-1.5">
-                <label className="text-slate-300 font-bold uppercase text-[10px] font-mono">Amount Paid (LKR)</label>
+                <label className="text-slate-300 font-bold uppercase text-[10px] font-mono">Advance Paid (LKR) *</label>
                 <input
                   type="number"
                   step="any"
                   value={paidAmount}
                   onChange={(e) => setPaidAmount(e.target.value)}
-                  className="w-full p-3 rounded-xl bg-carbon-900 border border-carbon-700 text-emerald-400 font-mono font-bold focus:outline-none focus:border-sky-500"
+                  className="w-full p-3 rounded-xl bg-carbon-900 border border-carbon-700 text-emerald-400 font-mono font-bold focus:outline-none focus:border-emerald-500"
                 />
               </div>
             ) : (
@@ -360,7 +551,7 @@ export function GlobalSaleModal({
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  className="w-full p-3 rounded-xl bg-carbon-900 border border-carbon-700 text-white font-mono focus:outline-none focus:border-sky-500"
+                  className="w-full p-3 rounded-xl bg-carbon-900 border border-carbon-700 text-white font-mono focus:outline-none focus:border-emerald-500"
                 />
               </div>
             )}
@@ -373,7 +564,7 @@ export function GlobalSaleModal({
               type="text"
               value={warranty}
               onChange={(e) => setWarranty(e.target.value)}
-              className="w-full p-3 rounded-xl bg-carbon-900 border border-carbon-700 text-white focus:outline-none focus:border-sky-500"
+              className="w-full p-3 rounded-xl bg-carbon-900 border border-carbon-700 text-white focus:outline-none focus:border-emerald-500"
             />
           </div>
 

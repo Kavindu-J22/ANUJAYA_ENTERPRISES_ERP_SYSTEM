@@ -188,8 +188,18 @@ const LOCAL_PAYMENTS_BASELINE = [
   { id: "pay_6", month: "August 2026", customerId: "c_22", customerName: "Kamani (Thummodara)", amount: 4500, date: "2026-08-25", method: "Direct Cash Payment", refNo: "CASH-004" }
 ];
 
+const GLOBAL_CLIENTS_BASELINE = [
+  { id: "gc_1", code: "GC-01", name: "Brandix Apparel Solutions Ltd", contactPerson: "Dinesh Perera", phone: "011-4727000", email: "info@brandix.com", address: "Mirigama Export Processing Zone", region: "Mirigama / Western Province", tinVat: "VAT114002981-7000", creditLimit: 10000000, notes: "Premier export partner for lockstitch and overlock automated lines" },
+  { id: "gc_2", code: "GC-02", name: "MAS Holdings (Bodyline Division)", contactPerson: "Sanjeewa Wickramasinghe", phone: "034-4298000", email: "bodyline.procurement@masholdings.com", address: "Horana Industrial Zone", region: "Horana / Western Province", tinVat: "VAT102394851-8000", creditLimit: 15000000, notes: "Specialized activewear and seamless interlock systems" },
+  { id: "gc_3", code: "GC-03", name: "Hirdaramani Garments Ltd", contactPerson: "Rohan Jayasuriya", phone: "011-4797000", email: "rohan.j@hirdaramani.com", address: "Kahathuduwa Apparel Complex", region: "Kahathuduwa / Piliyandala", tinVat: "VAT108472910-5000", creditLimit: 8000000, notes: "Woven & denim high-speed chainstitch installations" },
+  { id: "gc_4", code: "GC-04", name: "Jay Jay Mills Lanka", contactPerson: "Arul Nathan", phone: "011-2489000", email: "contact@jayjaymills.com", address: "Seethawaka BOI Export Zone", region: "Avissawella / Western Province", tinVat: "VAT119283746-9000", creditLimit: 6000000, notes: "Infant-wear high productivity multi-needle flatlocks" },
+  { id: "gc_5", code: "GC-05", name: "Omegaline Garments Ltd", contactPerson: "Angelo De Silva", phone: "031-2259000", email: "procurement@omegaline.lk", address: "Sandagankawa Industrial Estate", region: "Sandalankawa / North Western", tinVat: "VAT109384721-6000", creditLimit: 12000000, notes: "European knitwear and coverstitch lines" },
+  { id: "gc_6", code: "GC-06", name: "Orient Garments Plc", contactPerson: "Kanishka Fernando", phone: "011-2698000", email: "factory@orientgarments.com", address: "Katuwana Industrial Estate", region: "Homagama / Western Province", tinVat: "VAT105829103-4000", creditLimit: 5000000, notes: "Commercial apparel production lines" }
+];
+
 module.exports = {
   GLOBAL_MACHINES_BASELINE,
+  GLOBAL_CLIENTS_BASELINE,
   LOCAL_MACHINES_BASELINE,
   LOCAL_CUSTOMERS_BASELINE,
   LOCAL_PARTNERS_BASELINE,

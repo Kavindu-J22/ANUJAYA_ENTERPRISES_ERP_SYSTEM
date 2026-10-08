@@ -32,6 +32,7 @@ import { GlobalTaxInvoiceModal } from './components/global/GlobalTaxInvoiceModal
 import { GlobalSaleModal } from './components/global/GlobalSaleModal';
 import { GlobalMachineModal } from './components/global/GlobalMachineModal';
 import { GlobalDisburseModal } from './components/global/GlobalDisburseModal';
+import { GlobalClientModal } from './components/global/GlobalClientModal';
 
 // Local Components & Modals
 import { LocalDashboard } from './components/local/LocalDashboard';
@@ -100,6 +101,7 @@ export default function App() {
 
   // Global Path State
   const [globalMachines, setGlobalMachines] = useState([]);
+  const [globalClients, setGlobalClients] = useState([]);
   const [globalSales, setGlobalSales] = useState([]);
   const [globalDisbursements, setGlobalDisbursements] = useState([]);
   const [globalConfig, setGlobalConfig] = useState({ usdRate: 330, openingCapitalReserve: 15000000 });
@@ -139,6 +141,9 @@ export default function App() {
   const [selectedGlobalSale, setSelectedGlobalSale] = useState(null);
   const [isGlobalMachineModalOpen, setIsGlobalMachineModalOpen] = useState(false);
   const [selectedGlobalMachine, setSelectedGlobalMachine] = useState(null);
+  const [isGlobalClientModalOpen, setIsGlobalClientModalOpen] = useState(false);
+  const [selectedGlobalClient, setSelectedGlobalClient] = useState(null);
+  const [globalClientModalMode, setGlobalClientModalMode] = useState('ADD');
   const [isGlobalDisburseModalOpen, setIsGlobalDisburseModalOpen] = useState(false);
   const [globalTaxInvoiceData, setGlobalTaxInvoiceData] = useState(null);
 
@@ -190,6 +195,7 @@ export default function App() {
         gSalesRes,
         gDisburseRes,
         gConfigRes,
+        gClientsRes,
         lMachinesRes,
         lCustRes,
         lPayRes,
@@ -204,6 +210,7 @@ export default function App() {
         api.getGlobalSales(),
         api.getGlobalDisbursements(),
         api.getGlobalConfig(),
+        api.getGlobalClients(),
         api.getLocalMachines(),
         api.getLocalCustomers(),
         api.getLocalPayments(),
@@ -219,6 +226,7 @@ export default function App() {
       if (gSalesRes.success) setGlobalSales(gSalesRes.data);
       if (gDisburseRes.success) setGlobalDisbursements(gDisburseRes.data);
       if (gConfigRes.success) setGlobalConfig(gConfigRes.data);
+      if (gClientsRes && gClientsRes.success) setGlobalClients(gClientsRes.data);
       if (lMachinesRes.success) setLocalMachines(lMachinesRes.data);
       if (lCustRes.success) setLocalCustomers(lCustRes.data);
       if (lPayRes.success) setLocalPayments(lPayRes.data);
@@ -284,6 +292,12 @@ export default function App() {
     let pendingInvoices = 0;
     let totalUnitsSold = 0;
 
+    let profitAnujaya = 0;
+    let profitGlobal = 0;
+    let profitShared5050 = 0;
+    let profitGlobal100 = 0;
+    let profitAnujaya100 = 0;
+
     const validSales = (globalSales || []).filter(s => !s.cancelled);
     const salesCount = validSales.length;
 
@@ -298,13 +312,29 @@ export default function App() {
       const unitPrice = parseFloat(s.unitPrice) || 0;
       const rev = qty * unitPrice;
       const cost = qty * unitCost;
+      const saleNetProfit = rev - cost;
 
       totalRevenue += rev;
       totalCost += cost;
       totalTaxes += qty * (parseFloat(machine.taxLKR) || 0);
       totalUnitsSold += qty;
 
-      const paid = s.paymentStatus === 'PAID' ? rev : (parseFloat(s.paidAmount) || 0);
+      // Profit sharing allocation per transaction
+      if (s.profitAllocation === 'GLOBAL_100') {
+        profitGlobal += saleNetProfit;
+        profitGlobal100 += saleNetProfit;
+      } else if (s.profitAllocation === 'ANUJAYA_100') {
+        profitAnujaya += saleNetProfit;
+        profitAnujaya100 += saleNetProfit;
+      } else {
+        // Standard 50/50 Consortium split
+        profitAnujaya += saleNetProfit * 0.5;
+        profitGlobal += saleNetProfit * 0.5;
+        profitShared5050 += saleNetProfit;
+      }
+
+      const rawPaid = s.paidAmount !== undefined && s.paidAmount !== null ? s.paidAmount : s.amountPaid;
+      const paid = s.paymentStatus === 'PAID' ? rev : (parseFloat(rawPaid) || 0);
       totalPaidRevenue += paid;
       const due = Math.max(0, rev - paid);
       pendingReceivables += due;
@@ -326,8 +356,8 @@ export default function App() {
       .reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0);
     const totalDisbursed = drawAnujaya + drawGlobal;
 
-    const balAnujaya = partnerShare - drawAnujaya;
-    const balGlobal = partnerShare - drawGlobal;
+    const balAnujaya = profitAnujaya - drawAnujaya;
+    const balGlobal = profitGlobal - drawGlobal;
 
     const totalBal = Math.max(0, balAnujaya) + Math.max(0, balGlobal);
     const balanceGaugeX = totalBal > 0 ? Math.round((Math.max(0, balAnujaya) / totalBal) * 100) : 50;
@@ -368,6 +398,11 @@ export default function App() {
       grossProfit,
       netProfit,
       partnerShare,
+      profitAnujaya,
+      profitGlobal,
+      profitShared5050,
+      profitGlobal100,
+      profitAnujaya100,
       salesCount,
       totalUnitsSold,
       marginPct,
@@ -628,6 +663,64 @@ export default function App() {
       }
     } catch {
       addToast("Failed to cancel sale", "error");
+    }
+  };
+
+  // Global: Settle / Mark Sale as Fully Paid
+  const handleMarkGlobalSaleFullyPaid = async (sale) => {
+    try {
+      const qty = parseInt(sale.qty) || 1;
+      const unitPrice = parseFloat(sale.unitPrice) || 0;
+      const totalRevenue = qty * unitPrice;
+      const updatedData = {
+        ...sale,
+        paymentStatus: 'PAID',
+        paidAmount: totalRevenue
+      };
+      const res = await api.updateGlobalSale(sale.id, updatedData);
+      if (res.success) {
+        setGlobalSales(prev => prev.map(s => s.id === sale.id ? res.data : s));
+        addToast(`Invoice #${sale.id} marked as fully settled / paid!`, "success");
+      }
+    } catch {
+      addToast("Failed to update payment status", "error");
+    }
+  };
+
+  // Global: Add/Edit/Delete Apparel Client
+  const handleSaveGlobalClient = async (clientData, mode) => {
+    try {
+      if (mode === 'EDIT' || (selectedGlobalClient && selectedGlobalClient.id)) {
+        const targetId = selectedGlobalClient?.id || clientData.id;
+        const res = await api.updateGlobalClient(targetId, clientData);
+        if (res.success) {
+          setGlobalClients(prev => prev.map(c => c.id === targetId ? res.data : c));
+          addToast(`Client profile for ${res.data.name || clientData.name} updated!`, "success");
+        }
+      } else {
+        const res = await api.addGlobalClient(clientData);
+        if (res.success) {
+          setGlobalClients(prev => [res.data, ...prev]);
+          addToast(`Apparel client ${res.data.name} (${res.data.code}) registered!`, "success");
+        }
+      }
+      setIsGlobalClientModalOpen(false);
+      setSelectedGlobalClient(null);
+    } catch {
+      addToast("Failed to save apparel client", "error");
+    }
+  };
+
+  const handleDeleteGlobalClient = async (id) => {
+    if (!window.confirm("Are you sure you want to remove this apparel client from master directory?")) return;
+    try {
+      const res = await api.deleteGlobalClient(id);
+      if (res.success) {
+        setGlobalClients(prev => prev.filter(c => c.id !== id));
+        addToast("Client profile removed from master directory.", "info");
+      }
+    } catch {
+      addToast("Failed to delete client", "error");
     }
   };
 
@@ -1432,6 +1525,7 @@ export default function App() {
                   onOpenSaleModal={() => { setSelectedGlobalSale(null); setIsGlobalSaleModalOpen(true); }}
                   onOpenEditSaleModal={(s) => { setSelectedGlobalSale(s); setIsGlobalSaleModalOpen(true); }}
                   onDeleteSale={handleDeleteGlobalSale}
+                  onMarkFullyPaid={handleMarkGlobalSaleFullyPaid}
                   onPrintInvoice={(saleItem) => {
                     const saleObj = typeof saleItem === 'string'
                       ? globalSales.find(s => s.id === saleItem)
@@ -1447,7 +1541,20 @@ export default function App() {
 
               {activeGlobalTab === 'customers' && (
                 <GlobalApparelClients
+                  clients={globalClients}
                   sales={globalSales}
+                  onOpenAddClient={() => {
+                    setSelectedGlobalClient(null);
+                    setGlobalClientModalMode('ADD');
+                    setIsGlobalClientModalOpen(true);
+                  }}
+                  onOpenEditClient={(c) => {
+                    setSelectedGlobalClient(c);
+                    setGlobalClientModalMode('EDIT');
+                    setIsGlobalClientModalOpen(true);
+                  }}
+                  onDeleteClient={handleDeleteGlobalClient}
+                  currentUser={currentUser}
                   onPrintInvoice={(saleItem) => {
                     const saleObj = typeof saleItem === 'string'
                       ? globalSales.find(s => s.id === saleItem)
@@ -1612,11 +1719,17 @@ export default function App() {
         initialData={selectedGlobalSale}
         sale={selectedGlobalSale}
         machines={globalMachines}
+        clients={globalClients}
         usdRate={globalConfig.usdRate || 330}
         currentUser={currentUser}
         onClose={() => setIsGlobalSaleModalOpen(false)}
         onSave={handleSaveGlobalSale}
         onSubmit={handleSaveGlobalSale}
+        onOpenAddClientModal={() => {
+          setSelectedGlobalClient(null);
+          setGlobalClientModalMode('ADD');
+          setIsGlobalClientModalOpen(true);
+        }}
       />
 
       <GlobalMachineModal
@@ -1628,6 +1741,15 @@ export default function App() {
         onClose={() => setIsGlobalMachineModalOpen(false)}
         onSave={handleSaveGlobalMachine}
         onSubmit={handleSaveGlobalMachine}
+      />
+
+      <GlobalClientModal
+        isOpen={isGlobalClientModalOpen}
+        mode={globalClientModalMode}
+        client={selectedGlobalClient}
+        clients={globalClients}
+        onClose={() => setIsGlobalClientModalOpen(false)}
+        onSave={handleSaveGlobalClient}
       />
 
       <GlobalDisburseModal

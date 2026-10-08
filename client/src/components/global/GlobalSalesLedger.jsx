@@ -23,6 +23,7 @@ export function GlobalSalesLedger({
   onOpenEditSaleModal,
   onDeleteSale,
   onPrintInvoice,
+  onMarkFullyPaid,
   currentUser
 }) {
   const isAdmin = currentUser?.role === 'ADMIN';
@@ -46,9 +47,10 @@ export function GlobalSalesLedger({
       const totalCost = qty * unitCost;
       const netProfit = totalRevenue - totalCost;
 
+      const rawPaid = s.paidAmount !== undefined && s.paidAmount !== null ? s.paidAmount : s.amountPaid;
       const paidAmount = s.paymentStatus === 'PAID' 
         ? totalRevenue 
-        : (parseFloat(s.paidAmount) || 0);
+        : (parseFloat(rawPaid) || 0);
       const receivable = Math.max(0, totalRevenue - paidAmount);
 
       return {
@@ -205,7 +207,7 @@ export function GlobalSalesLedger({
                 <th className="px-4 py-3.5 text-right">Unit Price</th>
                 <th className="px-4 py-3.5 text-right">Total Revenue</th>
                 <th className="px-4 py-3.5 text-right">Net Profit</th>
-                <th className="px-4 py-3.5 text-center">Payment Status</th>
+                <th className="px-4 py-3.5 text-center">Payment & Due</th>
                 <th className="px-4 py-3.5 text-center">Actions</th>
               </tr>
             </thead>
@@ -222,7 +224,7 @@ export function GlobalSalesLedger({
                     key={sale.id} 
                     className={`hover:bg-carbon-900/40 transition ${sale.cancelled ? 'opacity-50 line-through' : ''}`}
                   >
-                    <td className="px-4 py-3 font-mono font-bold text-sky-400">{sale.id}</td>
+                    <td className="px-4 py-3 font-mono font-bold text-sky-400 whitespace-nowrap">{sale.id}</td>
                     <td className="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">{sale.date}</td>
                     <td className="px-4 py-3">
                       <div className="font-bold text-white">{sale.customer}</div>
@@ -237,8 +239,23 @@ export function GlobalSalesLedger({
                     </td>
                     <td className="px-4 py-3 text-center font-mono font-bold text-white">{sale.qty}</td>
                     <td className="px-4 py-3 text-right font-mono text-slate-300">{formatLKR(sale.unitPrice)}</td>
-                    <td className="px-4 py-3 text-right font-mono font-bold text-emerald-400">
-                      {formatLKR(sale.totalRevenue)}
+                    <td className="px-4 py-3 text-right font-mono">
+                      <div className="font-bold text-emerald-400">{formatLKR(sale.totalRevenue)}</div>
+                      <div className="pt-0.5">
+                        {sale.profitAllocation === 'GLOBAL_100' ? (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800 font-bold">
+                            100% GLOBAL
+                          </span>
+                        ) : sale.profitAllocation === 'ANUJAYA_100' ? (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-sky-950 text-sky-300 border border-sky-800 font-bold">
+                            100% ANUJAYA
+                          </span>
+                        ) : (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-carbon-800 text-slate-400 border border-carbon-700">
+                            50/50 SPLIT
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-right font-mono font-bold text-teal-300">
                       {formatLKR(sale.netProfit)}
@@ -249,8 +266,8 @@ export function GlobalSalesLedger({
                           CANCELLED
                         </span>
                       ) : (
-                        <div>
-                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-mono font-bold uppercase ${
+                        <div className="space-y-1">
+                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-mono font-bold uppercase inline-block ${
                             sale.paymentStatus === 'PAID'
                               ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
                               : sale.paymentStatus === 'PARTIAL'
@@ -259,8 +276,13 @@ export function GlobalSalesLedger({
                           }`}>
                             {sale.paymentStatus}
                           </span>
+                          {sale.paymentStatus === 'PARTIAL' && (
+                            <div className="text-[10px] font-mono text-emerald-400">
+                              Paid: {formatLKR(sale.paidAmount)}
+                            </div>
+                          )}
                           {sale.receivable > 0 && (
-                            <div className="text-[10px] font-mono text-rose-400 mt-0.5">
+                            <div className="text-[10px] font-mono font-bold text-rose-400">
                               Due: {formatLKR(sale.receivable)}
                             </div>
                           )}
@@ -276,6 +298,19 @@ export function GlobalSalesLedger({
                         >
                           <Printer className="w-3.5 h-3.5" />
                         </button>
+                        
+                        {/* Mark as Fully Paid Quick Action Button */}
+                        {isAdmin && !sale.cancelled && sale.receivable > 0 && onMarkFullyPaid && (
+                          <button
+                            onClick={() => onMarkFullyPaid(sale)}
+                            title="Mark as Fully Paid (Clear Outstanding Due)"
+                            className="p-1.5 rounded-lg bg-emerald-950 hover:bg-emerald-600 border border-emerald-800 text-emerald-300 hover:text-white transition flex items-center gap-1 font-mono text-[10px] font-bold"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                            <span className="hidden xl:inline">Settle</span>
+                          </button>
+                        )}
+
                         {isAdmin && !sale.cancelled && (
                           <>
                             <button

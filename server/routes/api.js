@@ -86,6 +86,43 @@ router.post('/global/reset-baseline', async (req, res) => {
   }
 });
 
+// ================= GLOBAL PATH: APPAREL CLIENTS =================
+router.get('/global/clients', async (req, res) => {
+  try {
+    const clients = await store.getGlobalClients();
+    res.json(clients);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/global/clients', async (req, res) => {
+  try {
+    const created = await store.addGlobalClient(req.body);
+    res.status(201).json(created);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+router.put('/global/clients/:id', async (req, res) => {
+  try {
+    const updated = await store.updateGlobalClient(req.params.id, req.body);
+    res.json(updated);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+router.delete('/global/clients/:id', async (req, res) => {
+  try {
+    await store.deleteGlobalClient(req.params.id);
+    res.json({ success: true, message: `Client ${req.params.id} removed.` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ================= GLOBAL PATH: SALES & AUDIT LEDGER =================
 router.get('/global/sales', async (req, res) => {
   try {

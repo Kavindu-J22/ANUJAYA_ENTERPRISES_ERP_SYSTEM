@@ -1,4 +1,4 @@
-﻿const API_BASE = '/api';
+const API_BASE = '/api';
 
 // Normalises ALL backend responses into { success: bool, data: any }
 // so App.jsx can safely do `if (res.success) setState(res.data)`.
@@ -43,6 +43,12 @@ export const api = {
   async updateGlobalMachine(id, data) { return req(`${API_BASE}/global/machines/${id}`, { method: 'PUT', headers: J, body: JSON.stringify(data) }); },
   async deleteGlobalMachine(id) { return req(`${API_BASE}/global/machines/${id}`, { method: 'DELETE' }); },
   async resetGlobalBaseline() { return ensureArray(await req(`${API_BASE}/global/reset-baseline`, { method: 'POST' })); },
+
+  // Global: Clients (Apparel Manufacturers)
+  async getGlobalClients() { return ensureArray(await req(`${API_BASE}/global/clients`)); },
+  async addGlobalClient(data) { return req(`${API_BASE}/global/clients`, { method: 'POST', headers: J, body: JSON.stringify(data) }); },
+  async updateGlobalClient(id, data) { return req(`${API_BASE}/global/clients/${id}`, { method: 'PUT', headers: J, body: JSON.stringify(data) }); },
+  async deleteGlobalClient(id) { return req(`${API_BASE}/global/clients/${id}`, { method: 'DELETE' }); },
 
   // Global: Sales
   async getGlobalSales() { return ensureArray(await req(`${API_BASE}/global/sales`)); },

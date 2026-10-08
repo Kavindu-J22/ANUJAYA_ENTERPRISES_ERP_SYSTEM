@@ -11,6 +11,20 @@ export function GlobalTaxInvoiceModal({ sale, machine, onClose }) {
   const unitPrice = parseFloat(sale.unitPrice) || 0;
   const totalRevenue = qty * unitPrice;
 
+  const rawPaid = sale.paidAmount !== undefined && sale.paidAmount !== null 
+    ? sale.paidAmount 
+    : sale.amountPaid;
+
+  const paidAmount = sale.paymentStatus === 'PAID'
+    ? totalRevenue
+    : sale.paymentStatus === 'PARTIAL'
+    ? (rawPaid !== undefined && rawPaid !== null ? parseFloat(rawPaid) : (totalRevenue * 0.5))
+    : (parseFloat(rawPaid) || 0);
+
+  const dueAmount = sale.dueAmount !== undefined && sale.dueAmount !== null
+    ? parseFloat(sale.dueAmount)
+    : Math.max(0, totalRevenue - paidAmount);
+
   const handlePrint = () => {
     window.print();
   };
@@ -138,22 +152,53 @@ export function GlobalTaxInvoiceModal({ sale, machine, onClose }) {
           </div>
 
           {/* Totals & Words */}
-          <div className="flex flex-col sm:flex-row justify-between items-start gap-4 pt-2">
-            <div className="space-y-1.5 flex-1">
-              <span className="text-[10px] uppercase font-bold text-slate-500 font-mono">Amount in Words:</span>
-              <div className="text-xs font-bold text-slate-800 italic bg-slate-50 p-2.5 rounded-lg border border-slate-200">
-                {numberToWordsLKR(totalRevenue)}
+          <div className="flex flex-col sm:flex-row justify-between items-start gap-6 pt-2">
+            <div className="space-y-3 flex-1">
+              <div>
+                <span className="text-[10px] uppercase font-bold text-slate-500 font-mono block mb-1">Amount in Words:</span>
+                <div className="text-xs font-bold text-slate-800 italic bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                  {numberToWordsLKR(totalRevenue)}
+                </div>
+              </div>
+
+              {/* Payment Summary Box */}
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs font-mono space-y-1">
+                <div className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Settlement Terms & Status</div>
+                <div className="flex items-center gap-2 pt-0.5">
+                  <span className={`px-2 py-0.5 rounded text-[11px] font-bold uppercase ${
+                    sale.paymentStatus === 'PAID' || dueAmount === 0
+                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                      : sale.paymentStatus === 'PARTIAL'
+                      ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                      : 'bg-rose-100 text-rose-800 border border-rose-300'
+                  }`}>
+                    {sale.paymentStatus === 'PAID' || dueAmount === 0 
+                      ? 'PAID IN FULL - SETTLED' 
+                      : sale.paymentStatus === 'PARTIAL' 
+                      ? 'ADVANCE / PARTIAL PAYMENT' 
+                      : 'COMMERCIAL CREDIT'}
+                  </span>
+                  <span className="text-slate-600 text-[11px]">Via {sale.payment || 'Bank Wire / SLIPS'}</span>
+                </div>
               </div>
             </div>
 
-            <div className="w-full sm:w-64 space-y-1.5 font-mono text-xs text-right">
+            <div className="w-full sm:w-72 space-y-1.5 font-mono text-xs text-right bg-slate-50 p-4 rounded-xl border border-slate-200">
               <div className="flex justify-between py-1 border-b border-slate-200">
                 <span className="text-slate-600">Subtotal:</span>
                 <span className="font-bold text-slate-900">{formatLKR(totalRevenue)}</span>
               </div>
-              <div className="flex justify-between py-1.5 text-base border-b-2 border-slate-900 font-black">
-                <span className="text-slate-900">Grand Total:</span>
-                <span className="text-emerald-700">{formatLKR(totalRevenue)}</span>
+              <div className="flex justify-between py-1.5 text-sm border-b-2 border-slate-900 font-black">
+                <span className="text-slate-900">Total Invoice Amount:</span>
+                <span className="text-slate-900">{formatLKR(totalRevenue)}</span>
+              </div>
+              <div className="flex justify-between py-1 text-slate-700">
+                <span className="text-slate-600 font-semibold">Advance / Paid Amount:</span>
+                <span className="font-bold text-emerald-700">{formatLKR(paidAmount)}</span>
+              </div>
+              <div className={`flex justify-between py-1.5 text-sm font-black border-t border-slate-300 pt-1.5 ${dueAmount > 0 ? 'text-rose-700' : 'text-emerald-700'}`}>
+                <span>{dueAmount > 0 ? 'Balance Due Payable:' : 'Net Balance Payable:'}</span>
+                <span>{formatLKR(dueAmount)}</span>
               </div>
             </div>
           </div>
