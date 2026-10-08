@@ -58,10 +58,25 @@ import { LocalQuotationModal } from './components/local/LocalQuotationModal';
 
 export default function App() {
   // Navigation & Authentication State
-  const [currentPath, setCurrentPath] = useState(() => localStorage.getItem('consortium_erp_path') || 'global');
   const [currentUser, setCurrentUser] = useState(() => {
-    const saved = localStorage.getItem('consortium_erp_user');
-    return saved ? JSON.parse(saved) : null;
+    try {
+      const saved = localStorage.getItem('consortium_erp_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [currentPath, setCurrentPath] = useState(() => {
+    try {
+      const savedUser = localStorage.getItem('consortium_erp_user');
+      if (savedUser && JSON.parse(savedUser)?.role === 'PARTNER') {
+        return 'global';
+      }
+      return localStorage.getItem('consortium_erp_path') || 'global';
+    } catch {
+      return 'global';
+    }
   });
   const [currentLang, setCurrentLang] = useState('en');
   const [activeGlobalTab, setActiveGlobalTab] = useState('dashboard');
@@ -224,8 +239,19 @@ export default function App() {
     fetchAllData();
   }, [fetchAllData]);
 
+  // Enforce partner role strictly to global path
+  useEffect(() => {
+    if (currentUser?.role === 'PARTNER' && currentPath !== 'global') {
+      setCurrentPath('global');
+      localStorage.setItem('consortium_erp_path', 'global');
+    }
+  }, [currentUser, currentPath]);
+
   // Handle Path Switching
   const handlePathChange = (newPath) => {
+    if (currentUser?.role === 'PARTNER') {
+      return; // Partner is strictly restricted to global path
+    }
     setCurrentPath(newPath);
     localStorage.setItem('consortium_erp_path', newPath);
   };
@@ -233,6 +259,10 @@ export default function App() {
   // Login handler
   const handleLoginSuccess = (user) => {
     setCurrentUser(user);
+    if (user.role === 'PARTNER') {
+      setCurrentPath('global');
+      localStorage.setItem('consortium_erp_path', 'global');
+    }
     localStorage.setItem('consortium_erp_user', JSON.stringify(user));
     addToast(`Authenticated as ${user.title} (${user.role})`, "success");
   };

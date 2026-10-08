@@ -317,7 +317,52 @@
       "__v": 0
     }
   ],
-  "globalSales": [],
+  "globalSales": [
+    {
+      "id": "INV-971852",
+      "date": "2026-10-08",
+      "machineId": "M-27",
+      "qty": 1,
+      "unitPrice": 78000,
+      "frozenExchangeRate": 330,
+      "frozenUnitCost": 54500,
+      "serialNumbers": "",
+      "customer": "test",
+      "phone": "0712915150",
+      "region": "Colombo / Western Province",
+      "payment": "Direct Cash Payment",
+      "paymentStatus": "PARTIAL",
+      "paidAmount": 50000,
+      "warranty": "1-Year Comprehensive Warranty (Motor & PCB)",
+      "cancelled": false,
+      "_id": "6ac778cdaf2c3f8376dd8a34",
+      "createdAt": "2026-10-08T11:04:45.046Z",
+      "updatedAt": "2026-10-08T11:04:45.046Z",
+      "__v": 0
+    },
+    {
+      "id": "INV-309556",
+      "date": "2026-10-08",
+      "machineId": "M-27",
+      "qty": 1,
+      "unitPrice": 78000,
+      "frozenExchangeRate": 330,
+      "frozenUnitCost": 54500,
+      "serialNumbers": "sdg, hgh, hthy",
+      "customer": "test",
+      "phone": "0712915150",
+      "region": "Colombo / Western Province",
+      "payment": "Direct Cash Payment",
+      "paymentStatus": "PAID",
+      "paidAmount": 78000,
+      "warranty": "1-Year Comprehensive Warranty (Motor & PCB)",
+      "cancelled": false,
+      "_id": "6ac7787aaf2c3f8376dd8a33",
+      "createdAt": "2026-10-08T11:03:22.800Z",
+      "updatedAt": "2026-10-08T11:03:22.800Z",
+      "__v": 0
+    }
+  ],
   "globalDisbursements": [],
   "globalConfig": {
     "usdRate": 330,
