@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { Scale, PlusCircle, ArrowDownRight, History, Calendar, DollarSign, Wallet, Sparkles, Building2 } from 'lucide-react';
+import { Scale, PlusCircle, ArrowDownRight, History, Calendar, DollarSign, Wallet, Sparkles, Building2, Edit3, Trash2 } from 'lucide-react';
 import { formatLKR } from '../../utils/formatters';
 
 export function GlobalPartnerSettlement({
   metrics = {},
   disbursements = [],
   onOpenDisburseModal,
+  onEditDisbursement,
+  onDeleteDisbursement,
   currentUser,
   usdRate = 330
 }) {
@@ -199,12 +201,13 @@ export function GlobalPartnerSettlement({
                 <th className="px-4 py-3">Partner Entity</th>
                 <th className="px-4 py-3">Transaction Memo / Reference</th>
                 <th className="px-4 py-3 text-right">Withdrawn Amount</th>
+                {isAdmin && <th className="px-4 py-3 text-center">Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-carbon-800/60">
               {disbursements.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-8 text-slate-500 font-mono">
+                  <td colSpan={isAdmin ? 6 : 5} className="text-center py-8 text-slate-500 font-mono">
                     No capital draws recorded yet. Click "Log Capital Draw" to register an advance.
                   </td>
                 </tr>
@@ -226,6 +229,26 @@ export function GlobalPartnerSettlement({
                     <td className="px-4 py-3 text-right font-mono font-bold text-rose-400">
                       -{formatLKR(d.amount)}
                     </td>
+                    {isAdmin && (
+                      <td className="px-4 py-3 text-center">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            onClick={() => onEditDisbursement && onEditDisbursement(d)}
+                            title="Edit Capital Draw"
+                            className="p-1.5 rounded-lg bg-carbon-850 hover:bg-amber-600 text-slate-400 hover:text-white transition"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => onDeleteDisbursement && onDeleteDisbursement(d.id)}
+                            title="Delete Capital Draw"
+                            className="p-1.5 rounded-lg bg-carbon-850 hover:bg-rose-700 text-slate-400 hover:text-white transition"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))
               )}

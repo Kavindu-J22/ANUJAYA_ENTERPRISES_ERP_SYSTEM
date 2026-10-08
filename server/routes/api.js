@@ -151,6 +151,15 @@ router.put('/global/sales/:id', async (req, res) => {
   }
 });
 
+router.delete('/global/sales/:id', async (req, res) => {
+  try {
+    await store.deleteGlobalSale(req.params.id);
+    res.json({ success: true, message: `Sale #${req.params.id} permanently removed.` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ================= GLOBAL PATH: PARTNER DISBURSEMENTS & SETTLEMENT =================
 router.get('/global/disbursements', async (req, res) => {
   try {
@@ -167,6 +176,24 @@ router.post('/global/disbursements', async (req, res) => {
     res.status(201).json(created);
   } catch (err) {
     res.status(400).json({ error: err.message });
+  }
+});
+
+router.put('/global/disbursements/:id', async (req, res) => {
+  try {
+    const updated = await store.updateGlobalDisbursement(req.params.id, req.body);
+    res.json(updated);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+router.delete('/global/disbursements/:id', async (req, res) => {
+  try {
+    await store.deleteGlobalDisbursement(req.params.id);
+    res.json({ success: true, message: `Disbursement #${req.params.id} deleted.` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 

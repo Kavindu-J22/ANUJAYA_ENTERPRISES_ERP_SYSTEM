@@ -531,12 +531,13 @@
       "id": "DIS-022479",
       "date": "2026-10-08",
       "partner": "Y",
-      "amount": 50000,
+      "amount": 40000,
       "memo": "Consortium Capital Draw",
       "_id": "6ac7a9c680cbd9eb9d5a2ec3",
       "createdAt": "2026-10-08T14:33:42.487Z",
       "updatedAt": "2026-10-08T14:33:42.487Z",
-      "__v": 0
+      "__v": 0,
+      "notes": "Consortium Capital Draw"
     },
     {
       "id": "DIS-915768",

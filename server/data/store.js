@@ -420,6 +420,20 @@ const store = {
     return null;
   },
 
+  async deleteGlobalSale(id) {
+    if (isDbActive()) {
+      try {
+        await GlobalSale.findOneAndDelete({ id });
+      } catch (err) {
+        console.warn("Mongo deleteGlobalSale failed, using local store:", err.message);
+      }
+    }
+    const s = loadLocalStore();
+    s.globalSales = s.globalSales.filter(x => x.id !== id);
+    saveLocalStore();
+    return true;
+  },
+
   // Global Disbursements
   async getGlobalDisbursements() {
     if (isDbActive()) {
@@ -440,6 +454,43 @@ const store = {
     s.globalDisbursements.unshift(disb);
     saveLocalStore();
     return disb;
+  },
+
+  async updateGlobalDisbursement(id, data) {
+    if (isDbActive()) {
+      try {
+        const updated = await GlobalDisbursement.findOneAndUpdate({ id }, data, { returnDocument: 'after', new: true }).lean();
+        const s = loadLocalStore();
+        const idx = s.globalDisbursements.findIndex(x => x.id === id);
+        if (idx !== -1) s.globalDisbursements[idx] = { ...s.globalDisbursements[idx], ...data, id };
+        saveLocalStore();
+        if (updated) return updated;
+      } catch (err) {
+        console.warn("Mongo updateGlobalDisbursement failed, using local store:", err.message);
+      }
+    }
+    const s = loadLocalStore();
+    const idx = s.globalDisbursements.findIndex(x => x.id === id);
+    if (idx !== -1) {
+      s.globalDisbursements[idx] = { ...s.globalDisbursements[idx], ...data, id };
+      saveLocalStore();
+      return s.globalDisbursements[idx];
+    }
+    return null;
+  },
+
+  async deleteGlobalDisbursement(id) {
+    if (isDbActive()) {
+      try {
+        await GlobalDisbursement.findOneAndDelete({ id });
+      } catch (err) {
+        console.warn("Mongo deleteGlobalDisbursement failed, using local store:", err.message);
+      }
+    }
+    const s = loadLocalStore();
+    s.globalDisbursements = s.globalDisbursements.filter(x => x.id !== id);
+    saveLocalStore();
+    return true;
   },
 
   // Global Config

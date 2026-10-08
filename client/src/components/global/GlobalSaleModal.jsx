@@ -190,11 +190,11 @@ export function GlobalSaleModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto selection:bg-emerald-500 selection:text-white">
-      <div className="glass-card max-w-2xl w-full p-6 sm:p-8 rounded-3xl border border-carbon-700/80 shadow-2xl space-y-6 my-8">
+    <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-y-auto selection:bg-emerald-500 selection:text-white">
+      <div className="glass-card max-w-3xl w-full max-h-[92vh] flex flex-col rounded-3xl border border-carbon-700/80 shadow-2xl overflow-hidden my-auto">
         
-        {/* Header */}
-        <div className="flex justify-between items-center pb-4 border-b border-carbon-700/80">
+        {/* Header (Pinned) */}
+        <div className="flex justify-between items-center p-4 sm:p-6 border-b border-carbon-700/80 bg-carbon-900/80 shrink-0">
           <div>
             <h3 className="font-display font-black text-lg sm:text-xl text-white flex items-center gap-2">
               <ShoppingCart className="w-5 h-5 text-emerald-400" />
@@ -210,13 +210,13 @@ export function GlobalSaleModal({
         </div>
 
         {error && (
-          <div className="p-3 bg-rose-950/80 border border-rose-700 rounded-xl text-xs text-rose-300 flex items-center gap-2 font-mono">
+          <div className="mx-4 sm:mx-6 mt-4 p-3 bg-rose-950/80 border border-rose-700 rounded-xl text-xs text-rose-300 flex items-center gap-2 font-mono shrink-0">
             <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
             <span>{error}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4 text-xs font-sans">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 md:p-7 overflow-y-auto space-y-4 text-xs font-sans flex-1">
           
           {/* Machine Selection & Live Specs */}
           <div className="space-y-2">
@@ -568,14 +568,16 @@ export function GlobalSaleModal({
             />
           </div>
 
-          {/* Submit Button */}
-          <button
-            type="submit"
-            className="w-full py-4 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 hover:from-emerald-500 hover:to-teal-400 font-bold text-xs uppercase tracking-wider rounded-xl text-white shadow-xl shadow-emerald-950/60 transition flex items-center justify-center gap-2 mt-4"
-          >
-            <CheckCircle2 className="w-4 h-4" />
-            <span>{effectiveMode === 'ADD' ? 'Confirm & Generate Official Tax Invoice' : 'Update Transaction & Reconcile'}</span>
-          </button>
+          {/* Submit Button (Sticky Bottom Action Bar) */}
+          <div className="pt-3 sticky bottom-0 bg-carbon-950/95 backdrop-blur-md -mx-4 -mb-4 sm:-mx-6 sm:-mb-6 md:-mx-7 md:-mb-7 p-4 sm:p-5 border-t border-carbon-800/80 mt-6 z-10">
+            <button
+              type="submit"
+              className="w-full py-3.5 sm:py-4 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 hover:from-emerald-500 hover:to-teal-400 font-bold text-xs uppercase tracking-wider rounded-xl text-white shadow-xl shadow-emerald-950/60 transition flex items-center justify-center gap-2"
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              <span>{effectiveMode === 'ADD' ? 'Confirm & Generate Official Tax Invoice' : 'Update Transaction & Reconcile'}</span>
+            </button>
+          </div>
         </form>
       </div>
     </div>

@@ -145,6 +145,8 @@ export default function App() {
   const [selectedGlobalClient, setSelectedGlobalClient] = useState(null);
   const [globalClientModalMode, setGlobalClientModalMode] = useState('ADD');
   const [isGlobalDisburseModalOpen, setIsGlobalDisburseModalOpen] = useState(false);
+  const [selectedGlobalDisbursement, setSelectedGlobalDisbursement] = useState(null);
+  const [globalDisburseModalMode, setGlobalDisburseModalMode] = useState('ADD');
   const [globalTaxInvoiceData, setGlobalTaxInvoiceData] = useState(null);
 
   // Local Modals
@@ -645,24 +647,46 @@ export default function App() {
   };
 
   const handleDeleteGlobalSale = async (id) => {
-    if (!window.confirm("Cancel this sale transaction and return units to stock?")) return;
+    if (!window.confirm("Cancel this sale transaction and return all units back to warehouse stock?")) return;
     try {
-      const sale = globalSales.find(s => s.id === id);
       const res = await api.updateGlobalSale(id, { cancelled: true });
       if (res.success) {
         setGlobalSales(prev => prev.map(s => s.id === id ? { ...s, cancelled: true } : s));
-        if (sale) {
-          setGlobalMachines(prev => prev.map(m => {
-            if (m.id === sale.machineId) {
-              return { ...m, stock: (parseInt(m.stock) || 0) + (parseInt(sale.qty) || 1) };
-            }
-            return m;
-          }));
-        }
-        addToast("Sale transaction cancelled and inventory restored.", "info");
+        addToast(`Sale #${id} cancelled and inventory restored to warehouse!`, "info");
+      } else {
+        addToast(res.error || "Failed to cancel sale", "error");
       }
     } catch {
       addToast("Failed to cancel sale", "error");
+    }
+  };
+
+  const handleRestoreGlobalSale = async (id) => {
+    try {
+      const res = await api.updateGlobalSale(id, { cancelled: false });
+      if (res.success) {
+        setGlobalSales(prev => prev.map(s => s.id === id ? { ...s, cancelled: false } : s));
+        addToast(`Sale #${id} restored to active sales ledger!`, "success");
+      } else {
+        addToast(res.error || "Failed to restore sale", "error");
+      }
+    } catch {
+      addToast("Failed to restore sale", "error");
+    }
+  };
+
+  const handlePermanentDeleteGlobalSale = async (id) => {
+    if (!window.confirm(`Permanently purge sale #${id} from the database? This action cannot be undone.`)) return;
+    try {
+      const res = await api.deleteGlobalSale(id);
+      if (res.success) {
+        setGlobalSales(prev => prev.filter(s => s.id !== id));
+        addToast(`Sale #${id} permanently purged from system.`, "info");
+      } else {
+        addToast(res.error || "Failed to delete sale", "error");
+      }
+    } catch {
+      addToast("Failed to delete sale", "error");
     }
   };
 
@@ -724,17 +748,46 @@ export default function App() {
     }
   };
 
-  // Global: Disburse Funds
-  const handleSaveGlobalDisbursement = async (data) => {
+  // Global: Add/Edit/Delete Disburse Funds
+  const handleSaveGlobalDisbursement = async (data, mode) => {
     try {
-      const res = await api.addGlobalDisbursement(data);
+      if (mode === 'EDIT' || (selectedGlobalDisbursement && selectedGlobalDisbursement.id)) {
+        const targetId = selectedGlobalDisbursement?.id || data.id;
+        const res = await api.updateGlobalDisbursement(targetId, data);
+        if (res.success) {
+          setGlobalDisbursements(prev => prev.map(d => d.id === targetId ? res.data : d));
+          addToast(`Capital Draw #${targetId} updated successfully!`, "success");
+        } else {
+          addToast(res.error || "Failed to update disbursement", "error");
+        }
+      } else {
+        const res = await api.addGlobalDisbursement(data);
+        if (res.success) {
+          setGlobalDisbursements(prev => [res.data, ...prev]);
+          addToast(`Disbursement of LKR ${data.amount} recorded for ${data.partner === 'X' ? 'Anujaya' : 'Global'}!`, "success");
+        } else {
+          addToast(res.error || "Failed to record disbursement", "error");
+        }
+      }
+      setIsGlobalDisburseModalOpen(false);
+      setSelectedGlobalDisbursement(null);
+    } catch {
+      addToast("Failed to process disbursement", "error");
+    }
+  };
+
+  const handleDeleteGlobalDisbursement = async (id) => {
+    if (!window.confirm(`Remove capital draw #${id} and restore equity to partner balance?`)) return;
+    try {
+      const res = await api.deleteGlobalDisbursement(id);
       if (res.success) {
-        setGlobalDisbursements(prev => [res.data, ...prev]);
-        setIsGlobalDisburseModalOpen(false);
-        addToast(`Disbursement of LKR ${data.amount} recorded for ${data.partner}!`, "success");
+        setGlobalDisbursements(prev => prev.filter(d => d.id !== id));
+        addToast(`Capital draw #${id} deleted and partner balance restored.`, "info");
+      } else {
+        addToast(res.error || "Failed to delete disbursement", "error");
       }
     } catch {
-      addToast("Failed to record disbursement", "error");
+      addToast("Failed to delete disbursement", "error");
     }
   };
 
@@ -1525,6 +1578,8 @@ export default function App() {
                   onOpenSaleModal={() => { setSelectedGlobalSale(null); setIsGlobalSaleModalOpen(true); }}
                   onOpenEditSaleModal={(s) => { setSelectedGlobalSale(s); setIsGlobalSaleModalOpen(true); }}
                   onDeleteSale={handleDeleteGlobalSale}
+                  onRestoreSale={handleRestoreGlobalSale}
+                  onPermanentDeleteSale={handlePermanentDeleteGlobalSale}
                   onMarkFullyPaid={handleMarkGlobalSaleFullyPaid}
                   onPrintInvoice={(saleItem) => {
                     const saleObj = typeof saleItem === 'string'
@@ -1571,7 +1626,17 @@ export default function App() {
                 <GlobalPartnerSettlement
                   metrics={globalMetrics}
                   disbursements={globalDisbursements}
-                  onOpenDisburseModal={() => setIsGlobalDisburseModalOpen(true)}
+                  onOpenDisburseModal={() => {
+                    setSelectedGlobalDisbursement(null);
+                    setGlobalDisburseModalMode('ADD');
+                    setIsGlobalDisburseModalOpen(true);
+                  }}
+                  onEditDisbursement={(d) => {
+                    setSelectedGlobalDisbursement(d);
+                    setGlobalDisburseModalMode('EDIT');
+                    setIsGlobalDisburseModalOpen(true);
+                  }}
+                  onDeleteDisbursement={handleDeleteGlobalDisbursement}
                   currentUser={currentUser}
                   usdRate={globalConfig.usdRate || 330}
                 />
@@ -1754,6 +1819,9 @@ export default function App() {
 
       <GlobalDisburseModal
         isOpen={isGlobalDisburseModalOpen}
+        mode={globalDisburseModalMode}
+        initialData={selectedGlobalDisbursement}
+        disbursement={selectedGlobalDisbursement}
         metrics={globalMetrics}
         onClose={() => setIsGlobalDisburseModalOpen(false)}
         onSave={handleSaveGlobalDisbursement}

@@ -54,10 +54,13 @@ export const api = {
   async getGlobalSales() { return ensureArray(await req(`${API_BASE}/global/sales`)); },
   async addGlobalSale(sale) { return req(`${API_BASE}/global/sales`, { method: 'POST', headers: J, body: JSON.stringify(sale) }); },
   async updateGlobalSale(id, data) { return req(`${API_BASE}/global/sales/${id}`, { method: 'PUT', headers: J, body: JSON.stringify(data) }); },
+  async deleteGlobalSale(id) { return req(`${API_BASE}/global/sales/${id}`, { method: 'DELETE' }); },
 
   // Global: Disbursements
   async getGlobalDisbursements() { return ensureArray(await req(`${API_BASE}/global/disbursements`)); },
   async addGlobalDisbursement(data) { return req(`${API_BASE}/global/disbursements`, { method: 'POST', headers: J, body: JSON.stringify(data) }); },
+  async updateGlobalDisbursement(id, data) { return req(`${API_BASE}/global/disbursements/${id}`, { method: 'PUT', headers: J, body: JSON.stringify(data) }); },
+  async deleteGlobalDisbursement(id) { return req(`${API_BASE}/global/disbursements/${id}`, { method: 'DELETE' }); },
 
   // Global: Config
   async getGlobalConfig() { return ensureObject(await req(`${API_BASE}/global/config`), { usdRate: 330, openingCapitalReserve: 15000000 }); },

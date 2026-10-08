@@ -22,6 +22,8 @@ export function GlobalSalesLedger({
   onOpenSaleModal,
   onOpenEditSaleModal,
   onDeleteSale,
+  onRestoreSale,
+  onPermanentDeleteSale,
   onPrintInvoice,
   onMarkFullyPaid,
   currentUser
@@ -71,10 +73,10 @@ export function GlobalSalesLedger({
     return enrichedSales.filter(s => {
       if (statusFilter === 'CANCELLED') {
         if (!s.cancelled) return false;
+      } else if (statusFilter === 'ACTIVE') {
+        if (s.cancelled) return false;
       } else if (statusFilter !== 'ALL') {
         if (s.cancelled || s.paymentStatus !== statusFilter) return false;
-      } else {
-        if (s.cancelled) return false; // Default view excludes cancelled
       }
 
       const q = searchQuery.toLowerCase().trim();
@@ -177,7 +179,7 @@ export function GlobalSalesLedger({
 
       {/* Filter Tabs */}
       <div className="flex flex-wrap gap-2 items-center text-xs font-mono">
-        {['ALL', 'PAID', 'PARTIAL', 'CREDIT', 'CANCELLED'].map(status => (
+        {['ALL', 'ACTIVE', 'PAID', 'PARTIAL', 'CREDIT', 'CANCELLED'].map(status => (
           <button
             key={status}
             onClick={() => setStatusFilter(status)}
@@ -322,11 +324,34 @@ export function GlobalSalesLedger({
                             </button>
                             <button
                               onClick={() => onDeleteSale(sale.id)}
-                              title="Cancel Dispatch (Return stock)"
-                              className="p-1.5 rounded-lg bg-carbon-800 hover:bg-rose-700 text-slate-400 hover:text-white transition"
+                              title="Cancel Dispatch (Return units to stock)"
+                              className="p-1.5 rounded-lg bg-carbon-800 hover:bg-rose-700 text-rose-400 hover:text-white transition flex items-center gap-1"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
+                          </>
+                        )}
+
+                        {isAdmin && sale.cancelled && (
+                          <>
+                            {onRestoreSale && (
+                              <button
+                                onClick={() => onRestoreSale(sale.id)}
+                                title="Restore Dispatch to Active Fleet"
+                                className="p-1.5 rounded-lg bg-carbon-800 hover:bg-emerald-600 text-emerald-400 hover:text-white transition"
+                              >
+                                <RotateCcw className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                            {onPermanentDeleteSale && (
+                              <button
+                                onClick={() => onPermanentDeleteSale(sale.id)}
+                                title="Permanently Purge Record"
+                                className="p-1.5 rounded-lg bg-rose-950 hover:bg-rose-600 border border-rose-800 text-rose-300 hover:text-white transition"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
                           </>
                         )}
                       </div>

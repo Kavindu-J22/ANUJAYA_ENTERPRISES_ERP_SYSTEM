@@ -38,6 +38,7 @@ export function GlobalApparelClients({
       if (!salesMap[key]) {
         salesMap[key] = {
           totalPurchased: 0,
+          totalPaid: 0,
           totalSets: 0,
           receivable: 0,
           invoices: []
@@ -45,16 +46,19 @@ export function GlobalApparelClients({
       }
 
       const rev = Number(s.qty || 1) * Number(s.unitPrice || 0);
-      const paid = s.paymentStatus === 'PAID' ? rev : (Number(s.paidAmount) || 0);
+      const rawPaid = s.paidAmount !== undefined && s.paidAmount !== null ? s.paidAmount : s.amountPaid;
+      const paid = s.paymentStatus === 'PAID' ? rev : (Number(rawPaid) || 0);
       const rec = Math.max(0, rev - paid);
 
       salesMap[key].totalPurchased += rev;
+      salesMap[key].totalPaid += paid;
       salesMap[key].totalSets += Number(s.qty || 1);
       salesMap[key].receivable += rec;
       salesMap[key].invoices.push({
         id: s.id,
         date: s.date,
         total: rev,
+        paid: paid,
         status: s.paymentStatus || 'PAID',
         receivable: rec
       });
@@ -66,6 +70,7 @@ export function GlobalApparelClients({
       const matchKeyId = (c.id || '').trim().toLowerCase();
       const metrics = salesMap[matchKeyId] || salesMap[matchKeyName] || {
         totalPurchased: 0,
+        totalPaid: 0,
         totalSets: 0,
         receivable: 0,
         invoices: []
@@ -74,6 +79,7 @@ export function GlobalApparelClients({
       return {
         ...c,
         totalPurchased: metrics.totalPurchased,
+        totalPaid: metrics.totalPaid,
         totalSets: metrics.totalSets,
         receivable: metrics.receivable,
         invoices: metrics.invoices
@@ -228,20 +234,31 @@ export function GlobalApparelClients({
                   </div>
                 </div>
 
-                {/* Financial Summary */}
-                <div className="grid grid-cols-2 gap-3 mt-4 pt-3 border-t border-carbon-800 text-xs font-mono">
-                  <div className="p-2.5 rounded-xl bg-carbon-950/60 border border-carbon-800">
-                    <span className="text-slate-500 text-[10px] block uppercase font-bold">Total Acquired</span>
-                    <div className="font-bold text-white text-sm mt-0.5">{client.totalSets} Sets</div>
-                    <div className="text-[10px] text-slate-400 mt-0.5">{formatLKR(client.totalPurchased)}</div>
+                {/* Financial Summary - 3 Metrics: Total Spend, Totally Paid, Outstanding Due */}
+                <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-carbon-800 text-xs font-mono">
+                  <div className="p-2 rounded-xl bg-carbon-950/60 border border-carbon-800">
+                    <span className="text-slate-500 text-[9px] block uppercase font-bold">Total Spend</span>
+                    <div className="font-bold text-white text-xs sm:text-sm mt-0.5">{formatLKR(client.totalPurchased)}</div>
+                    <div className="text-[9px] text-slate-400 mt-0.5">{client.totalSets} Sets</div>
                   </div>
-                  <div className="p-2.5 rounded-xl bg-carbon-950/60 border border-carbon-800 text-right">
-                    <span className="text-slate-500 text-[10px] block uppercase font-bold">Outstanding Due</span>
-                    <div className={`font-bold text-sm mt-0.5 ${client.receivable > 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
+
+                  <div className="p-2 rounded-xl bg-emerald-950/30 border border-emerald-800/60 text-center">
+                    <span className="text-emerald-400 text-[9px] block uppercase font-bold">Totally Paid</span>
+                    <div className="font-black text-emerald-400 text-xs sm:text-sm mt-0.5">{formatLKR(client.totalPaid)}</div>
+                    <div className="text-[9px] text-emerald-500 font-semibold mt-0.5">
+                      {client.totalPurchased > 0 
+                        ? `${Math.round((client.totalPaid / client.totalPurchased) * 100)}% Cleared` 
+                        : 'Settled'}
+                    </div>
+                  </div>
+
+                  <div className="p-2 rounded-xl bg-carbon-950/60 border border-carbon-800 text-right">
+                    <span className="text-slate-500 text-[9px] block uppercase font-bold">Outstanding Due</span>
+                    <div className={`font-bold text-xs sm:text-sm mt-0.5 ${client.receivable > 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
                       {formatLKR(client.receivable)}
                     </div>
-                    <div className="text-[10px] text-slate-500 mt-0.5">
-                      {client.receivable > 0 ? 'Pending Settlement' : 'Clear Balance'}
+                    <div className="text-[9px] text-slate-500 mt-0.5">
+                      {client.receivable > 0 ? 'Pending Due' : 'Zero Debt'}
                     </div>
                   </div>
                 </div>
@@ -265,7 +282,7 @@ export function GlobalApparelClients({
                         key={inv.id}
                         onClick={() => onPrintInvoice(inv.id)}
                         className="px-2.5 py-1 rounded-lg bg-carbon-900 hover:bg-sky-600/30 border border-carbon-700 text-[11px] font-mono text-slate-300 hover:text-white transition flex items-center gap-1.5 shadow-sm"
-                        title={`View & Print Tax Invoice ${inv.id}`}
+                        title={`View & Print Tax Invoice ${inv.id} - Total: ${formatLKR(inv.total)} | Paid: ${formatLKR(inv.paid)} | Due: ${formatLKR(inv.receivable)}`}
                       >
                         <Receipt className="w-3 h-3 text-sky-400" />
                         <span>{inv.id}</span>

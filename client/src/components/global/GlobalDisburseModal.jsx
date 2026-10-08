@@ -1,13 +1,40 @@
 import React, { useState } from 'react';
 import { X, Scale, CheckCircle2 } from 'lucide-react';
 
-export function GlobalDisburseModal({ isOpen, onClose, onSubmit, onSave }) {
+export function GlobalDisburseModal({ 
+  isOpen, 
+  mode = 'ADD', 
+  initialData = null, 
+  disbursement = null, 
+  onClose, 
+  onSubmit, 
+  onSave 
+}) {
   if (!isOpen) return null;
 
-  const [partner, setPartner] = useState('X');
-  const [amount, setAmount] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
-  const [memo, setMemo] = useState('Consortium Capital Draw');
+  const activeDisbursement = initialData || disbursement;
+  const effectiveMode = (activeDisbursement && activeDisbursement.id) ? 'EDIT' : (mode || 'ADD');
+
+  const [partner, setPartner] = useState(() => activeDisbursement?.partner || 'X');
+  const [amount, setAmount] = useState(() => activeDisbursement?.amount || '');
+  const [date, setDate] = useState(() => activeDisbursement?.date || new Date().toISOString().slice(0, 10));
+  const [memo, setMemo] = useState(() => activeDisbursement?.memo || activeDisbursement?.notes || 'Consortium Capital Draw');
+
+  React.useEffect(() => {
+    if (isOpen) {
+      if (activeDisbursement) {
+        setPartner(activeDisbursement.partner || 'X');
+        setAmount(activeDisbursement.amount || '');
+        setDate(activeDisbursement.date || new Date().toISOString().slice(0, 10));
+        setMemo(activeDisbursement.memo || activeDisbursement.notes || 'Consortium Capital Draw');
+      } else {
+        setPartner('X');
+        setAmount('');
+        setDate(new Date().toISOString().slice(0, 10));
+        setMemo('Consortium Capital Draw');
+      }
+    }
+  }, [isOpen, activeDisbursement]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -15,16 +42,17 @@ export function GlobalDisburseModal({ isOpen, onClose, onSubmit, onSave }) {
     if (!parsedAmount || parsedAmount <= 0) return;
 
     const payload = {
-      id: "DIS-" + Date.now().toString().slice(-6),
+      id: activeDisbursement?.id || ("DIS-" + Date.now().toString().slice(-6)),
       partner,
       amount: parsedAmount,
       date,
+      notes: memo.trim() || 'Capital Draw',
       memo: memo.trim() || 'Capital Draw'
     };
 
     const saveFn = onSubmit || onSave;
     if (saveFn) {
-      saveFn(payload);
+      saveFn(payload, effectiveMode);
     }
   };
 
@@ -35,7 +63,7 @@ export function GlobalDisburseModal({ isOpen, onClose, onSubmit, onSave }) {
           <div>
             <h3 className="font-display font-black text-lg text-white flex items-center gap-2">
               <Scale className="w-5 h-5 text-emerald-400" />
-              <span>Log Capital Draw</span>
+              <span>{effectiveMode === 'EDIT' ? `Edit Capital Draw: ${activeDisbursement?.id}` : 'Log Capital Draw'}</span>
             </h3>
             <p className="text-xs text-slate-400 mt-0.5 font-mono">Consortium Advance Disbursement Audit</p>
           </div>
