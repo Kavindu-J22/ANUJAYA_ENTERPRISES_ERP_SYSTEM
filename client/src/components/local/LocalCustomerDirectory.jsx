@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Users, 
   Search, 
@@ -16,15 +16,52 @@ import {
   CheckCircle2, 
   AlertCircle,
   Clock,
-  Printer
+  Printer,
+  Calendar,
+  X,
+  Warehouse
 } from 'lucide-react';
 import { formatLKR } from '../../utils/formatters';
+
+const MONTH_NAMES = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December"
+];
+const YEARS = [2024, 2025, 2026, 2027, 2028, 2029, 2030];
+
+function parseMonthYear(mStr) {
+  if (!mStr) {
+    const now = new Date();
+    return { month: MONTH_NAMES[now.getMonth()], year: now.getFullYear() };
+  }
+  const parts = mStr.trim().split(/\s+/);
+  if (parts.length === 2 && MONTH_NAMES.includes(parts[0])) {
+    return { month: parts[0], year: parseInt(parts[1]) || 2026 };
+  }
+  if (/^\d{4}-\d{2}$/.test(mStr)) {
+    const [y, m] = mStr.split('-').map(Number);
+    return { month: MONTH_NAMES[(m - 1 + 12) % 12], year: y };
+  }
+  return { month: "October", year: 2026 };
+}
+
+function normalizeMonth(str) {
+  if (!str) return '';
+  if (/^\d{4}-\d{2}$/.test(str)) {
+    const [y, m] = str.split('-').map(Number);
+    return `${MONTH_NAMES[(m - 1 + 12) % 12]} ${y}`.toLowerCase();
+  }
+  return str.trim().toLowerCase();
+}
 
 export function LocalCustomerDirectory({
   customers,
   payments,
+  machines = [],
   activeMonth,
   allMonths,
+  onSwitchMonth,
+  onAssignMachine,
   onOpenNewCustomer,
   onOpenEditCustomer,
   onOpenPaymentModal,
@@ -36,28 +73,116 @@ export function LocalCustomerDirectory({
 }) {
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+  const [confirmDeleteCustId, setConfirmDeleteCustId] = useState(null);
 
-  // Helper calculation functions matching system.html
+  // Month & Year selection state
+  const parsedActive = parseMonthYear(activeMonth);
+  const [selectedMonth, setSelectedMonth] = useState(parsedActive.month);
+  const [selectedYear, setSelectedYear] = useState(parsedActive.year);
+
+  useEffect(() => {
+    const parsed = parseMonthYear(activeMonth);
+    setSelectedMonth(parsed.month);
+    setSelectedYear(parsed.year);
+  }, [activeMonth]);
+
+  const handleMonthYearChange = (newM, newY) => {
+    setSelectedMonth(newM);
+    setSelectedYear(newY);
+    const targetStr = `${newM} ${newY}`;
+    if (onSwitchMonth) {
+      onSwitchMonth(targetStr);
+    }
+  };
+
+  const handleJumpCurrentMonth = () => {
+    const now = new Date();
+    const currM = MONTH_NAMES[now.getMonth()];
+    const currY = now.getFullYear();
+    handleMonthYearChange(currM, currY);
+  };
+
+  // Assign Yard Machine state
+  const [assigningCustomer, setAssigningCustomer] = useState(null);
+  const [selectedYardMachineId, setSelectedYardMachineId] = useState('');
+  const [yardSearch, setYardSearch] = useState('');
+  const [newSerialNo, setNewSerialNo] = useState('');
+  const [newRentRate, setNewRentRate] = useState('');
+  const [newStartDate, setNewStartDate] = useState(new Date().toISOString().slice(0, 10));
+  const [newAccessories, setNewAccessories] = useState('');
+  const [newProrated, setNewProrated] = useState(false);
+
+  const selectedYardMachine = useMemo(() => {
+    return (machines || []).find(m => m.id === selectedYardMachineId);
+  }, [machines, selectedYardMachineId]);
+
+  const filteredYardMachines = useMemo(() => {
+    const q = yardSearch.toLowerCase().trim();
+    if (!q) return machines || [];
+    return (machines || []).filter(m =>
+      (m.machineCode || '').toLowerCase().includes(q) ||
+      (m.brand || '').toLowerCase().includes(q) ||
+      (m.model || '').toLowerCase().includes(q) ||
+      (m.category || '').toLowerCase().includes(q)
+    );
+  }, [machines, yardSearch]);
+
+  const handleSelectYardMachine = (ym) => {
+    setSelectedYardMachineId(ym.id);
+    setNewRentRate(ym.standardMonthlyRent || 4500);
+    setNewAccessories(ym.accessories || 'Complete Stand, Table, Servo Motor');
+    setNewSerialNo('');
+  };
+
+  const handleConfirmAssign = (e) => {
+    e.preventDefault();
+    if (!assigningCustomer || !selectedYardMachine) return;
+    if (!newSerialNo.trim()) {
+      alert("Physical Serial Number (SN) is required.");
+      return;
+    }
+    const newRental = {
+      machineId: "m_" + Date.now(),
+      machineCode: selectedYardMachine.machineCode,
+      model: `${selectedYardMachine.brand} ${selectedYardMachine.model}`,
+      serialNumber: newSerialNo.trim(),
+      rentRate: parseFloat(newRentRate) || selectedYardMachine.standardMonthlyRent || 0,
+      accessories: newAccessories || selectedYardMachine.accessories || 'Complete Set',
+      startDate: newStartDate || new Date().toISOString().slice(0, 10),
+      isProratedFirstMonth: newProrated,
+      status: 'Active'
+    };
+    if (onAssignMachine) {
+      onAssignMachine(assigningCustomer.id, newRental);
+    }
+    setAssigningCustomer(null);
+    setSelectedYardMachineId('');
+    setNewSerialNo('');
+  };
+
+  // Helper calculation functions
   const getCustomerMonthlyRent = (c) => {
     if (c.isArchived) return 0;
     return (c.rentals || []).filter(r => r.status === 'Active').reduce((sum, r) => sum + (Number(r.rentRate) || 0), 0);
   };
 
   const getCustomerPaid = (cId) => {
-    return (payments || []).filter(p => p.customerId === cId && p.month === activeMonth)
-      .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+    return (payments || []).filter(p => {
+      if (p.customerId !== cId) return false;
+      if (p.month === activeMonth) return true;
+      return normalizeMonth(p.month) === normalizeMonth(activeMonth);
+    }).reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
   };
 
   const getCustomerArrears = (c) => {
-    const mIdx = allMonths.indexOf(activeMonth);
+    const mIdx = (allMonths || []).indexOf(activeMonth);
     if (mIdx <= 0) return Number(c.baseOpeningBalance || 0);
 
-    // Recursively compute previous month balance
     let prevBal = Number(c.baseOpeningBalance || 0);
     for (let i = 0; i < mIdx; i++) {
       const prevMonth = allMonths[i];
       const prevRent = (c.rentals || []).filter(r => r.status === 'Active').reduce((s, r) => s + (Number(r.rentRate) || 0), 0);
-      const prevPaid = (payments || []).filter(p => p.customerId === c.id && p.month === prevMonth)
+      const prevPaid = (payments || []).filter(p => p.customerId === c.id && (p.month === prevMonth || normalizeMonth(p.month) === normalizeMonth(prevMonth)))
         .reduce((s, p) => s + (Number(p.amount) || 0), 0);
       prevBal = prevBal + prevRent - prevPaid;
     }
@@ -94,7 +219,8 @@ export function LocalCustomerDirectory({
 
       const matchRental = (c.rentals || []).some(r => 
         (r.model || '').toLowerCase().includes(q) || 
-        (r.serialNumber || '').toLowerCase().includes(q)
+        (r.serialNumber || '').toLowerCase().includes(q) ||
+        (r.machineCode || '').toLowerCase().includes(q)
       );
 
       return (
@@ -110,7 +236,7 @@ export function LocalCustomerDirectory({
   return (
     <section className="space-y-6 animate-fadeIn">
       {/* Control Bar */}
-      <div className="glass-card p-6 rounded-3xl border border-carbon-700/80 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-xl">
+      <div className="glass-card p-6 rounded-3xl border border-carbon-700/80 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 shadow-xl">
         <div>
           <h2 className="font-display font-black text-xl text-white tracking-tight flex items-center gap-2">
             <Users className="w-5 h-5 text-sky-400" />
@@ -121,9 +247,49 @@ export function LocalCustomerDirectory({
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+        <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
+          {/* Enhanced Month & Year Selector */}
+          <div className="flex items-center gap-1.5 p-1.5 bg-carbon-900 border border-carbon-700/80 rounded-2xl shadow-inner font-mono text-xs">
+            <div className="flex items-center gap-1 px-2 py-1 text-slate-400">
+              <Calendar className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="text-[10px] uppercase font-bold text-slate-400">Month:</span>
+            </div>
+            
+            {/* Month Select */}
+            <select
+              value={selectedMonth}
+              onChange={(e) => handleMonthYearChange(e.target.value, selectedYear)}
+              className="bg-carbon-800 text-emerald-300 font-bold px-2.5 py-1.5 rounded-xl border border-carbon-700 focus:outline-none focus:border-emerald-500 cursor-pointer text-xs"
+            >
+              {MONTH_NAMES.map(m => (
+                <option key={m} value={m} className="bg-carbon-900 text-white font-bold">{m}</option>
+              ))}
+            </select>
+
+            {/* Year Select */}
+            <select
+              value={selectedYear}
+              onChange={(e) => handleMonthYearChange(selectedMonth, parseInt(e.target.value))}
+              className="bg-carbon-800 text-white font-bold px-2.5 py-1.5 rounded-xl border border-carbon-700 focus:outline-none focus:border-emerald-500 cursor-pointer text-xs"
+            >
+              {YEARS.map(y => (
+                <option key={y} value={y} className="bg-carbon-900 text-white font-bold">{y}</option>
+              ))}
+            </select>
+
+            {/* Quick Button to Current Real Month */}
+            <button
+              type="button"
+              onClick={handleJumpCurrentMonth}
+              className="px-2 py-1 text-[10px] font-bold bg-carbon-800 hover:bg-carbon-700 text-slate-300 hover:text-white rounded-xl transition border border-carbon-700/60"
+              title="Jump to Current Real-time Month"
+            >
+              Current
+            </button>
+          </div>
+
           {/* Search */}
-          <div className="relative flex-1 md:w-64">
+          <div className="relative flex-1 md:w-56">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
@@ -136,7 +302,7 @@ export function LocalCustomerDirectory({
 
           <button
             onClick={onOpenNewCustomer}
-            className="bg-gradient-to-r from-sky-600 to-emerald-600 hover:from-sky-500 hover:to-emerald-500 text-white text-xs font-bold px-3.5 py-2 rounded-xl shadow-lg transition flex items-center gap-2"
+            className="bg-gradient-to-r from-sky-600 to-emerald-600 hover:from-sky-500 hover:to-emerald-500 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-lg transition flex items-center gap-2"
           >
             <PlusCircle className="w-4 h-4" />
             <span>Add Client</span>
@@ -253,10 +419,24 @@ export function LocalCustomerDirectory({
 
                 {/* Machinery Fleet Table */}
                 <div className="space-y-3">
-                  <div className="flex justify-between items-center text-xs font-mono">
+                  <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 text-xs font-mono">
                     <span className="text-slate-300 font-bold uppercase tracking-wider text-[11px]">
                       Assigned Machinery Fleet ({activeRentals.length} Active • {returnedRentals.length} Returned)
                     </span>
+                    <button
+                      onClick={() => {
+                        setAssigningCustomer(customer);
+                        setSelectedYardMachineId('');
+                        setNewSerialNo('');
+                        setYardSearch('');
+                        setNewStartDate(new Date().toISOString().slice(0, 10));
+                        setNewProrated(false);
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-sky-600/30 hover:bg-sky-600 text-sky-300 hover:text-white border border-sky-500/50 text-xs font-bold transition flex items-center gap-1.5 self-start sm:self-auto"
+                    >
+                      <PlusCircle className="w-3.5 h-3.5" />
+                      <span>Assign New Fleet Machine</span>
+                    </button>
                   </div>
 
                   <div className="bg-carbon-900/60 rounded-2xl border border-carbon-800/80 overflow-hidden">
@@ -276,7 +456,7 @@ export function LocalCustomerDirectory({
                         {(customer.rentals || []).length === 0 ? (
                           <tr>
                             <td colSpan={7} className="text-center py-4 text-slate-500">
-                              No machines currently assigned to this client.
+                              No machines currently assigned to this client. Click "Assign New Fleet Machine" above to deploy.
                             </td>
                           </tr>
                         ) : (
@@ -287,7 +467,7 @@ export function LocalCustomerDirectory({
                                 {r.model}
                                 <span className="text-[10px] text-slate-400 font-mono block">{r.accessories}</span>
                               </td>
-                              <td className="px-3.5 py-2.5 text-slate-300">{r.serialNumber || 'Yard Batch'}</td>
+                              <td className="px-3.5 py-2.5 text-slate-300 font-bold">{r.serialNumber || 'Yard Batch'}</td>
                               <td className="px-3.5 py-2.5 text-slate-400">{r.startDate || '2026-08-01'}</td>
                               <td className="px-3.5 py-2.5 text-right font-bold text-emerald-400">
                                 {formatLKR(r.rentRate)}
@@ -306,7 +486,7 @@ export function LocalCustomerDirectory({
                                   <button
                                     onClick={() => onRollbackReturn(customer.id, r.machineId)}
                                     title="Restore back to Active Fleet"
-                                    className="px-2 py-1 rounded bg-carbon-800 hover:bg-emerald-700 text-slate-300 hover:text-white text-[10px] transition"
+                                    className="px-2 py-1 rounded bg-carbon-800 hover:bg-emerald-700 text-slate-300 hover:text-white text-[10px] transition font-bold"
                                   >
                                     Restore Active
                                   </button>
@@ -314,7 +494,7 @@ export function LocalCustomerDirectory({
                                   <button
                                     onClick={() => onOpenReturnModal(customer, r)}
                                     title="Process Yard Return"
-                                    className="px-2 py-1 rounded bg-carbon-800 hover:bg-amber-600 text-slate-300 hover:text-white text-[10px] transition"
+                                    className="px-2 py-1 rounded bg-carbon-800 hover:bg-amber-600 text-slate-300 hover:text-white text-[10px] transition font-bold"
                                   >
                                     Return Note
                                   </button>
@@ -347,15 +527,23 @@ export function LocalCustomerDirectory({
                     </button>
                   </div>
 
-                  {/* Print Document Triggers */}
+                  {/* Print Document Triggers & Management */}
                   <div className="flex flex-wrap items-center gap-1.5">
                     <button
-                      onClick={() => onPrintDoc({ type: 'INVOICE', customer })}
+                      onClick={() => onPrintDoc({ type: 'INVOICE', customer, month: activeMonth })}
                       className="px-2.5 py-1.5 rounded-lg bg-carbon-850 hover:bg-sky-600 border border-carbon-700 text-slate-300 hover:text-white text-xs font-bold transition flex items-center gap-1"
                       title="Print Monthly Rent Invoice"
                     >
                       <FileText className="w-3 h-3 text-sky-400" />
                       <span>Invoice</span>
+                    </button>
+                    <button
+                      onClick={() => onPrintDoc({ type: 'STATEMENT', customer })}
+                      className="px-2.5 py-1.5 rounded-lg bg-carbon-850 hover:bg-emerald-600 border border-carbon-700 text-slate-300 hover:text-white text-xs font-bold transition flex items-center gap-1"
+                      title="Print Full Rental Statement of Account"
+                    >
+                      <Printer className="w-3 h-3 text-emerald-400" />
+                      <span>Statement</span>
                     </button>
                     <button
                       onClick={() => onPrintDoc({ type: 'AGREEMENT', customer })}
@@ -388,13 +576,36 @@ export function LocalCustomerDirectory({
                     >
                       <Archive className="w-3.5 h-3.5" />
                     </button>
-                    <button
-                      onClick={() => onDeleteCustomer(customer)}
-                      className="p-1.5 rounded-lg bg-carbon-850 hover:bg-rose-900 border border-carbon-700 text-slate-400 hover:text-rose-300 transition"
-                      title="Delete Customer from System"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+
+                    {confirmDeleteCustId === customer.id ? (
+                      <div className="flex items-center gap-1 animate-fadeIn">
+                        <button
+                          onClick={() => {
+                            setConfirmDeleteCustId(null);
+                            onDeleteCustomer(customer.id);
+                          }}
+                          className="px-2 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded font-mono text-[10px] font-bold"
+                          title="Confirm Delete"
+                        >
+                          Confirm?
+                        </button>
+                        <button
+                          onClick={() => setConfirmDeleteCustId(null)}
+                          className="px-1.5 py-1 bg-carbon-700 hover:bg-carbon-600 text-slate-300 rounded font-mono text-[10px]"
+                          title="Cancel"
+                        >
+                          No
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setConfirmDeleteCustId(customer.id)}
+                        className="p-1.5 rounded-lg bg-carbon-850 hover:bg-rose-900 border border-carbon-700 text-slate-400 hover:text-rose-300 transition"
+                        title="Delete Customer from System"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -402,6 +613,194 @@ export function LocalCustomerDirectory({
           })
         )}
       </div>
+
+      {/* Assign Yard Fleet Machine to Client Modal */}
+      {assigningCustomer && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-carbon-900 border border-carbon-700/90 rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden my-8">
+            <div className="p-6 bg-carbon-850 border-b border-carbon-700/60 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-sky-500/20 border border-sky-500/40 flex items-center justify-center">
+                  <Warehouse className="w-5 h-5 text-sky-400" />
+                </div>
+                <div>
+                  <h3 className="font-display font-extrabold text-lg text-white">
+                    Assign Fleet Machinery to Client
+                  </h3>
+                  <p className="text-xs text-sky-400 font-mono">
+                    {assigningCustomer.name} ({assigningCustomer.code})
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setAssigningCustomer(null)}
+                className="p-2 rounded-xl bg-carbon-800 hover:bg-carbon-700 text-slate-400 hover:text-white transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleConfirmAssign} className="p-6 space-y-4 text-xs font-sans">
+              {/* Searchable Yard Machinery Selection */}
+              <div>
+                <label className="block text-slate-300 font-bold uppercase text-[10px] font-mono mb-1.5">
+                  Select Yard Machine from Master Inventory *
+                </label>
+                
+                {/* Search input for yard machines */}
+                <div className="relative mb-2">
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder="Search yard machine by model, brand, code..."
+                    value={yardSearch}
+                    onChange={(e) => setYardSearch(e.target.value)}
+                    className="w-full pl-8 pr-3 py-1.5 bg-carbon-950 border border-carbon-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
+                  />
+                </div>
+
+                <select
+                  required
+                  value={selectedYardMachineId}
+                  onChange={(e) => {
+                    const ym = (machines || []).find(m => m.id === e.target.value);
+                    if (ym) handleSelectYardMachine(ym);
+                    else setSelectedYardMachineId('');
+                  }}
+                  className="w-full px-3 py-2.5 bg-carbon-950 border border-carbon-700 rounded-xl text-white font-mono text-xs focus:outline-none focus:border-sky-500"
+                >
+                  <option value="">-- Choose Yard Machine ({filteredYardMachines.length} available) --</option>
+                  {filteredYardMachines.map(m => (
+                    <option key={m.id} value={m.id}>
+                      [{m.machineCode}] {m.brand} {m.model} • Rate: LKR {m.standardMonthlyRent?.toLocaleString()}/mo • Stock: {m.totalYardStock}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Auto-filled Details Preview */}
+              {selectedYardMachineId && selectedYardMachine && (
+                <div className="p-3.5 rounded-2xl bg-carbon-950/70 border border-carbon-800 space-y-2">
+                  <span className="text-[10px] font-mono font-bold text-emerald-400 uppercase block">
+                    Auto-Filled Machine Specifications:
+                  </span>
+                  <div className="grid grid-cols-2 gap-2 font-mono text-[11px] text-slate-300">
+                    <div>
+                      <span className="text-slate-500 block text-[10px]">Brand & Model:</span>
+                      <span className="font-bold text-white">
+                        {selectedYardMachine.brand} {selectedYardMachine.model}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block text-[10px]">Yard Code:</span>
+                      <span className="font-bold text-sky-400">{selectedYardMachine.machineCode}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block text-[10px]">Category:</span>
+                      <span>{selectedYardMachine.category}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block text-[10px]">Standard Rent:</span>
+                      <span className="text-emerald-400 font-bold">LKR {selectedYardMachine.standardMonthlyRent?.toLocaleString()} / mo</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Serial Number & Rent Rate inputs */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-300 font-bold uppercase text-[10px] font-mono mb-1">
+                    Serial Number (SN) * (Required)
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. SN-8700-4491"
+                    value={newSerialNo}
+                    onChange={(e) => setNewSerialNo(e.target.value)}
+                    className="w-full px-3 py-2 bg-carbon-950 border border-carbon-700 rounded-xl text-white font-mono focus:outline-none focus:border-sky-500 font-bold"
+                  />
+                  <span className="text-[10px] text-slate-500 font-mono mt-0.5 block">Only manual entry required</span>
+                </div>
+
+                <div>
+                  <label className="block text-slate-300 font-bold uppercase text-[10px] font-mono mb-1">
+                    Agreed Monthly Hire (LKR)
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    value={newRentRate}
+                    onChange={(e) => setNewRentRate(e.target.value)}
+                    className="w-full px-3 py-2 bg-carbon-950 border border-carbon-700 rounded-xl text-emerald-400 font-mono font-bold focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+              </div>
+
+              {/* Start Date & Accessories */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-300 font-bold uppercase text-[10px] font-mono mb-1">
+                    Rental Start Date
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={newStartDate}
+                    onChange={(e) => setNewStartDate(e.target.value)}
+                    className="w-full px-3 py-2 bg-carbon-950 border border-carbon-700 rounded-xl text-white font-mono focus:outline-none focus:border-sky-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-300 font-bold uppercase text-[10px] font-mono mb-1">
+                    Accessories / Configuration
+                  </label>
+                  <input
+                    type="text"
+                    value={newAccessories}
+                    onChange={(e) => setNewAccessories(e.target.value)}
+                    className="w-full px-3 py-2 bg-carbon-950 border border-carbon-700 rounded-xl text-slate-300 focus:outline-none focus:border-sky-500"
+                    placeholder="Complete Stand, Table, Servo Motor"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 pt-1 font-mono text-[11px] text-slate-400">
+                <input
+                  type="checkbox"
+                  id="proratedCheck"
+                  checked={newProrated}
+                  onChange={(e) => setNewProrated(e.target.checked)}
+                  className="rounded bg-carbon-950 border-carbon-700 text-sky-500 focus:ring-0"
+                />
+                <label htmlFor="proratedCheck" className="cursor-pointer">
+                  Calculate prorated days for the first month
+                </label>
+              </div>
+
+              <div className="pt-3 border-t border-carbon-700/60 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setAssigningCustomer(null)}
+                  className="px-4 py-2 bg-carbon-800 hover:bg-carbon-700 text-slate-300 rounded-xl font-bold transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={!selectedYardMachineId || !newSerialNo.trim()}
+                  className="px-5 py-2 bg-gradient-to-r from-sky-600 to-emerald-600 hover:from-sky-500 hover:to-emerald-500 text-white rounded-xl font-bold transition flex items-center gap-2 shadow-lg disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>Deploy & Assign Machine</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

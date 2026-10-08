@@ -1,6 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { X, Warehouse, CheckCircle2, AlertCircle } from 'lucide-react';
 
+const BRANDS = ['JUKI', 'KANSAI', 'PEGASUS', 'SIRUBA', 'BROTHER', 'JACK', 'EASTMAN', 'YAMATO', 'TYPICAL', 'ZOJE', 'OTHER'];
+
+function generateSkuForBrand(brandName) {
+  const brandPrefixMap = {
+    'JUKI': 'JUK',
+    'KANSAI': 'KAN',
+    'PEGASUS': 'PEG',
+    'SIRUBA': 'SIR',
+    'BROTHER': 'BRO',
+    'JACK': 'JCK',
+    'EASTMAN': 'EAS',
+    'YAMATO': 'YAM',
+    'TYPICAL': 'TYP',
+    'ZOJE': 'ZOJ',
+    'OTHER': 'YRD'
+  };
+  const prefix = brandPrefixMap[brandName] || (brandName ? brandName.slice(0, 3).toUpperCase() : 'YRD');
+  const rand = Math.floor(1000 + Math.random() * 9000);
+  return `${prefix}-YRD-${rand}`;
+}
+
 export function LocalYardMachineModal({
   isOpen,
   machine,
@@ -41,9 +62,10 @@ export function LocalYardMachineModal({
         notes: machine.notes || ''
       });
     } else {
+      const defaultBrand = 'JUKI';
       setFormData({
-        machineCode: 'JK-' + Math.floor(1000 + Math.random() * 9000),
-        brand: 'JUKI',
+        machineCode: generateSkuForBrand(defaultBrand),
+        brand: defaultBrand,
         model: '',
         category: 'Single Needle Lockstitch',
         serialNumbers: '',
@@ -58,6 +80,14 @@ export function LocalYardMachineModal({
       });
     }
   }, [machine, isOpen]);
+
+  const handleBrandChange = (newBrand) => {
+    setFormData(prev => ({
+      ...prev,
+      brand: newBrand,
+      machineCode: !machine ? generateSkuForBrand(newBrand) : prev.machineCode
+    }));
+  };
 
   if (!isOpen) return null;
 
@@ -130,14 +160,16 @@ export function LocalYardMachineModal({
             </div>
             <div>
               <label className="block text-slate-400 font-mono mb-1">Brand *</label>
-              <input
-                type="text"
+              <select
                 required
                 value={formData.brand}
-                onChange={e => setFormData({ ...formData, brand: e.target.value })}
-                className="w-full px-3 py-2 bg-carbon-800 border border-carbon-700 rounded-xl text-white font-bold focus:outline-none focus:border-emerald-500"
-                placeholder="e.g. JUKI, SIRUBA"
-              />
+                onChange={e => handleBrandChange(e.target.value)}
+                className="w-full px-3 py-2 bg-carbon-800 border border-carbon-700 rounded-xl text-white font-bold focus:outline-none focus:border-emerald-500 font-mono"
+              >
+                {BRANDS.map(b => (
+                  <option key={b} value={b} className="bg-carbon-900 text-white font-bold">{b}</option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="block text-slate-400 font-mono mb-1">Category</label>

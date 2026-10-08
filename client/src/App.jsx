@@ -41,7 +41,6 @@ import { LocalCustomerDirectory } from './components/local/LocalCustomerDirector
 import { LocalPaymentsLedger } from './components/local/LocalPaymentsLedger';
 import { LocalReturnsWorkflow } from './components/local/LocalReturnsWorkflow';
 import { LocalExpensesLedger } from './components/local/LocalExpensesLedger';
-import { LocalSourcingPartners } from './components/local/LocalSourcingPartners';
 import { LocalDocumentsModal } from './components/local/LocalDocumentsModal';
 import { LocalCustomerModal } from './components/local/LocalCustomerModal';
 import { LocalPaymentModal } from './components/local/LocalPaymentModal';
@@ -877,7 +876,6 @@ export default function App() {
   };
 
   const handleDeleteLocalYardMachine = async (id) => {
-    if (!window.confirm("Remove this machine from Kosgama Yard fleet master?")) return;
     try {
       const res = await api.deleteLocalMachine(id);
       if (res.success) {
@@ -928,7 +926,6 @@ export default function App() {
   };
 
   const handleDeleteLocalCustomer = async (id) => {
-    if (!window.confirm("Delete this customer account completely?")) return;
     try {
       const res = await api.deleteLocalCustomer(id);
       if (res.success) {
@@ -937,6 +934,23 @@ export default function App() {
       }
     } catch {
       addToast("Failed to delete customer", "error");
+    }
+  };
+
+  const handleAssignCustomerMachine = async (customerId, newRental) => {
+    try {
+      const customer = localCustomers.find(c => c.id === customerId);
+      if (!customer) return;
+      const updatedRentals = [...(customer.rentals || []), newRental];
+      const res = await api.updateLocalCustomer(customerId, { rentals: updatedRentals });
+      if (res.success) {
+        setLocalCustomers(prev => prev.map(c => c.id === customerId ? res.data : c));
+        addToast(`Assigned ${newRental.model} (${newRental.serialNumber}) to ${customer.name}!`, "success");
+        // refresh alerts
+        api.getAlertsOverview().then(r => r.success && setAlertsData(r.data));
+      }
+    } catch {
+      addToast("Failed to assign machine to client", "error");
     }
   };
 
@@ -1463,20 +1477,6 @@ export default function App() {
                       <span>Operating Expenses</span>
                     </div>
                   </button>
-
-                  <button
-                    onClick={() => setActiveLocalTab('partners')}
-                    className={`w-full px-3.5 py-3 rounded-xl font-bold transition flex items-center justify-between text-left group ${
-                      activeLocalTab === 'partners'
-                        ? 'bg-gradient-to-r from-emerald-600/30 to-teal-600/20 text-white border-l-4 border-emerald-400 shadow-md'
-                        : 'text-slate-400 hover:text-white hover:bg-carbon-800/60 border-l-4 border-transparent'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Building2 className={`w-4 h-4 ${activeLocalTab === 'partners' ? 'text-orange-400' : 'text-slate-400'}`} />
-                      <span>Sourcing Partners</span>
-                    </div>
-                  </button>
                 </>
               )}
             </nav>
@@ -1687,8 +1687,11 @@ export default function App() {
                 <LocalCustomerDirectory
                   customers={localCustomers}
                   payments={localPayments}
-                  activeMonth={localConfig.activeMonth || '2026-03'}
-                  allMonths={localConfig.allMonths || ['2026-01', '2026-02', '2026-03']}
+                  machines={localMachines}
+                  activeMonth={localConfig.activeMonth || 'August 2026'}
+                  allMonths={localConfig.allMonths || ['August 2026', 'September 2026', 'October 2026', 'November 2026']}
+                  onSwitchMonth={handleSwitchLocalMonth}
+                  onAssignMachine={handleAssignCustomerMachine}
                   onOpenNewCustomer={() => {
                     setLocalCustomerModalMode('ADD');
                     setSelectedLocalCustomer(null);
@@ -1752,21 +1755,6 @@ export default function App() {
                   onOpenNewExpense={() => { setSelectedLocalExpense(null); setIsLocalExpenseModalOpen(true); }}
                   onOpenEditExpense={(e) => { setSelectedLocalExpense(e); setIsLocalExpenseModalOpen(true); }}
                   onDeleteExpense={handleDeleteLocalExpense}
-                />
-              )}
-
-              {activeLocalTab === 'partners' && (
-                <LocalSourcingPartners
-                  partners={localPartners}
-                  onOpenNewPartner={() => { setSelectedLocalPartner(null); setIsLocalPartnerModalOpen(true); }}
-                  onOpenEditPartner={(p) => { setSelectedLocalPartner(p); setIsLocalPartnerModalOpen(true); }}
-                  onDeletePartner={handleDeleteLocalPartner}
-                  onOpenPurchaseModal={(p) => { setSelectedPartnerForPurchase(p); setIsLocalPurchaseModalOpen(true); }}
-                  onOpenReturnModal={(p) => { setSelectedPartnerForReturn(p); setIsLocalPartnerReturnModalOpen(true); }}
-                  onOpenPaymentModal={(p) => { setSelectedPartnerForPayment(p); setIsLocalPartnerPaymentModalOpen(true); }}
-                  onDeletePurchase={handleDeletePartnerPurchase}
-                  onDeleteReturn={handleDeletePartnerReturn}
-                  onPrintDoc={(docData) => setLocalDocModalData(docData)}
                 />
               )}
             </div>

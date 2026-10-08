@@ -24,29 +24,24 @@ export function LocalMachineryMaster({
 }) {
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
-  // Count how many of each model are currently active on rent across customers
-  const rentCountMap = useMemo(() => {
-    const map = {};
-    (customers || []).filter(c => !c.isArchived).forEach(c => {
-      (c.rentals || []).filter(r => r.status === 'Active').forEach(r => {
-        const key = (r.model || '').toLowerCase();
-        map[key] = (map[key] || 0) + 1;
-      });
-    });
-    return map;
-  }, [customers]);
-
-  // Compute live yard availability
+  // Compute live yard availability from active customer rentals
   const enrichedYardMachines = useMemo(() => {
     return (machines || []).map(m => {
-      const modelKey = m.model.toLowerCase();
-      // Match count by model substring or exact
+      const modelKey = (m.model || '').toLowerCase();
+      const codeKey = (m.machineCode || '').toLowerCase();
       let onRentCount = 0;
-      Object.keys(rentCountMap).forEach(k => {
-        if (k.includes(modelKey) || modelKey.includes(k) || (m.brand && k.includes(m.brand.toLowerCase()))) {
-          onRentCount = Math.max(onRentCount, rentCountMap[k] || 0);
-        }
+
+      (customers || []).filter(c => !c.isArchived).forEach(c => {
+        (c.rentals || []).filter(r => r.status === 'Active').forEach(r => {
+          const rModel = (r.model || '').toLowerCase();
+          const rCode = (r.machineCode || '').toLowerCase();
+          if ((codeKey && rCode && codeKey === rCode) ||
+              (modelKey && rModel && (rModel.includes(modelKey) || modelKey.includes(rModel)))) {
+            onRentCount++;
+          }
+        });
       });
 
       const totalStock = parseInt(m.totalYardStock) || 1;
@@ -58,7 +53,7 @@ export function LocalMachineryMaster({
         availableInYard
       };
     });
-  }, [machines, rentCountMap]);
+  }, [machines, customers]);
 
   // Categories
   const categories = [
@@ -229,13 +224,35 @@ export function LocalMachineryMaster({
                         >
                           <Edit3 className="w-3.5 h-3.5" />
                         </button>
-                        <button
-                          onClick={() => onDeleteMachine(m.id)}
-                          title="Remove from Yard Fleet"
-                          className="p-1.5 rounded-lg bg-carbon-800 hover:bg-rose-700 text-slate-400 hover:text-white transition"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        {confirmDeleteId === m.id ? (
+                          <div className="flex items-center gap-1 animate-fadeIn">
+                            <button
+                              onClick={() => {
+                                setConfirmDeleteId(null);
+                                onDeleteMachine(m.id);
+                              }}
+                              className="px-2 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded font-mono text-[10px] font-bold shadow-sm"
+                              title="Confirm Delete"
+                            >
+                              Confirm?
+                            </button>
+                            <button
+                              onClick={() => setConfirmDeleteId(null)}
+                              className="px-1.5 py-1 bg-carbon-700 hover:bg-carbon-600 text-slate-300 rounded font-mono text-[10px]"
+                              title="Cancel"
+                            >
+                              No
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setConfirmDeleteId(m.id)}
+                            title="Remove from Yard Fleet"
+                            className="p-1.5 rounded-lg bg-carbon-800 hover:bg-rose-700 text-slate-400 hover:text-white transition"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

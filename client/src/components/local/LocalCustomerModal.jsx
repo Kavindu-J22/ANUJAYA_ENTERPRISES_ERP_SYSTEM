@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Users, Plus, Trash2, CheckCircle2 } from 'lucide-react';
+import { X, Users, CheckCircle2 } from 'lucide-react';
 
 export function LocalCustomerModal({
   isOpen,
@@ -17,44 +17,6 @@ export function LocalCustomerModal({
   const [address, setAddress] = useState(initialData?.address || '');
   const [nic, setNic] = useState(initialData?.nic || 'REG-CLIENT');
   const [previousBalance, setPreviousBalance] = useState(initialData?.baseOpeningBalance || 0);
-  const [machines, setMachines] = useState(initialData?.rentals || [
-    {
-      machineId: "m_" + Date.now(),
-      machineCode: "JK-01",
-      model: "Juki DDL-8700 High-Speed Lockstitch",
-      serialNumber: "SN-001",
-      rentRate: 4500,
-      accessories: "Complete Stand, Table, Servo Motor",
-      startDate: new Date().toISOString().slice(0, 10),
-      isProratedFirstMonth: false,
-      status: "Active"
-    }
-  ]);
-
-  const addMachineRow = () => {
-    setMachines([
-      ...machines,
-      {
-        machineId: "m_" + Date.now() + "_" + machines.length,
-        machineCode: `MCH-${machines.length + 1}`,
-        model: "Industrial Sewing Unit",
-        serialNumber: `SN-00${machines.length + 1}`,
-        rentRate: 4500,
-        accessories: "Complete Stand, Table, Motor",
-        startDate: new Date().toISOString().slice(0, 10),
-        isProratedFirstMonth: false,
-        status: "Active"
-      }
-    ]);
-  };
-
-  const updateMachineRow = (idx, field, val) => {
-    setMachines(machines.map((m, i) => i === idx ? { ...m, [field]: val } : m));
-  };
-
-  const removeMachineRow = (idx) => {
-    setMachines(machines.filter((_, i) => i !== idx));
-  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -68,10 +30,7 @@ export function LocalCustomerModal({
       address: address.trim(),
       nic: nic.trim(),
       baseOpeningBalance: parseFloat(previousBalance) || 0,
-      rentals: (machines || []).map(m => ({
-        ...m,
-        rentRate: parseFloat(m.rentRate) || 0
-      }))
+      rentals: initialData?.rentals || []
     };
 
     if (mode === 'EDIT' && initialData) {
@@ -171,86 +130,6 @@ export function LocalCustomerModal({
               onChange={(e) => setAddress(e.target.value)}
               className="w-full p-3 rounded-xl bg-carbon-900 border border-carbon-700 text-white focus:outline-none focus:border-sky-500"
             />
-          </div>
-
-          {/* Assigned Machinery Fleet Rows */}
-          <div className="space-y-3 pt-2">
-            <div className="flex justify-between items-center pb-2 border-b border-carbon-700">
-              <span className="font-bold text-slate-300 uppercase tracking-wider text-[11px] font-mono">
-                Assigned Fleet Machinery ({machines.length} Units)
-              </span>
-              <button
-                type="button"
-                onClick={addMachineRow}
-                className="text-xs text-sky-400 hover:text-sky-300 font-bold flex items-center gap-1"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>+ Add Another Machine</span>
-              </button>
-            </div>
-
-            <div className="space-y-3 max-h-56 overflow-y-auto pr-1">
-              {(machines || []).map((m, idx) => (
-                <div key={idx} className="p-3 bg-carbon-900 rounded-xl border border-carbon-800 space-y-2">
-                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
-                    <input
-                      placeholder="Code (e.g. JK-01)"
-                      value={m.machineCode}
-                      onChange={(e) => updateMachineRow(idx, 'machineCode', e.target.value)}
-                      className="p-2 bg-carbon-950 border border-carbon-700 rounded-lg text-white font-mono text-xs"
-                    />
-                    <input
-                      placeholder="Model Description"
-                      value={m.model}
-                      onChange={(e) => updateMachineRow(idx, 'model', e.target.value)}
-                      className="p-2 bg-carbon-950 border border-carbon-700 rounded-lg text-white text-xs sm:col-span-2"
-                    />
-                    <input
-                      type="number"
-                      placeholder="Monthly Rent"
-                      value={m.rentRate}
-                      onChange={(e) => updateMachineRow(idx, 'rentRate', e.target.value)}
-                      className="p-2 bg-carbon-950 border border-carbon-700 rounded-lg text-emerald-400 font-mono font-bold text-xs"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 items-center">
-                    <input
-                      placeholder="Serial Number (SN)"
-                      value={m.serialNumber}
-                      onChange={(e) => updateMachineRow(idx, 'serialNumber', e.target.value)}
-                      className="p-2 bg-carbon-950 border border-carbon-700 rounded-lg text-slate-300 font-mono text-xs"
-                    />
-                    <input
-                      placeholder="Accessories / Stand / Motor"
-                      value={m.accessories}
-                      onChange={(e) => updateMachineRow(idx, 'accessories', e.target.value)}
-                      className="p-2 bg-carbon-950 border border-carbon-700 rounded-lg text-slate-300 text-xs"
-                    />
-                    <div className="flex justify-between items-center">
-                      <label className="text-[10px] text-slate-400 flex items-center gap-1 font-mono">
-                        <input
-                          type="checkbox"
-                          checked={m.isProratedFirstMonth}
-                          onChange={(e) => updateMachineRow(idx, 'isProratedFirstMonth', e.target.checked)}
-                          className="rounded bg-carbon-950 border-carbon-700"
-                        />
-                        <span>Prorated Days</span>
-                      </label>
-                      {machines.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeMachineRow(idx)}
-                          className="p-1 text-rose-400 hover:text-rose-300"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
 
           <button
