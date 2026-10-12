@@ -8,7 +8,8 @@ const LocalPaymentSchema = new mongoose.Schema({
   amount: { type: Number, required: true },
   date: { type: String, required: true },             // "YYYY-MM-DD"
   method: { type: String, default: "BOC Ruwanwella Transfer" },
-  refNo: { type: String, default: "" }
-}, { timestamps: true });
+  refNo: { type: String, default: "" },
+  remarks: { type: String, default: "" }
+}, { timestamps: true, strict: false });
 
 module.exports = mongoose.model('LocalPayment', LocalPaymentSchema);

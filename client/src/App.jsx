@@ -14,7 +14,8 @@ import {
   Bell,
   RefreshCw,
   PlusCircle,
-  FileText
+  FileText,
+  Handshake
 } from 'lucide-react';
 
 import { api } from './services/api';
@@ -55,6 +56,7 @@ import {
 import { LocalExpenseModal } from './components/local/LocalExpenseModal';
 import { LocalAlertLogsModal } from './components/local/LocalAlertLogsModal';
 import { LocalQuotationModal } from './components/local/LocalQuotationModal';
+import { LocalRentalPartners } from './components/local/LocalRentalPartners';
 
 export default function App() {
   // Navigation & Authentication State
@@ -1519,6 +1521,23 @@ export default function App() {
                       <span>Operating Expenses</span>
                     </div>
                   </button>
+
+                  <button
+                    onClick={() => setActiveLocalTab('rental_partners')}
+                    className={`w-full px-3.5 py-3 rounded-xl font-bold transition flex items-center justify-between text-left group ${
+                      activeLocalTab === 'rental_partners'
+                        ? 'bg-gradient-to-r from-amber-600/30 to-orange-600/20 text-white border-l-4 border-amber-400 shadow-md'
+                        : 'text-slate-400 hover:text-white hover:bg-carbon-800/60 border-l-4 border-transparent'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Handshake className={`w-4 h-4 ${activeLocalTab === 'rental_partners' ? 'text-amber-400' : 'text-slate-400'}`} />
+                      <span>Renting Partners</span>
+                    </div>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-carbon-800 border border-carbon-700 text-amber-300 font-bold">
+                      {localPartners.length}
+                    </span>
+                  </button>
                 </>
               )}
             </nav>
@@ -1730,6 +1749,7 @@ export default function App() {
                   customers={localCustomers}
                   payments={localPayments}
                   machines={localMachines}
+                  partners={localPartners}
                   activeMonth={localConfig.activeMonth || 'August 2026'}
                   allMonths={localConfig.allMonths || ['August 2026', 'September 2026', 'October 2026', 'November 2026']}
                   onSwitchMonth={handleSwitchLocalMonth}
@@ -1826,6 +1846,74 @@ export default function App() {
                   onOpenNewExpense={() => { setSelectedLocalExpense(null); setIsLocalExpenseModalOpen(true); }}
                   onOpenEditExpense={(e) => { setSelectedLocalExpense(e); setIsLocalExpenseModalOpen(true); }}
                   onDeleteExpense={handleDeleteLocalExpense}
+                />
+              )}
+
+              {activeLocalTab === 'rental_partners' && (
+                <LocalRentalPartners
+                  partners={localPartners}
+                  customers={localCustomers}
+                  activeMonth={localConfig.activeMonth || 'October 2026'}
+                  onSwitchMonth={handleSwitchLocalMonth}
+                  onPrintDoc={(docData) => setLocalDocModalData(docData)}
+                  onSavePartner={async (partnerData) => {
+                    try {
+                      if (partnerData.id) {
+                        const res = await api.updateLocalPartner(partnerData.id, partnerData);
+                        if (res.success) {
+                          setLocalPartners(prev => prev.map(p => p.id === partnerData.id ? res.data : p));
+                          addToast('Renting partner updated.', 'success');
+                        } else throw new Error(res.error);
+                      } else {
+                        const res = await api.addLocalPartner(partnerData);
+                        if (res.success) {
+                          setLocalPartners(prev => [res.data, ...prev]);
+                          addToast('Renting partner registered.', 'success');
+                        } else throw new Error(res.error);
+                      }
+                    } catch (err) {
+                      addToast('Failed to save renting partner: ' + (err.message || ''), 'error');
+                    }
+                  }}
+                  onDeletePartner={async (partner) => {
+                    try {
+                      const res = await api.deleteLocalPartner(partner.id);
+                      if (res.success) {
+                        setLocalPartners(prev => prev.filter(p => p.id !== partner.id));
+                        addToast('Renting partner deleted.', 'info');
+                      } else throw new Error(res.error);
+                    } catch (err) {
+                      addToast('Failed to delete partner: ' + (err.message || ''), 'error');
+                    }
+                  }}
+                  onRecordPartnerPayment={async (partnerId, paymentData) => {
+                    try {
+                      const partner = localPartners.find(p => p.id === partnerId);
+                      if (!partner) return;
+                      const updatedPayments = [...(partner.payments || []), { ...paymentData, id: 'pp_' + Date.now() }];
+                      const res = await api.updateLocalPartner(partnerId, { payments: updatedPayments });
+                      if (res.success) {
+                        setLocalPartners(prev => prev.map(p => p.id === partnerId ? res.data : p));
+                        addToast('Payment to partner recorded.', 'success');
+                      } else throw new Error(res.error);
+                    } catch (err) {
+                      addToast('Failed to record partner payment: ' + (err.message || ''), 'error');
+                    }
+                  }}
+                  onDeletePartnerPayment={async (partnerId, paymentId) => {
+                    try {
+                      const partner = localPartners.find(p => p.id === partnerId);
+                      if (!partner) return;
+                      const updatedPayments = (partner.payments || []).filter(p => p.id !== paymentId);
+                      const res = await api.updateLocalPartner(partnerId, { payments: updatedPayments });
+                      if (res.success) {
+                        setLocalPartners(prev => prev.map(p => p.id === partnerId ? res.data : p));
+                        addToast('Partner payment deleted.', 'info');
+                      } else throw new Error(res.error);
+                    } catch (err) {
+                      addToast('Failed to delete partner payment: ' + (err.message || ''), 'error');
+                    }
+                  }}
                 />
               )}
             </div>

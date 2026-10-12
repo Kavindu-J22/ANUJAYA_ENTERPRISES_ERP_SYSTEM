@@ -240,6 +240,9 @@ export function LocalDocumentsModal({
                 {type === 'STATEMENT' ? 'STATEMENT OF ACCOUNT' :
                  type === 'AGREEMENT' ? 'RENTAL LEASE AGREEMENT' :
                  type === 'DELIVERY' ? (singleRental ? 'INDIVIDUAL DELIVERY NOTE' : 'MASTER DELIVERY NOTE') :
+                 type === 'RENTAL_SETTLEMENT_INVOICE' ? 'RENTAL PARTNER SETTLEMENT INVOICE' :
+                 type === 'RENTAL_SETTLEMENT_STATEMENT' ? 'RENTAL PARTNER STATEMENT OF ACCOUNT' :
+                 type === 'PARTNER_PAYMENT_VOUCHER' ? 'PARTNER PAYMENT SETTLEMENT VOUCHER' :
                  (type || 'DOCUMENT').replace(/_/g, ' ')}
               </div>
               <div className="text-lg font-black text-slate-900 mt-0.5">
@@ -249,14 +252,17 @@ export function LocalDocumentsModal({
                  type === 'STATEMENT' ? `STMT-${customer?.code || 'CL'}-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}` :
                  type === 'AGREEMENT' ? `AGR-${customer?.code || 'CL'}-2026` :
                  type === 'DELIVERY' ? (singleRental ? `DN-${singleRental.machineCode}-${Date.now().toString().slice(-4)}` : `DN-${customer?.code || 'CL'}-${Date.now().toString().slice(-4)}`) :
-                 type === 'INVOICE' ? `INV-${customer?.code || 'CL'}-${activeInvoiceMonth.replace(/\s+/g, '').toUpperCase()}` :
-                 `${customer?.code || 'DOC'}-${Date.now().toString().slice(-5)}`}
+                 type === 'INVOICE' ? `INV-${customer?.code || 'CL'}-${(activeInvoiceMonth || '').replace(/\s+/g, '').toUpperCase()}` :
+                 type === 'RENTAL_SETTLEMENT_INVOICE' ? `SINV-${partner?.code || 'PTR'}-${String(meta?.cycleMonth || month || '').replace(/\s+/g, '').toUpperCase()}` :
+                 type === 'RENTAL_SETTLEMENT_STATEMENT' ? `RSTMT-${partner?.code || 'PTR'}-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}` :
+                 type === 'PARTNER_PAYMENT_VOUCHER' ? `PV-${partner?.code || 'PTR'}-${(payment?.refNo || payment?.id || Date.now().toString().slice(-4))}` :
+                 `${customer?.code || partner?.code || 'DOC'}-${Date.now().toString().slice(-5)}`}
               </div>
               <div className="text-xs text-slate-600 mt-1">
                 Date: {payment?.date || meta?.returnDate || quotation?.date || new Date().toISOString().slice(0, 10)}
               </div>
               <div className="mt-2">
-                <MockBarcode code={customer?.code || "AE-2026"} />
+                <MockBarcode code={customer?.code || partner?.code || "AE-2026"} />
               </div>
             </div>
           </div>
@@ -773,16 +779,38 @@ export function LocalDocumentsModal({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 font-mono text-xs p-4 bg-slate-50 rounded-xl border border-slate-200">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 font-mono text-xs p-4 bg-slate-50 rounded-xl border border-slate-200">
                 <div>
-                  <span className="text-slate-500 block">Received From:</span>
+                  <span className="text-slate-500 block text-[10px] uppercase font-bold">Received From:</span>
                   <span className="font-bold text-slate-900 font-sans text-sm">{payment.customerName || customer?.name}</span>
+                  {customer?.code && (
+                    <span className="text-[11px] text-sky-700 block mt-0.5">Client Code: {customer.code}</span>
+                  )}
+                  {payment.month && (
+                    <span className="text-[11px] text-emerald-800 font-bold block mt-1">
+                      Applied Billing Cycle: {payment.month}
+                    </span>
+                  )}
                 </div>
-                <div className="text-right">
-                  <span className="text-slate-500 block">Payment Method:</span>
-                  <span className="font-bold text-slate-900">{payment.method} ({payment.refNo})</span>
+                <div className="sm:text-right">
+                  <span className="text-slate-500 block text-[10px] uppercase font-bold">Payment Method & Reference:</span>
+                  <span className="font-bold text-slate-900">{payment.method}</span>
+                  <span className="text-[11px] text-slate-600 block mt-0.5">Ref No: {payment.refNo || payment.id}</span>
+                  <span className="text-[11px] text-slate-500 block mt-0.5">Payment Date: {payment.date}</span>
                 </div>
               </div>
+
+              {/* Remarks / Settlement Details */}
+              {payment.remarks && (
+                <div className="p-4 bg-emerald-50/70 rounded-xl border border-emerald-200 text-xs font-mono space-y-1">
+                  <span className="text-[10px] text-emerald-900 uppercase font-bold block tracking-wider">
+                    Payment Remarks / Settlement Details:
+                  </span>
+                  <p className="text-slate-800 font-sans text-xs leading-relaxed">
+                    {payment.remarks}
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
@@ -896,6 +924,210 @@ export function LocalDocumentsModal({
                   <div className="text-xl font-black text-slate-900">
                     {formatLKR(purchase?.total || returnItem?.total || payment?.amount)}
                   </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ================= 11. RENTAL PARTNER SETTLEMENT INVOICE ================= */}
+          {type === 'RENTAL_SETTLEMENT_INVOICE' && partner && (
+            <div className="space-y-5 text-xs font-sans">
+              {/* Partner & billing header */}
+              <div className="grid grid-cols-2 gap-4 p-4 bg-amber-50 rounded-xl border border-amber-200">
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-amber-700 block mb-1">Invoice To (Payable to):</span>
+                  <div className="font-black text-slate-900 text-sm">{partner.name}</div>
+                  <div className="text-slate-600 text-[11px] mt-0.5">{partner.code}</div>
+                  <div className="text-slate-600 text-[11px]">{partner.address || 'Sri Lanka'}</div>
+                  <div className="text-slate-600 text-[11px]">Contact: {partner.contactPerson || 'Director'} • {partner.phone || 'N/A'}</div>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] uppercase font-bold text-amber-700 block mb-1">Billing Cycle:</span>
+                  <div className="font-black text-slate-900 text-base">{meta?.cycleMonth || month || 'Current Month'}</div>
+                  <div className="text-slate-600 text-[11px] mt-1">Invoice Ref: {`SINV-${partner.code}-${String(meta?.cycleMonth || month || '').replace(/\s+/g,'').toUpperCase()}`}</div>
+                  <div className="text-slate-600 text-[11px]">Issued: {new Date().toLocaleDateString('en-GB', {day:'2-digit',month:'long',year:'numeric'})}</div>
+                </div>
+              </div>
+
+              {/* Sub-leased machinery table */}
+              <div>
+                <div className="text-[10px] uppercase font-bold text-slate-500 mb-1.5 tracking-wider">Sub-Leased Machinery — Monthly Hire Charges</div>
+                <div className="overflow-x-auto rounded-xl border border-slate-200">
+                  <table className="w-full text-left text-[11px]">
+                    <thead className="bg-amber-50 text-slate-600 font-bold uppercase text-[10px] border-b border-amber-100">
+                      <tr>
+                        <th className="p-2.5">Machine Code</th>
+                        <th className="p-2.5">Model / Description</th>
+                        <th className="p-2.5">S/N</th>
+                        <th className="p-2.5">Deployed Client</th>
+                        <th className="p-2.5">Start Date</th>
+                        <th className="p-2.5 text-right">Monthly Rate (LKR)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {(meta?.sourcedMachines || []).length === 0 ? (
+                        <tr><td colSpan={6} className="p-3 text-center text-slate-400">No active machinery sourced from this partner for this billing cycle.</td></tr>
+                      ) : (
+                        (meta?.sourcedMachines || []).map((m, i) => (
+                          <tr key={i} className="hover:bg-slate-50">
+                            <td className="p-2.5 font-mono font-bold text-amber-800">{m.machineCode || m.partnerMachineCode}</td>
+                            <td className="p-2.5 font-bold text-slate-900">{m.model}</td>
+                            <td className="p-2.5 font-mono text-sky-700">{m.serialNumber}</td>
+                            <td className="p-2.5 text-slate-700">{m.customerName}</td>
+                            <td className="p-2.5 font-mono text-slate-500">{m.startDate}</td>
+                            <td className="p-2.5 text-right font-bold text-slate-900">{formatLKR(m.partnerRentRate || 0)}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                    <tfoot className="bg-amber-50 border-t-2 border-amber-300 font-bold text-sm">
+                      <tr>
+                        <td colSpan={5} className="p-3 text-right text-amber-800 uppercase tracking-wider text-[11px]">Total Monthly Hire Due to Partner:</td>
+                        <td className="p-3 text-right text-amber-900 font-black text-base">{formatLKR(meta?.cyclePartnerRent || 0)}</td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+
+              {/* Summary box */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
+                  <div className="text-[10px] uppercase font-bold text-slate-500 mb-2">Account Summary</div>
+                  <div className="flex justify-between text-[11px]"><span className="text-slate-600">Prior Carried Arrears:</span><span className="font-bold text-amber-700">{formatLKR(meta?.priorArrears || 0)}</span></div>
+                  <div className="flex justify-between text-[11px]"><span className="text-slate-600">This Cycle Hire Charge:</span><span className="font-bold text-slate-900">{formatLKR(meta?.cyclePartnerRent || 0)}</span></div>
+                  <div className="flex justify-between text-[11px]"><span className="text-slate-600">Payments Made This Cycle:</span><span className="font-bold text-sky-700">- {formatLKR(meta?.cyclePaid || 0)}</span></div>
+                  <div className="border-t border-slate-300 pt-1.5 flex justify-between font-black text-sm"><span className="text-amber-800">Balance Due to Partner:</span><span className={meta?.cycleBalanceDue > 0 ? 'text-rose-700' : 'text-emerald-700'}>{formatLKR(meta?.cycleBalanceDue || 0)}</span></div>
+                </div>
+                <div className="p-4 bg-amber-50 rounded-xl border border-amber-200 space-y-1 flex flex-col justify-center items-center text-center">
+                  <div className="text-[10px] uppercase font-bold text-amber-700">Net Balance Payable</div>
+                  <div className={`text-3xl font-black mt-1 ${(meta?.cycleBalanceDue || 0) > 0 ? 'text-rose-700' : 'text-emerald-700'}`}>{formatLKR(meta?.cycleBalanceDue || 0)}</div>
+                  <div className="text-[10px] text-slate-500 mt-1">Please settle by end of billing cycle</div>
+                </div>
+              </div>
+
+              {/* Payment instructions */}
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-[10px] font-mono text-slate-600">
+                <span className="font-bold text-slate-800 block mb-1 uppercase tracking-wider">Settlement Instructions (Our Bank):</span>
+                Bank: Bank Of Ceylon | Account: Anujaya Enterprises | A/C No: 94459826 | Branch: Ruwanwella
+              </div>
+            </div>
+          )}
+
+          {/* ================= 12. RENTAL PARTNER SETTLEMENT STATEMENT ================= */}
+          {type === 'RENTAL_SETTLEMENT_STATEMENT' && partner && (
+            <div className="space-y-5 text-xs font-sans">
+              {/* Partner info */}
+              <div className="grid grid-cols-2 gap-4 p-4 bg-amber-50 rounded-xl border border-amber-200">
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-amber-700 block mb-1">Partner Company:</span>
+                  <div className="font-black text-slate-900 text-sm">{partner.name}</div>
+                  <div className="text-slate-600 text-[11px] mt-0.5">{partner.code} • {partner.phone || 'N/A'}</div>
+                  <div className="text-slate-600 text-[11px]">{partner.address || 'Sri Lanka'}</div>
+                  <div className="text-slate-600 text-[11px]">Contact: {partner.contactPerson || 'Director'}</div>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] uppercase font-bold text-amber-700 block mb-1">Statement Reference:</span>
+                  <div className="font-black text-slate-900">{`RSTMT-${partner.code}-${new Date().toISOString().slice(0,10).replace(/-/g,'')}`}</div>
+                  <div className="text-slate-600 text-[11px] mt-1">Generated: {new Date().toLocaleDateString('en-GB', {day:'2-digit',month:'long',year:'numeric'})}</div>
+                  <div className="text-[11px] font-bold text-amber-700 mt-2">All-Time Balance Due: {formatLKR(meta?.allTimeBalanceDue || 0)}</div>
+                </div>
+              </div>
+
+              {/* Active fleet summary */}
+              <div>
+                <div className="text-[10px] uppercase font-bold text-slate-500 mb-1.5 tracking-wider">Sub-Leased Fleet Overview</div>
+                <div className="overflow-x-auto rounded-xl border border-slate-200">
+                  <table className="w-full text-left text-[11px]">
+                    <thead className="bg-slate-100 text-slate-600 font-bold uppercase text-[10px] border-b border-slate-200">
+                      <tr>
+                        <th className="p-2.5">Machine Code</th>
+                        <th className="p-2.5">Model</th>
+                        <th className="p-2.5">S/N</th>
+                        <th className="p-2.5">Deployed Client</th>
+                        <th className="p-2.5">Since</th>
+                        <th className="p-2.5 text-center">Status</th>
+                        <th className="p-2.5 text-right">Partner Rate/mo</th>
+                        <th className="p-2.5 text-right">Client Rate/mo</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {(meta?.sourcedMachines || []).length === 0 ? (
+                        <tr><td colSpan={8} className="p-3 text-center text-slate-400">No machinery records for this partner.</td></tr>
+                      ) : (
+                        (meta?.sourcedMachines || []).map((m, i) => (
+                          <tr key={i} className={m.status === 'Returned' ? 'bg-slate-50' : ''}>
+                            <td className="p-2.5 font-mono font-bold text-amber-800">{m.machineCode || m.partnerMachineCode}</td>
+                            <td className="p-2.5 font-bold text-slate-900">{m.model}</td>
+                            <td className="p-2.5 font-mono text-sky-700">{m.serialNumber}</td>
+                            <td className="p-2.5 text-slate-700">{m.customerName}</td>
+                            <td className="p-2.5 font-mono text-slate-500">{m.startDate}</td>
+                            <td className="p-2.5 text-center">
+                              <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${m.status === 'Returned' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}`}>
+                                {m.status === 'Returned' ? `Returned ${m.returnDate||''}` : 'Active'}
+                              </span>
+                            </td>
+                            <td className="p-2.5 text-right font-bold text-amber-800">{formatLKR(m.partnerRentRate || 0)}</td>
+                            <td className="p-2.5 text-right font-bold text-emerald-700">{formatLKR(m.rentRate || 0)}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Payments history */}
+              <div>
+                <div className="text-[10px] uppercase font-bold text-slate-500 mb-1.5 tracking-wider">Settlement Payments History</div>
+                <div className="overflow-x-auto rounded-xl border border-slate-200">
+                  <table className="w-full text-left text-[11px]">
+                    <thead className="bg-slate-100 text-slate-600 font-bold uppercase text-[10px] border-b border-slate-200">
+                      <tr>
+                        <th className="p-2.5">Date</th>
+                        <th className="p-2.5">Billing Cycle</th>
+                        <th className="p-2.5">Method</th>
+                        <th className="p-2.5">Reference</th>
+                        <th className="p-2.5">Remarks</th>
+                        <th className="p-2.5 text-right">Amount (LKR)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {(partner.payments || []).length === 0 ? (
+                        <tr><td colSpan={6} className="p-3 text-center text-slate-400">No payments recorded yet.</td></tr>
+                      ) : (
+                        (partner.payments || []).map((pay, i) => (
+                          <tr key={i} className="hover:bg-slate-50">
+                            <td className="p-2.5 font-mono text-slate-600">{pay.date}</td>
+                            <td className="p-2.5 font-bold text-slate-800">{pay.month || '-'}</td>
+                            <td className="p-2.5 text-slate-600">{pay.method}</td>
+                            <td className="p-2.5 font-mono text-sky-700">{pay.refNo || '-'}</td>
+                            <td className="p-2.5 text-slate-500 italic">{pay.remarks || '-'}</td>
+                            <td className="p-2.5 text-right font-bold text-emerald-700">{formatLKR(pay.amount)}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                    <tfoot className="bg-slate-100 border-t-2 border-slate-300 font-bold">
+                      <tr>
+                        <td colSpan={5} className="p-2.5 text-right text-[11px] text-slate-700 uppercase">Total Settled All-Time:</td>
+                        <td className="p-2.5 text-right font-black text-emerald-800">{formatLKR(meta?.allTimePaid || 0)}</td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+
+              {/* Balance summary */}
+              <div className="p-4 bg-amber-50 rounded-xl border border-amber-200 flex justify-between items-center">
+                <div className="space-y-1 text-[11px]">
+                  <div className="flex gap-6"><span className="text-slate-600">Active Machines:</span><span className="font-bold text-emerald-700">{(meta?.sourcedMachines||[]).filter(m=>m.status!=='Returned').length} Units</span></div>
+                  <div className="flex gap-6"><span className="text-slate-600">Returned Machines:</span><span className="font-bold text-amber-700">{(meta?.sourcedMachines||[]).filter(m=>m.status==='Returned').length} Units</span></div>
+                  <div className="flex gap-6"><span className="text-slate-600">Opening Balance:</span><span className="font-bold">{formatLKR(partner.baseOpeningBalance||0)}</span></div>
+                </div>
+                <div className="text-right">
+                  <div className="text-[10px] uppercase font-bold text-amber-700 mb-1">Net Balance Payable (Live)</div>
+                  <div className={`text-3xl font-black ${(meta?.allTimeBalanceDue||0)>0?'text-rose-700':'text-emerald-700'}`}>{formatLKR(meta?.allTimeBalanceDue||0)}</div>
                 </div>
               </div>
             </div>

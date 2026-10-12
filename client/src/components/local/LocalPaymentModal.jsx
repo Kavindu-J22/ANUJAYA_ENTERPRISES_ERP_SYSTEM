@@ -20,6 +20,7 @@ export function LocalPaymentModal({
   const [refNo, setRefNo] = useState(initialData?.refNo || "REC-" + Date.now().toString().slice(-6));
   const [date, setDate] = useState(initialData?.date || new Date().toISOString().slice(0, 10));
   const [paymentMonth, setPaymentMonth] = useState(initialData?.month || activeMonth || 'August 2026');
+  const [remarks, setRemarks] = useState(initialData?.remarks || '');
 
   useEffect(() => {
     if (initialData) {
@@ -29,6 +30,7 @@ export function LocalPaymentModal({
       setRefNo(initialData.refNo || "REC-" + Date.now().toString().slice(-6));
       setDate(initialData.date || new Date().toISOString().slice(0, 10));
       setPaymentMonth(initialData.month || activeMonth || 'August 2026');
+      setRemarks(initialData.remarks || '');
     } else if (prefilledCustomer) {
       setCustomerId(prefilledCustomer.id || '');
       setAmount('');
@@ -36,6 +38,7 @@ export function LocalPaymentModal({
       setRefNo("REC-" + Date.now().toString().slice(-6));
       setDate(new Date().toISOString().slice(0, 10));
       setPaymentMonth(activeMonth || 'August 2026');
+      setRemarks('');
     } else {
       setCustomerId(customers[0]?.id || '');
       setAmount('');
@@ -43,6 +46,7 @@ export function LocalPaymentModal({
       setRefNo("REC-" + Date.now().toString().slice(-6));
       setDate(new Date().toISOString().slice(0, 10));
       setPaymentMonth(activeMonth || 'August 2026');
+      setRemarks('');
     }
   }, [isOpen, initialData, prefilledCustomer, activeMonth]);
 
@@ -62,7 +66,8 @@ export function LocalPaymentModal({
       method,
       refNo: refNo.trim() || `REC-${Date.now().toString().slice(-6)}`,
       date,
-      month: targetMonth
+      month: targetMonth,
+      remarks: remarks.trim()
     };
 
     if (mode === 'EDIT' && initialData) {
@@ -176,6 +181,20 @@ export function LocalPaymentModal({
                 className="w-full p-3 rounded-xl bg-carbon-900 border border-carbon-700 text-sky-400 font-mono font-bold focus:outline-none focus:border-sky-500"
               />
             </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-slate-300 font-bold uppercase text-[10px] font-mono flex justify-between">
+              <span>Remarks / Payment Settlement Details</span>
+              <span className="text-slate-500 font-normal">Printed on official receipt</span>
+            </label>
+            <input
+              type="text"
+              value={remarks}
+              onChange={(e) => setRemarks(e.target.value)}
+              placeholder="e.g. October monthly fleet hire settled via online fund transfer"
+              className="w-full p-3 rounded-xl bg-carbon-900 border border-carbon-700 text-slate-200 text-xs focus:outline-none focus:border-emerald-500"
+            />
           </div>
 
           <button

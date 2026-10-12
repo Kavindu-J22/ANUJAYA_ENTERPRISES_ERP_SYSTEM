@@ -19,7 +19,9 @@ import {
   Printer,
   Calendar,
   X,
-  Warehouse
+  Warehouse,
+  Handshake,
+  Building2
 } from 'lucide-react';
 import { formatLKR } from '../../utils/formatters';
 
@@ -188,6 +190,7 @@ function FleetItemEditModal({ item, onClose, onSave }) {
   const [machineCode, setMachineCode] = useState(rental.machineCode || '');
   const [serialNumber, setSerialNumber] = useState(rental.serialNumber || '');
   const [rentRate, setRentRate] = useState(rental.rentRate || 4500);
+  const [partnerRentRate, setPartnerRentRate] = useState(rental.partnerRentRate ?? '');
   const [startDate, setStartDate] = useState(rental.startDate || new Date().toISOString().slice(0, 10));
   const [accessories, setAccessories] = useState(rental.accessories || '');
   const [deliveryStatus, setDeliveryStatus] = useState(rental.deliveryStatus || 'Ongoing');
@@ -202,6 +205,7 @@ function FleetItemEditModal({ item, onClose, onSave }) {
       machineCode,
       serialNumber,
       rentRate: parseFloat(rentRate) || 0,
+      partnerRentRate: (rental.isPartnerMachine || rental.partnerId) ? (parseFloat(partnerRentRate) || 0) : (rental.partnerRentRate || 0),
       startDate,
       accessories,
       deliveryStatus,
@@ -286,6 +290,35 @@ function FleetItemEditModal({ item, onClose, onSave }) {
               />
             </div>
           </div>
+
+          {(rental.isPartnerMachine || rental.partnerId) && (
+            <div className="p-3 bg-amber-950/40 border border-amber-600/70 rounded-xl space-y-2">
+              <div className="text-[11px] font-bold text-amber-300 font-mono flex items-center justify-between">
+                <span>Renting Partner: {rental.partnerName || 'External Partner'}</span>
+                <span className="text-[10px] text-amber-400/80">Sub-Leased Machine</span>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-300 font-bold uppercase text-[10px] font-mono mb-1">
+                    Partner Rent (Cost We Pay)
+                  </label>
+                  <input
+                    type="number"
+                    step="any"
+                    value={partnerRentRate}
+                    onChange={(e) => setPartnerRentRate(e.target.value)}
+                    className="w-full px-3 py-2 bg-carbon-900 border border-amber-600/60 rounded-xl text-amber-300 font-mono font-bold"
+                  />
+                </div>
+                <div className="flex flex-col justify-end">
+                  <span className="text-[10px] text-slate-400 font-mono mb-1">Monthly Net Margin:</span>
+                  <span className={`text-xs font-mono font-bold ${((parseFloat(rentRate) || 0) - (parseFloat(partnerRentRate) || 0)) >= 0 ? 'text-teal-400' : 'text-rose-400'}`}>
+                    {formatLKR((parseFloat(rentRate) || 0) - (parseFloat(partnerRentRate) || 0))}/mo
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div>
             <label className="block text-slate-300 font-bold uppercase text-[10px] font-mono mb-1">Included Accessories</label>
@@ -448,6 +481,7 @@ export function LocalCustomerDirectory({
   customers,
   payments,
   machines = [],
+  partners = [],
   activeMonth,
   allMonths,
   onSwitchMonth,
@@ -503,8 +537,9 @@ export function LocalCustomerDirectory({
     handleMonthYearChange(currM, currY);
   };
 
-  // Assign Yard Machine state
+  // Assign Machine state (Yard Inventory vs Partner Sub-Leasing)
   const [assigningCustomer, setAssigningCustomer] = useState(null);
+  const [assignSourceMode, setAssignSourceMode] = useState('YARD'); // 'YARD' | 'PARTNER'
   const [selectedYardMachineId, setSelectedYardMachineId] = useState('');
   const [yardSearch, setYardSearch] = useState('');
   const [newSerialNo, setNewSerialNo] = useState('');
@@ -512,6 +547,14 @@ export function LocalCustomerDirectory({
   const [newStartDate, setNewStartDate] = useState(new Date().toISOString().slice(0, 10));
   const [newAccessories, setNewAccessories] = useState('');
   const [newProrated, setNewProrated] = useState(false);
+
+  // Partner Machine fields
+  const [selectedPartnerId, setSelectedPartnerId] = useState('');
+  const [partnerBrand, setPartnerBrand] = useState('Juki');
+  const [partnerModel, setPartnerModel] = useState('');
+  const [partnerMachineCode, setPartnerMachineCode] = useState('');
+  const [partnerCategory, setPartnerCategory] = useState('Single Needle Lockstitch');
+  const [partnerRentRate, setPartnerRentRate] = useState('');
 
   const selectedYardMachine = useMemo(() => {
     return (machines || []).find(m => m.id === selectedYardMachineId);
@@ -537,7 +580,74 @@ export function LocalCustomerDirectory({
 
   const handleConfirmAssign = (e) => {
     e.preventDefault();
-    if (!assigningCustomer || !selectedYardMachine) return;
+    if (!assigningCustomer) return;
+
+    if (assignSourceMode === 'PARTNER') {
+      if (!selectedPartnerId) {
+        alert("Please select a Renting Partnership Company.");
+        return;
+      }
+      const partnerObj = (partners || []).find(p => (p.id && p.id === selectedPartnerId) || (p._id && p._id === selectedPartnerId));
+      if (!partnerObj) {
+        alert("Selected partner company not found.");
+        return;
+      }
+      if (!partnerModel.trim()) {
+        alert("Machine Model / Description is required.");
+        return;
+      }
+      if (!newSerialNo.trim()) {
+        alert("Physical Serial Number (SN) is required.");
+        return;
+      }
+      const pRent = parseFloat(partnerRentRate);
+      const cRent = parseFloat(newRentRate);
+      if (isNaN(pRent) || pRent < 0) {
+        alert("Please enter a valid Partner Monthly Rent (we owe to partner).");
+        return;
+      }
+      if (isNaN(cRent) || cRent < 0) {
+        alert("Please enter a valid Customer Monthly Rent (customer owes to us).");
+        return;
+      }
+
+      const generatedCode = partnerMachineCode.trim() || `PRT-${partnerObj.code || 'CO'}-${Date.now().toString().slice(-4)}`;
+      const fullModel = partnerBrand.trim() ? `${partnerBrand.trim()} ${partnerModel.trim()}` : partnerModel.trim();
+
+      const newRental = {
+        machineId: "m_prt_" + Date.now(),
+        isPartnerMachine: true,
+        partnerId: partnerObj.id || partnerObj._id,
+        partnerName: partnerObj.name || partnerObj.companyName,
+        partnerRentRate: pRent,
+        partnerMachineCode: generatedCode,
+        machineCode: generatedCode,
+        model: fullModel,
+        category: partnerCategory || 'Sewing Machine',
+        serialNumber: newSerialNo.trim(),
+        rentRate: cRent,
+        accessories: newAccessories || 'Complete Set (Partner Machine)',
+        startDate: newStartDate || new Date().toISOString().slice(0, 10),
+        isProratedFirstMonth: newProrated,
+        deliveryStatus: 'Ongoing',
+        deliveredDate: '',
+        status: 'Active'
+      };
+
+      if (onAssignMachine) {
+        onAssignMachine(assigningCustomer.id, newRental);
+      }
+      setAssigningCustomer(null);
+      setSelectedPartnerId('');
+      setNewSerialNo('');
+      return;
+    }
+
+    // YARD inventory mode
+    if (!selectedYardMachine) {
+      alert("Please select a yard machine from master inventory.");
+      return;
+    }
     if (!newSerialNo.trim()) {
       alert("Physical Serial Number (SN) is required.");
       return;
@@ -891,11 +1001,19 @@ export function LocalCustomerDirectory({
                     <button
                       onClick={() => {
                         setAssigningCustomer(customer);
+                        setAssignSourceMode('YARD');
                         setSelectedYardMachineId('');
                         setNewSerialNo('');
                         setYardSearch('');
                         setNewStartDate(new Date().toISOString().slice(0, 10));
                         setNewProrated(false);
+                        setSelectedPartnerId(partners && partners.length > 0 ? (partners[0].id || partners[0]._id) : '');
+                        setPartnerBrand('Juki');
+                        setPartnerModel('');
+                        setPartnerMachineCode('');
+                        setPartnerCategory('Single Needle Lockstitch');
+                        setPartnerRentRate('');
+                        setNewRentRate('');
                       }}
                       className="px-3 py-1.5 rounded-xl bg-sky-600/30 hover:bg-sky-600 text-sky-300 hover:text-white border border-sky-500/50 text-xs font-bold transition flex items-center gap-1.5 self-start sm:self-auto"
                     >
@@ -939,10 +1057,23 @@ export function LocalCustomerDirectory({
                                   key={r.machineId} 
                                   className={`transition ${isFutureItem ? 'opacity-80 bg-carbon-900/40' : 'hover:bg-carbon-850/40'}`}
                                 >
-                                  <td className="px-3 py-2.5 font-bold text-sky-400">{r.machineCode || 'MCH'}</td>
+                                  <td className="px-3 py-2.5 font-bold text-sky-400">
+                                    <div>{r.machineCode || 'MCH'}</div>
+                                    {r.isPartnerMachine && (
+                                      <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded text-[9px] font-sans font-bold bg-amber-950/80 text-amber-300 border border-amber-700/60">
+                                        <Handshake className="w-2.5 h-2.5" />
+                                        <span>{r.partnerName || 'Partner Machine'}</span>
+                                      </span>
+                                    )}
+                                  </td>
                                   <td className="px-3 py-2.5 font-sans font-bold text-white">
                                     {r.model}
                                     <span className="text-[10px] text-slate-400 font-mono block">{r.accessories}</span>
+                                    {r.isPartnerMachine && (
+                                      <span className="text-[9px] text-amber-400/90 font-mono block mt-0.5">
+                                        Partner Cost: {formatLKR(r.partnerRentRate || 0)}/mo
+                                      </span>
+                                    )}
                                   </td>
                                   <td className="px-3 py-2.5 text-slate-300 font-bold">{r.serialNumber || 'Yard Batch'}</td>
                                   <td className="px-3 py-2.5 text-slate-400">{r.startDate || '2026-08-01'}</td>
@@ -1472,104 +1603,303 @@ export function LocalCustomerDirectory({
             </div>
 
             <form onSubmit={handleConfirmAssign} className="p-6 space-y-4 text-xs font-sans">
-              <div>
-                <label className="block text-slate-300 font-bold uppercase text-[10px] font-mono mb-1.5">
-                  Select Yard Machine from Master Inventory *
-                </label>
-                
-                <div className="relative mb-2">
-                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    placeholder="Search master machinery by code, brand, model..."
-                    value={yardSearch}
-                    onChange={(e) => setYardSearch(e.target.value)}
-                    className="w-full pl-8 pr-3 py-1.5 bg-carbon-950 border border-carbon-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 font-mono"
-                  />
-                </div>
-
-                <div className="max-h-40 overflow-y-auto rounded-xl border border-carbon-700/80 bg-carbon-950/70 divide-y divide-carbon-800/80 font-mono">
-                  {filteredYardMachines.length === 0 ? (
-                    <div className="p-3 text-center text-slate-500 text-xs">
-                      No matching yard machinery models found.
-                    </div>
-                  ) : (
-                    filteredYardMachines.map(m => (
-                      <div
-                        key={m.id}
-                        onClick={() => handleSelectYardMachine(m)}
-                        className={`p-2.5 flex items-center justify-between cursor-pointer transition ${
-                          selectedYardMachineId === m.id
-                            ? 'bg-sky-600/30 border-l-4 border-sky-400'
-                            : 'hover:bg-carbon-800/60'
-                        }`}
-                      >
-                        <div>
-                          <div className="font-bold text-white flex items-center gap-2">
-                            <span className="text-sky-400">{m.machineCode}</span>
-                            <span>{m.brand} {m.model}</span>
-                          </div>
-                          <div className="text-[10px] text-slate-400 font-sans">
-                            {m.category} • Location: {m.yardLocation || 'Kosgama Bay 1'}
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <span className="text-xs font-bold text-emerald-400 block">
-                            {formatLKR(m.standardMonthlyRent || 4500)}/mo
-                          </span>
-                          <span className="text-[9px] text-slate-400">
-                            Available: {m.availableInYard != null ? m.availableInYard : m.totalYardStock}
-                          </span>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
+              {/* Sourcing Mode Switcher */}
+              <div className="flex rounded-2xl bg-carbon-950 p-1 border border-carbon-800">
+                <button
+                  type="button"
+                  onClick={() => setAssignSourceMode('YARD')}
+                  className={`flex-1 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 ${
+                    assignSourceMode === 'YARD'
+                      ? 'bg-sky-600 text-white shadow-md'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <Warehouse className="w-4 h-4" />
+                  <span>Kosgama Yard Fleet (Inventory)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAssignSourceMode('PARTNER');
+                    if (!selectedPartnerId && partners && partners.length > 0) {
+                      setSelectedPartnerId(partners[0].id || partners[0]._id);
+                    }
+                  }}
+                  className={`flex-1 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 ${
+                    assignSourceMode === 'PARTNER'
+                      ? 'bg-amber-600 text-white shadow-md'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <Handshake className="w-4 h-4" />
+                  <span>Partner Sourced (Sub-Leasing)</span>
+                </button>
               </div>
 
-              {selectedYardMachine && (
-                <div className="p-3 bg-sky-950/40 border border-sky-500/30 rounded-2xl flex items-center justify-between font-mono">
+              {/* MODE 1: YARD INVENTORY */}
+              {assignSourceMode === 'YARD' && (
+                <>
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-sky-400 block">Selected Fleet Asset</span>
-                    <span className="text-sm font-bold text-white font-sans">{selectedYardMachine.brand} {selectedYardMachine.model}</span>
-                    <span className="text-[11px] text-slate-400 block">Code: {selectedYardMachine.machineCode}</span>
+                    <label className="block text-slate-300 font-bold uppercase text-[10px] font-mono mb-1.5">
+                      Select Yard Machine from Master Inventory *
+                    </label>
+                    
+                    <div className="relative mb-2">
+                      <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        placeholder="Search master machinery by code, brand, model..."
+                        value={yardSearch}
+                        onChange={(e) => setYardSearch(e.target.value)}
+                        className="w-full pl-8 pr-3 py-1.5 bg-carbon-950 border border-carbon-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 font-mono"
+                      />
+                    </div>
+
+                    <div className="max-h-40 overflow-y-auto rounded-xl border border-carbon-700/80 bg-carbon-950/70 divide-y divide-carbon-800/80 font-mono">
+                      {filteredYardMachines.length === 0 ? (
+                        <div className="p-3 text-center text-slate-500 text-xs">
+                          No matching yard machinery models found.
+                        </div>
+                      ) : (
+                        filteredYardMachines.map(m => (
+                          <div
+                            key={m.id}
+                            onClick={() => handleSelectYardMachine(m)}
+                            className={`p-2.5 flex items-center justify-between cursor-pointer transition ${
+                              selectedYardMachineId === m.id
+                                ? 'bg-sky-600/30 border-l-4 border-sky-400'
+                                : 'hover:bg-carbon-800/60'
+                            }`}
+                          >
+                            <div>
+                              <div className="font-bold text-white flex items-center gap-2">
+                                <span className="text-sky-400">{m.machineCode}</span>
+                                <span>{m.brand} {m.model}</span>
+                              </div>
+                              <div className="text-[10px] text-slate-400 font-sans">
+                                {m.category} • Location: {m.yardLocation || 'Kosgama Bay 1'}
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <span className="text-xs font-bold text-emerald-400 block">
+                                {formatLKR(m.standardMonthlyRent || 4500)}/mo
+                              </span>
+                              <span className="text-[9px] text-slate-400">
+                                Available: {m.availableInYard != null ? m.availableInYard : m.totalYardStock}
+                              </span>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
                   </div>
-                  <span className="text-emerald-400 font-bold text-sm">
-                    {formatLKR(selectedYardMachine.standardMonthlyRent || 4500)}/mo
-                  </span>
-                </div>
+
+                  {selectedYardMachine && (
+                    <div className="p-3 bg-sky-950/40 border border-sky-500/30 rounded-2xl flex items-center justify-between font-mono">
+                      <div>
+                        <span className="text-[10px] uppercase font-bold text-sky-400 block">Selected Fleet Asset</span>
+                        <span className="text-sm font-bold text-white font-sans">{selectedYardMachine.brand} {selectedYardMachine.model}</span>
+                        <span className="text-[11px] text-slate-400 block">Code: {selectedYardMachine.machineCode}</span>
+                      </div>
+                      <span className="text-emerald-400 font-bold text-sm">
+                        {formatLKR(selectedYardMachine.standardMonthlyRent || 4500)}/mo
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-slate-300 font-bold uppercase text-[10px] font-mono mb-1">
+                        Physical Serial Number (SN) *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. SN-8700-44912"
+                        value={newSerialNo}
+                        onChange={(e) => setNewSerialNo(e.target.value)}
+                        className="w-full px-3 py-2 bg-carbon-950 border border-carbon-700 rounded-xl text-white font-mono font-bold focus:outline-none focus:border-sky-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-300 font-bold uppercase text-[10px] font-mono mb-1">
+                        Monthly Rent Rate (LKR) *
+                      </label>
+                      <input
+                        type="number"
+                        step="any"
+                        required
+                        value={newRentRate}
+                        onChange={(e) => setNewRentRate(e.target.value)}
+                        className="w-full px-3 py-2 bg-carbon-950 border border-carbon-700 rounded-xl text-emerald-400 font-mono font-bold focus:outline-none focus:border-sky-500"
+                      />
+                    </div>
+                  </div>
+                </>
               )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-300 font-bold uppercase text-[10px] font-mono mb-1">
-                    Physical Serial Number (SN) *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. SN-8700-44912"
-                    value={newSerialNo}
-                    onChange={(e) => setNewSerialNo(e.target.value)}
-                    className="w-full px-3 py-2 bg-carbon-950 border border-carbon-700 rounded-xl text-white font-mono font-bold focus:outline-none focus:border-sky-500"
-                  />
-                </div>
+              {/* MODE 2: PARTNER SOURCED SUB-LEASING */}
+              {assignSourceMode === 'PARTNER' && (
+                <>
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-slate-300 font-bold uppercase text-[10px] font-mono">
+                        Select Renting Partnership Company (Machine Owner) *
+                      </label>
+                      <span className="text-[10px] text-amber-400 font-mono flex items-center gap-1">
+                        <Handshake className="w-3 h-3" />
+                        Sub-Lease Sourced
+                      </span>
+                    </div>
+                    {(!partners || partners.length === 0) ? (
+                      <div className="p-3 bg-amber-950/40 border border-amber-800/80 rounded-xl text-amber-300 text-xs">
+                        No Renting Partnership Companies registered yet. Please register your partner companies in the <strong>Renting Partnership Companies</strong> page.
+                      </div>
+                    ) : (
+                      <select
+                        value={selectedPartnerId}
+                        onChange={(e) => setSelectedPartnerId(e.target.value)}
+                        className="w-full px-3 py-2 bg-carbon-950 border border-amber-600/70 rounded-xl text-white font-mono font-bold focus:outline-none focus:border-amber-400"
+                      >
+                        <option value="">-- Choose Partner Company --</option>
+                        {partners.map(p => {
+                          const pId = p.id || p._id;
+                          return (
+                            <option key={pId} value={pId}>
+                              {p.name || p.companyName} ({p.code || 'CO'}) • {p.phone || p.contactPerson || 'Active Partner'}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    )}
+                  </div>
 
-                <div>
-                  <label className="block text-slate-300 font-bold uppercase text-[10px] font-mono mb-1">
-                    Monthly Rent Rate (LKR) *
-                  </label>
-                  <input
-                    type="number"
-                    step="any"
-                    required
-                    value={newRentRate}
-                    onChange={(e) => setNewRentRate(e.target.value)}
-                    className="w-full px-3 py-2 bg-carbon-950 border border-carbon-700 rounded-xl text-emerald-400 font-mono font-bold focus:outline-none focus:border-sky-500"
-                  />
-                </div>
-              </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-slate-300 font-bold uppercase text-[10px] font-mono mb-1">
+                        Brand
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Juki, Brother, Siruba"
+                        value={partnerBrand}
+                        onChange={(e) => setPartnerBrand(e.target.value)}
+                        className="w-full px-3 py-2 bg-carbon-950 border border-carbon-700 rounded-xl text-white font-mono focus:outline-none focus:border-amber-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-300 font-bold uppercase text-[10px] font-mono mb-1">
+                        Model / Spec *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. DDL-8700, 747K Overlock"
+                        value={partnerModel}
+                        onChange={(e) => setPartnerModel(e.target.value)}
+                        className="w-full px-3 py-2 bg-carbon-950 border border-carbon-700 rounded-xl text-white font-mono focus:outline-none focus:border-amber-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-300 font-bold uppercase text-[10px] font-mono mb-1">
+                        Partner Machine Code
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. PRT-JUK-001"
+                        value={partnerMachineCode}
+                        onChange={(e) => setPartnerMachineCode(e.target.value)}
+                        className="w-full px-3 py-2 bg-carbon-950 border border-carbon-700 rounded-xl text-white font-mono focus:outline-none focus:border-amber-500"
+                      />
+                    </div>
+                  </div>
 
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-slate-300 font-bold uppercase text-[10px] font-mono mb-1">
+                        Category
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Single Needle Lockstitch"
+                        value={partnerCategory}
+                        onChange={(e) => setPartnerCategory(e.target.value)}
+                        className="w-full px-3 py-2 bg-carbon-950 border border-carbon-700 rounded-xl text-white font-mono focus:outline-none focus:border-amber-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-300 font-bold uppercase text-[10px] font-mono mb-1">
+                        Physical Serial Number (SN) *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. SN-PRT-99214"
+                        value={newSerialNo}
+                        onChange={(e) => setNewSerialNo(e.target.value)}
+                        className="w-full px-3 py-2 bg-carbon-950 border border-amber-600/70 rounded-xl text-white font-mono font-bold focus:outline-none focus:border-amber-400"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Dual Rent Inputs & Live Profit Margin Spread */}
+                  <div className="p-3 bg-carbon-950 border border-carbon-800 rounded-2xl space-y-2.5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-amber-400 font-bold uppercase text-[10px] font-mono mb-1">
+                          1. Rent We Pay to Partner (Cost Rate) *
+                        </label>
+                        <input
+                          type="number"
+                          step="any"
+                          required
+                          placeholder="e.g. 3500"
+                          value={partnerRentRate}
+                          onChange={(e) => setPartnerRentRate(e.target.value)}
+                          className="w-full px-3 py-2 bg-carbon-900 border border-amber-700/80 rounded-xl text-amber-300 font-mono font-bold focus:outline-none focus:border-amber-500"
+                        />
+                        <span className="text-[9px] text-slate-500 font-mono block mt-0.5">Payable to partner monthly</span>
+                      </div>
+
+                      <div>
+                        <label className="block text-emerald-400 font-bold uppercase text-[10px] font-mono mb-1">
+                          2. Rent Customer Pays Us (Revenue) *
+                        </label>
+                        <input
+                          type="number"
+                          step="any"
+                          required
+                          placeholder="e.g. 5000"
+                          value={newRentRate}
+                          onChange={(e) => setNewRentRate(e.target.value)}
+                          className="w-full px-3 py-2 bg-carbon-900 border border-emerald-700/80 rounded-xl text-emerald-300 font-mono font-bold focus:outline-none focus:border-emerald-500"
+                        />
+                        <span className="text-[9px] text-slate-500 font-mono block mt-0.5">Billed to customer monthly</span>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-carbon-800/80 flex items-center justify-between text-xs font-mono">
+                      <span className="text-slate-400">Monthly Sub-Leasing Profit Spread:</span>
+                      <span className={`font-bold ${
+                        (parseFloat(newRentRate) || 0) - (parseFloat(partnerRentRate) || 0) >= 0
+                          ? 'text-emerald-400'
+                          : 'text-rose-400'
+                      }`}>
+                        {formatLKR((parseFloat(newRentRate) || 0) - (parseFloat(partnerRentRate) || 0))}/mo
+                        {((parseFloat(newRentRate) || 0) > 0) && (
+                          <span className="text-[10px] text-slate-400 ml-1.5 font-normal">
+                            ({Math.round((((parseFloat(newRentRate) || 0) - (parseFloat(partnerRentRate) || 0)) / (parseFloat(newRentRate) || 1)) * 100)}% margin)
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* COMMON FIELDS: DATES, ACCESSORIES, PRORATION */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-slate-300 font-bold uppercase text-[10px] font-mono mb-1">
@@ -1621,11 +1951,21 @@ export function LocalCustomerDirectory({
                 </button>
                 <button
                   type="submit"
-                  disabled={!selectedYardMachineId || !newSerialNo.trim()}
-                  className="px-5 py-2 bg-gradient-to-r from-sky-600 to-emerald-600 hover:from-sky-500 hover:to-emerald-500 text-white rounded-xl font-bold transition flex items-center gap-2 shadow-lg disabled:opacity-40 disabled:cursor-not-allowed"
+                  disabled={
+                    assignSourceMode === 'YARD'
+                      ? (!selectedYardMachineId || !newSerialNo.trim())
+                      : (!selectedPartnerId || !partnerModel.trim() || !newSerialNo.trim() || !newRentRate || !partnerRentRate)
+                  }
+                  className={`px-5 py-2 text-white rounded-xl font-bold transition flex items-center gap-2 shadow-lg disabled:opacity-40 disabled:cursor-not-allowed ${
+                    assignSourceMode === 'PARTNER'
+                      ? 'bg-gradient-to-r from-amber-600 to-emerald-600 hover:from-amber-500 hover:to-emerald-500'
+                      : 'bg-gradient-to-r from-sky-600 to-emerald-600 hover:from-sky-500 hover:to-emerald-500'
+                  }`}
                 >
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>Deploy & Assign Machine</span>
+                  <span>
+                    {assignSourceMode === 'PARTNER' ? 'Deploy & Assign Partner Machine' : 'Deploy & Assign Yard Machine'}
+                  </span>
                 </button>
               </div>
             </form>
