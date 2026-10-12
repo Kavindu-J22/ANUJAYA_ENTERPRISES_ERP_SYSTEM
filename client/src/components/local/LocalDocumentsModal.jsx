@@ -24,9 +24,9 @@ export function LocalDocumentsModal({
   const [isEditingAgreement, setIsEditingAgreement] = useState(false);
 
   const { 
-    type, 
-    customer, 
-    payment, 
+    type: rawType, 
+    customer: passedCustomer, 
+    payment: passedPayment, 
     returnedMachines, 
     meta, 
     quotation, 
@@ -40,6 +40,12 @@ export function LocalDocumentsModal({
     singleRental, 
     handoveredOnly 
   } = docData;
+
+  // Resilient resolution: handles wrapped { type: 'RECEIPT', payment, customer } or raw payment object
+  const isRawPayment = !rawType && (docData.amount !== undefined || docData.refNo !== undefined);
+  const type = rawType || (isRawPayment ? 'RECEIPT' : 'DOCUMENT');
+  const payment = passedPayment || (isRawPayment ? docData : null);
+  const customer = passedCustomer || (isRawPayment && docData.customerName ? { name: docData.customerName, code: 'CL' } : null);
 
   const handlePrint = () => {
     window.print();
@@ -234,7 +240,7 @@ export function LocalDocumentsModal({
                 {type === 'STATEMENT' ? 'STATEMENT OF ACCOUNT' :
                  type === 'AGREEMENT' ? 'RENTAL LEASE AGREEMENT' :
                  type === 'DELIVERY' ? (singleRental ? 'INDIVIDUAL DELIVERY NOTE' : 'MASTER DELIVERY NOTE') :
-                 type.replace(/_/g, ' ')}
+                 (type || 'DOCUMENT').replace(/_/g, ' ')}
               </div>
               <div className="text-lg font-black text-slate-900 mt-0.5">
                 {type === 'RECEIPT' ? (payment?.refNo || payment?.id) :

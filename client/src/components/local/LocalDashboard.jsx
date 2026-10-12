@@ -312,8 +312,8 @@ export function LocalDashboard({
             {formatLKR(metrics.netProfit)}
           </div>
           <div className="text-[11px] text-slate-400 mt-2 flex items-center justify-between">
-            <span>Partner Payables</span>
-            <span className="font-mono text-amber-300 font-bold">{formatLKR(metrics.totalPartnerPayables)}</span>
+            <span>Operational Margin</span>
+            <span className="font-mono text-teal-300 font-bold">Collections − Expenses</span>
           </div>
         </div>
       </div>

@@ -982,7 +982,7 @@
               ],
               "__v": 0,
               "createdAt": "2026-10-08T09:16:38.566Z",
-              "updatedAt": "2026-10-08T22:24:58.646Z",
+              "updatedAt": "2026-10-12T21:26:48.076Z",
               "arrearsData": {
                 "breakdown": [
                   {
@@ -1027,13 +1027,13 @@
             "customCode": "SPECIAL-MIX",
             "customSerial": "SN-MIX-06",
             "deductAmount": 29800,
-            "returnDate": "2026-10-08",
-            "slipNo": "RET-01242",
+            "returnDate": "2026-10-12",
+            "slipNo": "RET-46740",
             "condition": "Good / Operational",
             "remarks": "Motor, Table & Stand verified intact at Kosgama Central Yard.",
             "inspector": "Kosgama Yard Head"
           },
-          "returnDate": "2026-10-08"
+          "returnDate": "2026-10-12"
         }
       ]
     },

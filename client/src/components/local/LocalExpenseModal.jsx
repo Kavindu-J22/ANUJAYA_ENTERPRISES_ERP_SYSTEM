@@ -5,7 +5,8 @@ export function LocalExpenseModal({ isOpen, expense, onClose, onSave }) {
   const [formData, setFormData] = useState({
     title: '',
     amount: 0,
-    type: 'Operations'
+    type: 'Operations',
+    date: new Date().toISOString().slice(0, 10)
   });
 
   useEffect(() => {
@@ -13,13 +14,15 @@ export function LocalExpenseModal({ isOpen, expense, onClose, onSave }) {
       setFormData({
         title: expense.title || '',
         amount: expense.amount || 0,
-        type: expense.type || 'Operations'
+        type: expense.type || 'Operations',
+        date: expense.date || (expense.createdAt ? new Date(expense.createdAt).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10))
       });
     } else {
       setFormData({
         title: '',
         amount: 0,
-        type: 'Operations'
+        type: 'Operations',
+        date: new Date().toISOString().slice(0, 10)
       });
     }
   }, [expense, isOpen]);
@@ -71,7 +74,17 @@ export function LocalExpenseModal({ isOpen, expense, onClose, onSave }) {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label className="block text-slate-400 font-mono mb-1">Date *</label>
+              <input
+                type="date"
+                required
+                value={formData.date}
+                onChange={e => setFormData({ ...formData, date: e.target.value })}
+                className="w-full px-3 py-2 bg-carbon-800 border border-carbon-700 rounded-xl text-white font-mono focus:outline-none focus:border-purple-500"
+              />
+            </div>
             <div>
               <label className="block text-slate-400 font-mono mb-1">Category</label>
               <select

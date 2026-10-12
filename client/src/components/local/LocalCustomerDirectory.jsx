@@ -457,6 +457,8 @@ export function LocalCustomerDirectory({
   onOpenNewCustomer,
   onOpenEditCustomer,
   onOpenPaymentModal,
+  onOpenEditPayment,
+  onDeletePayment,
   onOpenReturnModal,
   onRollbackReturn,
   onToggleArchive,
@@ -467,6 +469,8 @@ export function LocalCustomerDirectory({
   const [searchQuery, setSearchQuery] = useState('');
   const [confirmDeleteCustId, setConfirmDeleteCustId] = useState(null);
   const [confirmDeleteRentalKey, setConfirmDeleteRentalKey] = useState(null);
+  const [confirmDeletePaymentId, setConfirmDeletePaymentId] = useState(null);
+  const [expandedPayments, setExpandedPayments] = useState({});
   const [editingFleetItem, setEditingFleetItem] = useState(null);
   const [viewingArrearsCustomer, setViewingArrearsCustomer] = useState(null);
   // Optimistic local state for delivery status changes (key: `${customerId}_${machineId}`)
@@ -749,6 +753,7 @@ export function LocalCustomerDirectory({
             const activeRentals = (customer.rentals || []).filter(r => r.status === 'Active');
             const returnedRentals = (customer.rentals || []).filter(r => r.status === 'Returned');
             const handoveredCount = (customer.rentals || []).filter(r => r.deliveryStatus === 'Handovered').length;
+            const custPayments = (payments || []).filter(p => p.customerId === customer.id);
 
             return (
               <div 
@@ -1294,6 +1299,145 @@ export function LocalCustomerDirectory({
                       </button>
                     )}
                   </div>
+                </div>
+
+                {/* Expandable All-Time Payment History & Receipts Drawer */}
+                <div className="pt-2 border-t border-carbon-800">
+                  <button
+                    type="button"
+                    onClick={() => setExpandedPayments(prev => ({ ...prev, [customer.id]: !prev[customer.id] }))}
+                    className="w-full py-2.5 px-4 rounded-2xl bg-carbon-900/90 hover:bg-carbon-850 border border-carbon-700/80 flex items-center justify-between text-xs font-mono transition text-left group"
+                  >
+                    <div className="flex flex-wrap items-center gap-2">
+                      <CreditCard className="w-4 h-4 text-sky-400 group-hover:scale-110 transition" />
+                      <span className="font-bold text-white group-hover:text-amber-400 transition">
+                        Payment History & Receipts
+                      </span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-carbon-800 text-sky-300 border border-carbon-700 font-bold">
+                        {custPayments.length} All-Time Payments
+                      </span>
+                      <span className="text-[10px] text-slate-400">
+                        • Total Paid: <strong className="text-emerald-400">{formatLKR(customer.allTimePaid)}</strong>
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-slate-400 group-hover:text-white text-[11px] font-bold">
+                      <span>{expandedPayments[customer.id] ? "Collapse ▲" : "Expand All Payments ▼"}</span>
+                    </div>
+                  </button>
+
+                  {/* Expanded Payments Table */}
+                  {expandedPayments[customer.id] && (
+                    <div className="mt-3 bg-carbon-950/90 rounded-2xl border border-carbon-700/60 p-4 space-y-3 animate-fadeIn">
+                      <div className="flex items-center justify-between text-xs font-mono pb-2 border-b border-carbon-800">
+                        <span className="text-[11px] uppercase font-bold text-slate-300 flex items-center gap-1.5">
+                          <span>Complete All-Time Payment Ledger ({customer.name})</span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => onOpenPaymentModal(customer, `${selectedMonth} ${selectedYear}`)}
+                          className="px-2.5 py-1 rounded-xl bg-emerald-600/30 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/50 text-[10px] font-bold transition flex items-center gap-1"
+                        >
+                          <PlusCircle className="w-3 h-3" />
+                          <span>Record Payment</span>
+                        </button>
+                      </div>
+
+                      {custPayments.length === 0 ? (
+                        <div className="text-center py-6 text-slate-500 font-mono text-xs">
+                          No payment transactions recorded for this client yet.
+                        </div>
+                      ) : (
+                        <div className="overflow-x-auto rounded-xl border border-carbon-800">
+                          <table className="w-full text-left text-xs font-mono">
+                            <thead className="bg-carbon-900 text-slate-400 uppercase text-[10px] tracking-wider border-b border-carbon-800">
+                              <tr>
+                                <th className="p-2.5">Ref / Slip #</th>
+                                <th className="p-2.5">Payment Date</th>
+                                <th className="p-2.5">Cycle Month</th>
+                                <th className="p-2.5">Method</th>
+                                <th className="p-2.5">Remarks / Details</th>
+                                <th className="p-2.5 text-right">Amount Settled</th>
+                                <th className="p-2.5 text-center">Actions</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-carbon-850">
+                              {custPayments.map(p => (
+                                <tr key={p.id} className="hover:bg-carbon-900/40 transition">
+                                  <td className="p-2.5 font-bold text-sky-400">{p.refNo || p.id}</td>
+                                  <td className="p-2.5 text-slate-300">{p.date}</td>
+                                  <td className="p-2.5 text-slate-300 font-bold">{p.month || '-'}</td>
+                                  <td className="p-2.5 text-slate-400">{p.method}</td>
+                                  <td className="p-2.5 text-slate-400 font-sans text-[11px]">{p.remarks || '-'}</td>
+                                  <td className="p-2.5 text-right font-bold text-emerald-400">
+                                    {formatLKR(p.amount)}
+                                  </td>
+                                  <td className="p-2.5 text-center">
+                                    <div className="flex items-center justify-center gap-1.5">
+                                      <button
+                                        type="button"
+                                        onClick={() => onPrintDoc({
+                                          type: 'RECEIPT',
+                                          payment: p,
+                                          customer
+                                        })}
+                                        title="Print Official Payment Receipt"
+                                        className="p-1.5 rounded-lg bg-carbon-800 hover:bg-sky-600 text-slate-300 hover:text-white transition"
+                                      >
+                                        <Printer className="w-3.5 h-3.5" />
+                                      </button>
+                                      {onOpenEditPayment && (
+                                        <button
+                                          type="button"
+                                          onClick={() => onOpenEditPayment(p)}
+                                          title="Edit Payment Record"
+                                          className="p-1.5 rounded-lg bg-carbon-800 hover:bg-amber-600 text-slate-300 hover:text-white transition"
+                                        >
+                                          <Edit3 className="w-3.5 h-3.5" />
+                                        </button>
+                                      )}
+                                      {onDeletePayment && (
+                                        confirmDeletePaymentId === p.id ? (
+                                          <div className="flex items-center gap-1 animate-fadeIn">
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                setConfirmDeletePaymentId(null);
+                                                onDeletePayment(p.id);
+                                              }}
+                                              className="px-2 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded text-[9px] font-bold"
+                                              title="Confirm Delete"
+                                            >
+                                              Confirm?
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onClick={() => setConfirmDeletePaymentId(null)}
+                                              className="px-1 py-1 bg-carbon-700 hover:bg-carbon-600 text-slate-300 rounded text-[9px]"
+                                            >
+                                              No
+                                            </button>
+                                          </div>
+                                        ) : (
+                                          <button
+                                            type="button"
+                                            onClick={() => setConfirmDeletePaymentId(p.id)}
+                                            title="Delete Payment Record"
+                                            className="p-1.5 rounded-lg bg-carbon-800 hover:bg-rose-800 text-slate-400 hover:text-white transition"
+                                          >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                          </button>
+                                        )
+                                      )}
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             );

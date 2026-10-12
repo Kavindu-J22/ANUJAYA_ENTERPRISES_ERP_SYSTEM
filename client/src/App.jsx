@@ -1761,6 +1761,12 @@ export default function App() {
                   onRollbackReturn={handleRollbackMachineReturn}
                   onToggleArchive={handleToggleArchiveLocalCustomer}
                   onDeleteCustomer={handleDeleteLocalCustomer}
+                  onOpenEditPayment={(pay) => {
+                    setLocalPaymentModalMode('EDIT');
+                    setSelectedLocalPayment(pay);
+                    setIsLocalPaymentModalOpen(true);
+                  }}
+                  onDeletePayment={handleDeleteLocalPayment}
                   onPrintDoc={(docData) => setLocalDocModalData(docData)}
                 />
               )}
@@ -1769,7 +1775,8 @@ export default function App() {
                 <LocalPaymentsLedger
                   payments={localPayments}
                   customers={localCustomers}
-                  activeMonth={localConfig.activeMonth || '2026-03'}
+                  activeMonth={localConfig.activeMonth || 'October 2026'}
+                  onSwitchMonth={handleSwitchLocalMonth}
                   onOpenNewPayment={() => {
                     setLocalPaymentModalMode('ADD');
                     setSelectedLocalPayment(null);
@@ -1782,13 +1789,25 @@ export default function App() {
                     setIsLocalPaymentModalOpen(true);
                   }}
                   onDeletePayment={handleDeleteLocalPayment}
-                  onPrintReceipt={(docData) => setLocalDocModalData(docData)}
+                  onPrintReceipt={(payOrDoc, cust) => {
+                    if (payOrDoc?.type) {
+                      setLocalDocModalData(payOrDoc);
+                    } else {
+                      setLocalDocModalData({
+                        type: 'RECEIPT',
+                        payment: payOrDoc,
+                        customer: cust || localCustomers.find(c => c.id === payOrDoc?.customerId) || { name: payOrDoc?.customerName || 'Garment Client', code: 'CUST' }
+                      });
+                    }
+                  }}
                 />
               )}
 
               {activeLocalTab === 'yard_returns' && (
                 <LocalReturnsWorkflow
                   customers={localCustomers}
+                  activeMonth={localConfig.activeMonth || 'October 2026'}
+                  onSwitchMonth={handleSwitchLocalMonth}
                   onOpenReturnModal={() => {
                     setSelectedReturnCustomer(null);
                     setPrefilledReturnRental(null);
@@ -1802,6 +1821,8 @@ export default function App() {
               {activeLocalTab === 'expenses' && (
                 <LocalExpensesLedger
                   expenses={localExpenses}
+                  activeMonth={localConfig.activeMonth || 'October 2026'}
+                  onSwitchMonth={handleSwitchLocalMonth}
                   onOpenNewExpense={() => { setSelectedLocalExpense(null); setIsLocalExpenseModalOpen(true); }}
                   onOpenEditExpense={(e) => { setSelectedLocalExpense(e); setIsLocalExpenseModalOpen(true); }}
                   onDeleteExpense={handleDeleteLocalExpense}
