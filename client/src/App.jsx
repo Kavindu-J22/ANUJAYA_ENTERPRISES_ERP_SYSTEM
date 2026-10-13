@@ -15,7 +15,8 @@ import {
   RefreshCw,
   PlusCircle,
   FileText,
-  Handshake
+  Handshake,
+  BarChart3
 } from 'lucide-react';
 
 import { api } from './services/api';
@@ -57,6 +58,7 @@ import { LocalExpenseModal } from './components/local/LocalExpenseModal';
 import { LocalAlertLogsModal } from './components/local/LocalAlertLogsModal';
 import { LocalQuotationModal } from './components/local/LocalQuotationModal';
 import { LocalRentalPartners } from './components/local/LocalRentalPartners';
+import { LocalReportsAnalytics } from './components/local/LocalReportsAnalytics';
 
 export default function App() {
   // Navigation & Authentication State
@@ -1538,6 +1540,23 @@ export default function App() {
                       {localPartners.length}
                     </span>
                   </button>
+
+                  <button
+                    onClick={() => setActiveLocalTab('reports')}
+                    className={`w-full px-3.5 py-3 rounded-xl font-bold transition flex items-center justify-between text-left group ${
+                      activeLocalTab === 'reports'
+                        ? 'bg-gradient-to-r from-teal-600/30 to-emerald-600/20 text-white border-l-4 border-teal-400 shadow-md'
+                        : 'text-slate-400 hover:text-white hover:bg-carbon-800/60 border-l-4 border-transparent'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <BarChart3 className={`w-4 h-4 ${activeLocalTab === 'reports' ? 'text-teal-400' : 'text-slate-400'}`} />
+                      <span>Official Reports & Stats</span>
+                    </div>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-carbon-800 border border-carbon-700 text-teal-300 font-bold">
+                       6
+                    </span>
+                  </button>
                 </>
               )}
             </nav>
@@ -1914,6 +1933,19 @@ export default function App() {
                       addToast('Failed to delete partner payment: ' + (err.message || ''), 'error');
                     }
                   }}
+                />
+              )}
+
+              {activeLocalTab === 'reports' && (
+                <LocalReportsAnalytics
+                  customers={localCustomers}
+                  machines={localMachines}
+                  payments={localPayments}
+                  expenses={localExpenses}
+                  partners={localPartners}
+                  config={localConfig}
+                  companyInfo={localConfig?.companyInfo}
+                  bankInfo={localConfig?.bankInfo}
                 />
               )}
             </div>
