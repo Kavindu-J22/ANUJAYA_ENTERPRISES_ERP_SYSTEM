@@ -90,17 +90,6 @@ export function Navbar({
             {!isPartner && (
               <div className="hidden lg:flex items-center p-1 bg-carbon-900 border border-carbon-700/80 rounded-2xl ml-4">
                 <button
-                  onClick={() => onPathChange('global')}
-                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
-                    isGlobal 
-                      ? 'bg-gradient-to-r from-sky-600 to-emerald-600 text-white shadow-md' 
-                      : 'text-slate-400 hover:text-white hover:bg-carbon-800'
-                  }`}
-                >
-                  <Globe className="w-3.5 h-3.5 text-sky-300" />
-                  <span>Global Sales ERP (China)</span>
-                </button>
-                <button
                   onClick={() => onPathChange('local')}
                   className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
                     !isGlobal 
@@ -110,6 +99,17 @@ export function Navbar({
                 >
                   <Warehouse className="w-3.5 h-3.5 text-emerald-300" />
                   <span>Local Rental ERP (Yard)</span>
+                </button>
+                <button
+                  onClick={() => onPathChange('global')}
+                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
+                    isGlobal 
+                      ? 'bg-gradient-to-r from-sky-600 to-emerald-600 text-white shadow-md' 
+                      : 'text-slate-400 hover:text-white hover:bg-carbon-800'
+                  }`}
+                >
+                  <Globe className="w-3.5 h-3.5 text-sky-300" />
+                  <span>Global Sales ERP (China)</span>
                 </button>
               </div>
             )}
