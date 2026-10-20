@@ -5,6 +5,13 @@ export function formatLKR(val) {
   });
 }
 
+export function formatUSD(val) {
+  return "$" + Number(val || 0).toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+}
+
 export function numberToWordsLKR(amount) {
   const num = Math.round(amount || 0);
   if (num === 0) return "Zero Rupees Only";

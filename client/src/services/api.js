@@ -66,6 +66,18 @@ export const api = {
   async getGlobalConfig() { return ensureObject(await req(`${API_BASE}/global/config`), { usdRate: 330, openingCapitalReserve: 15000000 }); },
   async updateGlobalConfig(data) { return req(`${API_BASE}/global/config`, { method: 'PUT', headers: J, body: JSON.stringify(data) }); },
 
+  // Global: China Import & Settlements
+  async getChinaShipments() { return ensureArray(await req(`${API_BASE}/global/china-shipments`)); },
+  async getChinaShipment(id) { return req(`${API_BASE}/global/china-shipments/${id}`); },
+  async addChinaShipment(data) { return req(`${API_BASE}/global/china-shipments`, { method: 'POST', headers: J, body: JSON.stringify(data) }); },
+  async updateChinaShipment(id, data) { return req(`${API_BASE}/global/china-shipments/${id}`, { method: 'PUT', headers: J, body: JSON.stringify(data) }); },
+  async deleteChinaShipment(id) { return req(`${API_BASE}/global/china-shipments/${id}`, { method: 'DELETE' }); },
+  async receiveChinaShipmentStock(id, data) { return req(`${API_BASE}/global/china-shipments/${id}/goods-receipt`, { method: 'POST', headers: J, body: JSON.stringify(data) }); },
+  async addPartnerReceipt(id, data) { return req(`${API_BASE}/global/china-shipments/${id}/partner-receipts`, { method: 'POST', headers: J, body: JSON.stringify(data) }); },
+  async addSupplierPayment(id, data) { return req(`${API_BASE}/global/china-shipments/${id}/supplier-payments`, { method: 'POST', headers: J, body: JSON.stringify(data) }); },
+  async addIntermediaryAdvance(id, data) { return req(`${API_BASE}/global/china-shipments/${id}/intermediary-advances`, { method: 'POST', headers: J, body: JSON.stringify(data) }); },
+  async addCustomsExpense(id, data) { return req(`${API_BASE}/global/china-shipments/${id}/customs-expenses`, { method: 'POST', headers: J, body: JSON.stringify(data) }); },
+
   // Local: Machines
   async getLocalMachines() { return ensureArray(await req(`${API_BASE}/local/machines`)); },
   async addLocalMachine(data) { return req(`${API_BASE}/local/machines`, { method: 'POST', headers: J, body: JSON.stringify(data) }); },

@@ -16,7 +16,8 @@ import {
   PlusCircle,
   FileText,
   Handshake,
-  BarChart3
+  BarChart3,
+  Ship
 } from 'lucide-react';
 
 import { api } from './services/api';
@@ -35,6 +36,7 @@ import { GlobalSaleModal } from './components/global/GlobalSaleModal';
 import { GlobalMachineModal } from './components/global/GlobalMachineModal';
 import { GlobalDisburseModal } from './components/global/GlobalDisburseModal';
 import { GlobalClientModal } from './components/global/GlobalClientModal';
+import { ChinaImportModule } from './components/global/ChinaImport/ChinaImportModule';
 
 // Local Components & Modals
 import { LocalDashboard } from './components/local/LocalDashboard';
@@ -1427,6 +1429,26 @@ export default function App() {
                       <span>50/50 Equity Audit</span>
                     </div>
                   </button>
+
+                  {/* China Import & Financial Settlement - Visible to ADMIN only */}
+                  {currentUser?.role === 'ADMIN' && (
+                    <button
+                      onClick={() => setActiveGlobalTab('china_import')}
+                      className={`w-full px-3.5 py-3 rounded-xl font-bold transition flex items-center justify-between text-left group ${
+                        activeGlobalTab === 'china_import'
+                          ? 'bg-gradient-to-r from-indigo-600/30 to-sky-600/20 text-white border-l-4 border-indigo-400 shadow-md shadow-indigo-950/40'
+                          : 'text-slate-400 hover:text-white hover:bg-carbon-800/60 border-l-4 border-transparent'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Ship className={`w-4 h-4 ${activeGlobalTab === 'china_import' ? 'text-indigo-400' : 'text-slate-400 group-hover:text-indigo-400'}`} />
+                        <span>China Import & Finance</span>
+                      </div>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-carbon-800 border border-carbon-700 text-indigo-300 font-bold">
+                        Admin
+                      </span>
+                    </button>
+                  )}
                 </>
               ) : (
                 // ================= LOCAL RENTAL VERTICAL SIDEBAR ITEMS =================
@@ -1716,6 +1738,14 @@ export default function App() {
                   onDeleteDisbursement={handleDeleteGlobalDisbursement}
                   currentUser={currentUser}
                   usdRate={globalConfig.usdRate || 330}
+                />
+              )}
+
+              {activeGlobalTab === 'china_import' && currentUser?.role === 'ADMIN' && (
+                <ChinaImportModule
+                  currentUser={currentUser}
+                  addToast={addToast}
+                  onRefreshGlobalMachines={fetchAllData}
                 />
               )}
             </div>

@@ -25,6 +25,8 @@ const LocalPartner = require('../models/LocalPartner');
 const LocalExpense = require('../models/LocalExpense');
 const LocalConfig = require('../models/LocalConfig');
 const AlertLog = require('../models/AlertLog');
+const ChinaShipment = require('../models/ChinaShipment');
+const { getHistoricalChinaShipmentSeed, calculateShipmentFinancialSummary } = require('../services/chinaImportService');
 
 const STORE_FILE = path.join(__dirname, 'persistent-store.json');
 
@@ -36,6 +38,7 @@ function getInitialStore() {
     globalSales: [],
     globalDisbursements: [],
     globalConfig: { usdRate: 330.00, lang: 'en' },
+    chinaShipments: [getHistoricalChinaShipmentSeed()],
     localMachines: JSON.parse(JSON.stringify(LOCAL_MACHINES_BASELINE)),
     localCustomers: JSON.parse(JSON.stringify(LOCAL_CUSTOMERS_BASELINE)),
     localPayments: JSON.parse(JSON.stringify(LOCAL_PAYMENTS_BASELINE)),
@@ -82,6 +85,10 @@ function loadLocalStore() {
       inMemoryStore = JSON.parse(raw);
       if (!inMemoryStore.globalClients) {
         inMemoryStore.globalClients = JSON.parse(JSON.stringify(GLOBAL_CLIENTS_BASELINE));
+        saveLocalStore();
+      }
+      if (!inMemoryStore.chinaShipments) {
+        inMemoryStore.chinaShipments = [getHistoricalChinaShipmentSeed()];
         saveLocalStore();
       }
     } else {
@@ -162,6 +169,12 @@ async function seedMongoIfEmpty() {
     const lcfgCount = await LocalConfig.countDocuments();
     if (lcfgCount === 0) {
       await LocalConfig.create(getInitialStore().localConfig);
+    }
+
+    const csCount = await ChinaShipment.countDocuments();
+    if (csCount === 0) {
+      console.log("Seeding MongoDB with verified China Import Historical Shipment 2025(SLLK)823...");
+      await ChinaShipment.create(getHistoricalChinaShipmentSeed());
     }
     console.log("MongoDB verification/seeding completed.");
   } catch (err) {
@@ -846,6 +859,195 @@ const store = {
     s.alertLogs.unshift(log);
     saveLocalStore();
     return log;
+  },
+
+  // ================= CHINA IMPORT & FINANCIAL SETTLEMENTS =================
+  async getChinaShipments() {
+    if (isDbActive()) {
+      let list = await ChinaShipment.find().sort({ createdAt: -1 }).lean();
+      if (list.length === 0) {
+        const seed = getHistoricalChinaShipmentSeed();
+        const created = await ChinaShipment.create(seed);
+        list = [created.toObject()];
+      }
+      return list.map(s => ({
+        ...s,
+        financialSummary: calculateShipmentFinancialSummary(s)
+      }));
+    }
+    const storeData = loadLocalStore();
+    if (!storeData.chinaShipments || storeData.chinaShipments.length === 0) {
+      storeData.chinaShipments = [getHistoricalChinaShipmentSeed()];
+      saveLocalStore();
+    }
+    return storeData.chinaShipments.map(s => ({
+      ...s,
+      financialSummary: calculateShipmentFinancialSummary(s)
+    }));
+  },
+
+  async getChinaShipment(id) {
+    if (isDbActive()) {
+      let item = await ChinaShipment.findOne({ id }).lean();
+      if (!item) {
+        item = await ChinaShipment.findOne({ shipmentNo: id }).lean();
+      }
+      if (item) {
+        item.financialSummary = calculateShipmentFinancialSummary(item);
+      }
+      return item;
+    }
+    const storeData = loadLocalStore();
+    const item = (storeData.chinaShipments || []).find(s => s.id === id || s.shipmentNo === id) || null;
+    if (item) {
+      return {
+        ...item,
+        financialSummary: calculateShipmentFinancialSummary(item)
+      };
+    }
+    return null;
+  },
+
+  async addChinaShipment(data) {
+    if (!data.id) {
+      data.id = `CS-${Date.now().toString().slice(-6)}`;
+    }
+    if (isDbActive()) {
+      const created = await ChinaShipment.create(data);
+      const s = loadLocalStore();
+      if (!s.chinaShipments) s.chinaShipments = [];
+      s.chinaShipments.unshift(created.toObject());
+      saveLocalStore();
+      const obj = created.toObject();
+      obj.financialSummary = calculateShipmentFinancialSummary(obj);
+      return obj;
+    }
+    const s = loadLocalStore();
+    if (!s.chinaShipments) s.chinaShipments = [];
+    s.chinaShipments.unshift(data);
+    saveLocalStore();
+    return {
+      ...data,
+      financialSummary: calculateShipmentFinancialSummary(data)
+    };
+  },
+
+  async updateChinaShipment(id, data) {
+    if (isDbActive()) {
+      const updated = await ChinaShipment.findOneAndUpdate(
+        { id },
+        { $set: data },
+        { returnDocument: 'after', runValidators: false }
+      ).lean();
+      const s = loadLocalStore();
+      if (!s.chinaShipments) s.chinaShipments = [];
+      const idx = s.chinaShipments.findIndex(item => item.id === id);
+      if (idx !== -1) {
+        s.chinaShipments[idx] = { ...s.chinaShipments[idx], ...data };
+        saveLocalStore();
+      }
+      if (updated) {
+        updated.financialSummary = calculateShipmentFinancialSummary(updated);
+      }
+      return updated;
+    }
+    const s = loadLocalStore();
+    if (!s.chinaShipments) s.chinaShipments = [];
+    const idx = s.chinaShipments.findIndex(item => item.id === id);
+    if (idx !== -1) {
+      s.chinaShipments[idx] = { ...s.chinaShipments[idx], ...data };
+      saveLocalStore();
+      return {
+        ...s.chinaShipments[idx],
+        financialSummary: calculateShipmentFinancialSummary(s.chinaShipments[idx])
+      };
+    }
+    return null;
+  },
+
+  async deleteChinaShipment(id) {
+    if (isDbActive()) {
+      await ChinaShipment.deleteOne({ id });
+    }
+    const s = loadLocalStore();
+    if (s.chinaShipments) {
+      s.chinaShipments = s.chinaShipments.filter(item => item.id !== id);
+      saveLocalStore();
+    }
+    return { success: true, id };
+  },
+
+  async receiveChinaShipmentStock(shipmentId, receiptPayload) {
+    const shipment = await this.getChinaShipment(shipmentId);
+    if (!shipment) throw new Error("Shipment not found");
+
+    const receivedItems = receiptPayload.items || [];
+    const updatedShipmentItems = (shipment.items || []).map(item => {
+      const rec = receivedItems.find(r => r.sku === item.sku || r.id === item.id);
+      if (rec) {
+        const newQtyReceived = (item.qtyReceived || 0) + (Number(rec.qtyReceived) || 0);
+        return {
+          ...item,
+          qtyReceived: newQtyReceived,
+          stockIntakeStatus: newQtyReceived >= item.qtyOrdered ? 'received' : 'partially_received'
+        };
+      }
+      return item;
+    });
+
+    for (const rec of receivedItems) {
+      const qtyToAdd = Number(rec.qtyReceived) || 0;
+      if (qtyToAdd <= 0) continue;
+
+      const targetSku = rec.sku || rec.globalMachineId;
+      if (targetSku) {
+        const globalMachines = await this.getGlobalMachines();
+        const existingGlobalMachine = globalMachines.find(m => m.id === targetSku || m.model === rec.model);
+        if (existingGlobalMachine) {
+          const newStock = (existingGlobalMachine.initialStock || 0) + qtyToAdd;
+          await this.updateGlobalMachine(existingGlobalMachine.id, { initialStock: newStock });
+        } else {
+          await this.addGlobalMachine({
+            id: targetSku,
+            brand: rec.brand || "JUKI",
+            model: rec.model,
+            name: rec.name || rec.model,
+            unit: rec.unit || "SETS",
+            initialStock: qtyToAdd,
+            usdPrice: rec.unitFobUsd || 0,
+            taxLKR: 5000,
+            wholesalePrice: Math.round((rec.unitFobUsd || 100) * 330 * 1.15),
+            retailPrice: Math.round((rec.unitFobUsd || 100) * 330 * 1.25)
+          });
+        }
+      }
+    }
+
+    const goodsReceipt = {
+      id: `GR-${Date.now().toString().slice(-6)}`,
+      receiptDate: receiptPayload.receiptDate || new Date().toISOString().slice(0, 10),
+      receivedBy: receiptPayload.receivedBy || "Yard Operations",
+      warehouseLocation: receiptPayload.warehouseLocation || "Kosgama Central Machinery Fleet Yard",
+      totalUnitsReceived: receivedItems.reduce((sum, r) => sum + (Number(r.qtyReceived) || 0), 0),
+      itemsReceived: receivedItems,
+      intakeConfirmed: true,
+      notes: receiptPayload.notes || "Physical stock received and synced to Global Machinery Warehouse"
+    };
+
+    const newAuditLog = {
+      id: `LOG-${Date.now().toString().slice(-6)}`,
+      timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19),
+      action: "Goods Receipt & Stock Intake",
+      user: receiptPayload.receivedBy || "Admin",
+      details: `Received ${goodsReceipt.totalUnitsReceived} units into Global Warehouse`
+    };
+
+    return await this.updateChinaShipment(shipmentId, {
+      items: updatedShipmentItems,
+      status: 'received',
+      goodsReceipts: [...(shipment.goodsReceipts || []), goodsReceipt],
+      auditLogs: [...(shipment.auditLogs || []), newAuditLog]
+    });
   }
 };
 

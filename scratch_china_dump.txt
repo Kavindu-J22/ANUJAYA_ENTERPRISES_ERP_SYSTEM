@@ -1,0 +1,148 @@
+
+================ SHEET: Master Dashboard ================
+R1: ['CHINA SHIPMENT - FULLY AUTOMATED SETTLEMENT & CASH FLOW ENGINE']
+R4: ['Shipment Invoice No:', '2025(SLLK)823', None, 'Total Shipment Units:', '472', None, 'Base Budget USD Rate:', '330']
+R5: ['Total China FOB Value ($):', '206316.96', None, 'Customs, Tax & Clearing (LKR):', '4991500', None, 'TOTAL CHINA LIABILITY (LKR):', '73076096.8']
+R7: ['1. LIVE EXECUTIVE FINANCIAL POSITION ']
+R8: ['TOTAL CHINA LIABILITY\n', None, 'TOTAL RECEIVED FROM GLOBAL\n', None, 'TOTAL SETTLED TO CHINA\n', None, 'OUR NET CASH CONTRIBUTED\n', None, 'REMAINING DUE TO CHINA\n']
+R9: ['73076096.8', None, '15917478.1', None, '30534298.1', None, None, None, '42541798.699999996']
+    Formulas: {'C1': '=H5', 'C3': "='Global Inflow Log'!E500", 'C5': "='China Outflow Log'!H500", 'C9': '=A9-E9'}
+R12: ['2. PARTNER LIABILITY & SETTLEMENT SHARE']
+R14: ['Partner Entity', 'Operational Role / Settlement Responsibility', 'Agreed Ratio', 'Target Liability (LKR)', 'Actual Paid / Handed Over (LKR)', 'Remaining Due (LKR)', 'Progress %', 'Live Account Status ']
+R15: ['Global Apparel Solutions ', 'Gives cash to Our Company', '0.5', '36538048.4', '15917478.1', '20620570.299999997', '0.43564116850860596', '⚠ GLOBAL OWES US: 20,620,570.30']
+    Formulas: {'C4': '=$H$5*C15', 'C5': '=C9', 'C6': '=D15-E15', 'C7': '=IF(D15>0, E15/D15, 0)', 'C8': '=IF(F15<=0, "✓ FULLY SETTLED TO US", "⚠ GLOBAL OWES US: " & TEXT(F15, "#,##0.00"))'}
+R16: ['Our Company', 'Direct Outflow Execution to China', '0.5', '36538048.4', '0', '36538048.4', '0', '⏳ OUR SHARE PENDING: 36,538,048.40']
+    Formulas: {'C4': '=$H$5*C16', 'C5': '=G9', 'C6': '=D16-E16', 'C7': '=IF(D16>0, E16/D16, 0)', 'C8': '=IF(F16<=0, "✓ OUR SHARE COMPLETED", "⏳ OUR SHARE PENDING: " & TEXT(F16, "#,##0.00"))'}
+R17: ['COMBINED PARTNERSHIP TOTAL ', '100.0% China Liability Settlement', '1', '73076096.8', '15917478.1', '57158618.699999996', '0.21782058425430298', 'REMAINING TOTAL: 42,541,798.70']
+    Formulas: {'C3': '=SUM(C15:C16)', 'C4': '=SUM(D15:D16)', 'C5': '=SUM(E15:E16)', 'C6': '=SUM(F15:F16)', 'C7': '=IF(D17>0, E17/D17, 0)', 'C8': '=IF(I9<=0, "✓ 100% COMPLETE & SETTLED", "REMAINING TOTAL: " & TEXT(I9, "#,##0.00"))'}
+R20: ['3. OVERSEAS FRIENDS & AGENTS RECONCILIATION SUMMARY']
+R22: ['Friend / Intermediary Name', 'Country / Route', 'Operating Currency', 'Total Cash Given by Us (LKR)', 'Total Settled to China (LKR Equiv)', 'Net Balance (LKR)', 'Current Settlement Status', 'Action / Instructions']
+R23: ['Ashen ', None, None, '4300000', '4454800', '-154800', 'We owe Friend', 'Api must pay balance to Ashen']
+    Formulas: {'C4': "='Friend & Agent Settlement'!C15", 'C5': "='Friend & Agent Settlement'!G15", 'C6': "='Friend & Agent Settlement'!H15", 'C7': "='Friend & Agent Settlement'!I15", 'C8': '=IF(F23>0, "Hold surplus for next tranche", IF(F23<0, "Api must pay balance to Ashen", "Settled"))'}
+R24: ['Friend 2 (Korea)', 'Korea', None, '10109330', '10162020', '-52690', 'We Owe Friend', 'Api must pay balance to friend']
+    Formulas: {'C4': "='Friend & Agent Settlement'!C32", 'C5': "='Friend & Agent Settlement'!G32", 'C6': "='Friend & Agent Settlement'!H32", 'C8': '=IF(F24>0, "Surplus held for next batch", IF(F24<0, "Api must pay balance to friend", "Settled"))'}
+R25: ['Direct Bank TT (Sri Lanka)', 'Commercial / BOC / Sampath', 'USD Wire', '15917478.1', '15917478.1', '0', 'Settled Directly via TT', 'Direct Supplier Wire Completed']
+
+================ SHEET: Global Inflow Log ================
+R1: ['GLOBAL APPAREL - INWARD FUNDS RECEIVED LOG ']
+R4: ['Receipt ID', 'Date Received', 'Payment Method (Cheque / Bank Transfer / Cash)', 'Reference / Cheque No / Account Details', 'Amount Received in LKR', 'Cumulative Received in LKR', 'Allocation Status ', 'Remarks / Special Notes']
+R5: ['GLB-001', '2026-08-09 00:00:00', None, None, '15917478.1']
+R6: ['GLB-002']
+R7: ['GLB-003']
+    Formulas: {'C6': '=IF(OR(E7="",E7=0), "", IF(ISNUMBER(F6), F6+E7, E7))', 'C7': '=IF(OR(E7="",E7=0), "", "✓ Received & Logged")'}
+R8: ['GLB-004']
+    Formulas: {'C6': '=IF(OR(E8="",E8=0), "", IF(ISNUMBER(F7), F7+E8, E8))', 'C7': '=IF(OR(E8="",E8=0), "", "✓ Received & Logged")'}
+R9: ['GLB-005']
+    Formulas: {'C6': '=IF(OR(E9="",E9=0), "", IF(ISNUMBER(F8), F8+E9, E9))', 'C7': '=IF(OR(E9="",E9=0), "", "✓ Received & Logged")'}
+R10: ['GLB-006']
+    Formulas: {'C6': '=IF(OR(E10="",E10=0), "", IF(ISNUMBER(F9), F9+E10, E10))', 'C7': '=IF(OR(E10="",E10=0), "", "✓ Received & Logged")'}
+R11: ['GLB-007']
+    Formulas: {'C6': '=IF(OR(E11="",E11=0), "", IF(ISNUMBER(F10), F10+E11, E11))', 'C7': '=IF(OR(E11="",E11=0), "", "✓ Received & Logged")'}
+R12: ['GLB-008']
+    Formulas: {'C6': '=IF(OR(E12="",E12=0), "", IF(ISNUMBER(F11), F11+E12, E12))', 'C7': '=IF(OR(E12="",E12=0), "", "✓ Received & Logged")'}
+R13: ['GLB-009']
+    Formulas: {'C6': '=IF(OR(E13="",E13=0), "", IF(ISNUMBER(F12), F12+E13, E13))', 'C7': '=IF(OR(E13="",E13=0), "", "✓ Received & Logged")'}
+R14: ['GLB-010']
+    Formulas: {'C6': '=IF(OR(E14="",E14=0), "", IF(ISNUMBER(F13), F13+E14, E14))', 'C7': '=IF(OR(E14="",E14=0), "", "✓ Received & Logged")'}
+R15: ['GLB-011']
+    Formulas: {'C6': '=IF(OR(E15="",E15=0), "", IF(ISNUMBER(F14), F14+E15, E15))', 'C7': '=IF(OR(E15="",E15=0), "", "✓ Received & Logged")'}
+R16: ['GLB-012']
+    Formulas: {'C6': '=IF(OR(E16="",E16=0), "", IF(ISNUMBER(F15), F15+E16, E16))', 'C7': '=IF(OR(E16="",E16=0), "", "✓ Received & Logged")'}
+R17: ['GLB-013']
+    Formulas: {'C6': '=IF(OR(E17="",E17=0), "", IF(ISNUMBER(F16), F16+E17, E17))', 'C7': '=IF(OR(E17="",E17=0), "", "✓ Received & Logged")'}
+R18: ['GLB-014']
+    Formulas: {'C6': '=IF(OR(E18="",E18=0), "", IF(ISNUMBER(F17), F17+E18, E18))', 'C7': '=IF(OR(E18="",E18=0), "", "✓ Received & Logged")'}
+R19: ['GLB-015']
+    Formulas: {'C6': '=IF(OR(E19="",E19=0), "", IF(ISNUMBER(F18), F18+E19, E19))', 'C7': '=IF(OR(E19="",E19=0), "", "✓ Received & Logged")'}
+R20: ['GLB-016']
+    Formulas: {'C6': '=IF(OR(E20="",E20=0), "", IF(ISNUMBER(F19), F19+E20, E20))', 'C7': '=IF(OR(E20="",E20=0), "", "✓ Received & Logged")'}
+R21: ['GLB-017']
+    Formulas: {'C6': '=IF(OR(E21="",E21=0), "", IF(ISNUMBER(F20), F20+E21, E21))', 'C7': '=IF(OR(E21="",E21=0), "", "✓ Received & Logged")'}
+R22: ['GLB-018']
+    Formulas: {'C6': '=IF(OR(E22="",E22=0), "", IF(ISNUMBER(F21), F21+E22, E22))', 'C7': '=IF(OR(E22="",E22=0), "", "✓ Received & Logged")'}
+R23: ['GLB-019']
+    Formulas: {'C6': '=IF(OR(E23="",E23=0), "", IF(ISNUMBER(F22), F22+E23, E23))', 'C7': '=IF(OR(E23="",E23=0), "", "✓ Received & Logged")'}
+R24: ['GLB-020']
+    Formulas: {'C6': '=IF(OR(E24="",E24=0), "", IF(ISNUMBER(F23), F23+E24, E24))', 'C7': '=IF(OR(E24="",E24=0), "", "✓ Received & Logged")'}
+R25: ['GLB-021']
+    Formulas: {'C6': '=IF(OR(E25="",E25=0), "", IF(ISNUMBER(F24), F24+E25, E25))', 'C7': '=IF(OR(E25="",E25=0), "", "✓ Received & Logged")'}
+R500: ['TOTAL INWARD FUNDS RECEIVED FROM GLOBAL APPAREL / GLOBAL වෙතින් ලැබුණු මුළු එකතුව', None, None, None, '15917478.1', '0']
+    Formulas: {'C5': '=SUM(E5:E499)', 'C6': '=MAX(F5:F499)'}
+
+================ SHEET: China Outflow Log ================
+R1: ['CHINA SHIPMENT - OUTWARD SETTLEMENT LOG ', None, None, None, '\n']
+R4: ['Trx ID', 'Payment Date', 'Settlement Route / Channel', 'Intermediary / Bank Partner', 'Currency Sent (RMB / USD / AED)', 'Foreign Amount Sent', 'Applied FX Rate (LKR) ', 'Total LKR Settled to China ', 'Cumulative Settled', 'Source of Funds (Global / Api)', 'Transaction Reference / Notes']
+R5: ['TRX-001', '2026-02-10 00:00:00', 'Ashen', 'Ashen', 'RMB', '86000', '51.8', '4454800', '4454800']
+    Formulas: {'C8': '=IF(AND(ISNUMBER(F5),ISNUMBER(G5),F5>0,G5>0), ROUND(F5*G5, 2), "")', 'C9': '=IF(H5>0, H5, 0)'}
+R6: ['TRX-002', '2026-01-10 00:00:00', None, 'Korea', 'RMB', '60000', '51.9', '3114000', '3114000']
+    Formulas: {'C8': '=SUM(G6*F6)', 'C9': '=IF(H6>0, H6, 0)'}
+R7: ['TRX-003', '2026-01-10 00:00:00', None, 'Korea', 'RMB', '15000', '51.9', '778500', '778500']
+    Formulas: {'C8': '=IF(AND(ISNUMBER(F7),ISNUMBER(G7),F7>0,G7>0), ROUND(F7*G7, 2), "")', 'C9': '=IF(H7>0, H7, 0)'}
+R8: ['TRX-004', '2026-01-10 00:00:00', None, 'Korea', 'RMB', '25000', '51.9', '1297500', '1297500']
+    Formulas: {'C8': '=IF(AND(ISNUMBER(F8),ISNUMBER(G8),F8>0,G8>0), ROUND(F8*G8, 2), "")', 'C9': '=IF(H8>0, H8, 0)'}
+R9: ['TRX-005', None, 'TT', None, None, None, None, '15917478.1', '15917478.1']
+R10: ['TRX-006', None, None, 'Korea', None, '19800', '51.9', '1027620', '53333478']
+    Formulas: {'C8': '=SUM(G10*F10)', 'C9': '=SUM(H10*G10)'}
+R11: ['TRX-007', None, None, 'Korea', None, '76000', '51.9', '3944400', '204714360']
+    Formulas: {'C8': '=IF(AND(ISNUMBER(F11),ISNUMBER(G11),F11>0,G11>0), ROUND(F11*G11, 2), "")', 'C9': '=IF(AND(ISNUMBER(G11),ISNUMBER(H11),G11>0,H11>0), ROUND(G11*H11, 2), "")'}
+R12: ['TRX-008']
+    Formulas: {'C8': '=IF(AND(ISNUMBER(F12),ISNUMBER(G12),F12>0,G12>0), ROUND(F12*G12, 2), "")', 'C9': '=IF(OR(H12="",H12=0), "", IF(ISNUMBER(I11), I11+H12, H12))'}
+R13: ['TRX-009']
+    Formulas: {'C8': '=IF(AND(ISNUMBER(F13),ISNUMBER(G13),F13>0,G13>0), ROUND(F13*G13, 2), "")', 'C9': '=IF(OR(H13="",H13=0), "", IF(ISNUMBER(I12), I12+H13, H13))'}
+R14: ['TRX-010']
+    Formulas: {'C8': '=IF(AND(ISNUMBER(F14),ISNUMBER(G14),F14>0,G14>0), ROUND(F14*G14, 2), "")', 'C9': '=IF(OR(H14="",H14=0), "", IF(ISNUMBER(I13), I13+H14, H14))'}
+R15: ['TRX-011']
+    Formulas: {'C8': '=IF(AND(ISNUMBER(F15),ISNUMBER(G15),F15>0,G15>0), ROUND(F15*G15, 2), "")', 'C9': '=IF(OR(H15="",H15=0), "", IF(ISNUMBER(I14), I14+H15, H15))'}
+R16: ['TRX-012']
+    Formulas: {'C8': '=IF(AND(ISNUMBER(F16),ISNUMBER(G16),F16>0,G16>0), ROUND(F16*G16, 2), "")', 'C9': '=IF(OR(H16="",H16=0), "", IF(ISNUMBER(I15), I15+H16, H16))'}
+R17: ['TRX-013']
+    Formulas: {'C8': '=IF(AND(ISNUMBER(F17),ISNUMBER(G17),F17>0,G17>0), ROUND(F17*G17, 2), "")', 'C9': '=IF(OR(H17="",H17=0), "", IF(ISNUMBER(I16), I16+H17, H17))'}
+R18: ['TRX-014']
+    Formulas: {'C8': '=IF(AND(ISNUMBER(F18),ISNUMBER(G18),F18>0,G18>0), ROUND(F18*G18, 2), "")', 'C9': '=IF(OR(H18="",H18=0), "", IF(ISNUMBER(I17), I17+H18, H18))'}
+R19: ['TRX-015']
+    Formulas: {'C8': '=IF(AND(ISNUMBER(F19),ISNUMBER(G19),F19>0,G19>0), ROUND(F19*G19, 2), "")', 'C9': '=IF(OR(H19="",H19=0), "", IF(ISNUMBER(I18), I18+H19, H19))'}
+R20: ['TRX-016']
+    Formulas: {'C8': '=IF(AND(ISNUMBER(F20),ISNUMBER(G20),F20>0,G20>0), ROUND(F20*G20, 2), "")', 'C9': '=IF(OR(H20="",H20=0), "", IF(ISNUMBER(I19), I19+H20, H20))'}
+R21: ['TRX-017']
+    Formulas: {'C8': '=IF(AND(ISNUMBER(F21),ISNUMBER(G21),F21>0,G21>0), ROUND(F21*G21, 2), "")', 'C9': '=IF(OR(H21="",H21=0), "", IF(ISNUMBER(I20), I20+H21, H21))'}
+R22: ['TRX-018']
+    Formulas: {'C8': '=IF(AND(ISNUMBER(F22),ISNUMBER(G22),F22>0,G22>0), ROUND(F22*G22, 2), "")', 'C9': '=IF(OR(H22="",H22=0), "", IF(ISNUMBER(I21), I21+H22, H22))'}
+R23: ['TRX-019']
+    Formulas: {'C8': '=IF(AND(ISNUMBER(F23),ISNUMBER(G23),F23>0,G23>0), ROUND(F23*G23, 2), "")', 'C9': '=IF(OR(H23="",H23=0), "", IF(ISNUMBER(I22), I22+H23, H23))'}
+R24: ['TRX-020']
+    Formulas: {'C8': '=IF(AND(ISNUMBER(F24),ISNUMBER(G24),F24>0,G24>0), ROUND(F24*G24, 2), "")', 'C9': '=IF(OR(H24="",H24=0), "", IF(ISNUMBER(I23), I23+H24, H24))'}
+R25: ['TRX-021']
+    Formulas: {'C8': '=IF(AND(ISNUMBER(F25),ISNUMBER(G25),F25>0,G25>0), ROUND(F25*G25, 2), "")', 'C9': '=IF(OR(H25="",H25=0), "", IF(ISNUMBER(I24), I24+H25, H25))'}
+R500: ['TOTAL SETTLED TO CHINA / චීනයට ගෙවා අවසන් මුළු මුදල', None, None, None, None, '281800', None, '30534298.1', '204714360']
+    Formulas: {'C6': '=SUM(F5:F499)', 'C8': '=SUM(H5:H499)', 'C9': '=MAX(I5:I499)'}
+
+================ SHEET: Friend & Agent Settlement ================
+R1: ['INTERMEDIARY & OVERSEAS FRIEND RECONCILIATION LEDGER']
+R2: ['Tracking cash given to friends vs foreign payments settled to China with dynamic rate-based auto calculation']
+R4: ['★ INTERMEDIARY 1: ASHEN ']
+R6: ['Date', 'Description / Bank Reference', 'Cash Given by Us (LKR)\n', 'Foreign\nCurr', 'Foreign Amount\n', 'Applied FX Rate\n', 'LKR Settled to China\n', 'Difference LKR\n', 'Balance Status\n', 'Running Balance (LKR)\n', 'Settlement Notes / Remarks']
+R7: ['2026-02-10 00:00:00', 'BOC - Commercial Bank', '4300000', 'RMB', '86000', '51.8', '4454800', '-154800', 'We owe Friend', '-154800']
+    Formulas: {'C7': '=IF(AND(ISNUMBER(E7),ISNUMBER(F7),E7>0,F7>0), ROUND(E7*F7, 2), IF(E7>0, E7, 0))', 'C8': '=C7-G7', 'C10': '=H7'}
+R15: ['ASHEN ACCOUNT RECONCILIATION SUMMARY', None, '4300000', None, '86000', None, '4454800', '-154800', 'We owe Friend', '-154800']
+    Formulas: {'C3': '=SUM(C7:C14)', 'C5': '=SUM(E7:E14)', 'C7': '=SUM(G7:G14)', 'C8': '=C15-G15', 'C10': '=H15'}
+R17: ['★ INTERMEDIARY 2: FRIEND 2 (Korea)']
+R19: ['Date', 'Description / Bank Reference', 'Cash Given by Us (LKR)\n', 'Foreign\nCurr', 'Foreign Amount\n', 'Applied FX Rate\n', 'LKR Settled to China\n', 'Difference LKR\n', 'Balance Status\n', 'Running Balance (LKR)\n', 'Settlement Notes / Remarks']
+R20: ['2026-01-10 00:00:00', 'DFCC - BOC', '2500000', 'RMB', '60000', '51.9', '3114000', None, 'We owe Friend']
+    Formulas: {'C7': '=SUM(F20*E20)'}
+R21: ['2026-01-10 00:00:00', 'BOC - HNB', '2450000', 'RMB', '15000', '51.9', '778500']
+    Formulas: {'C7': '=IF(AND(ISNUMBER(E21),ISNUMBER(F21),E21>0,F21>0), ROUND(E21*F21, 2), "")', 'C9': '=IF(H21="","", IF(H21>0, "Friend Holds Surplus (අපට ලැබිය යුතු)", IF(H21<0, "We Owe Friend (අප දිය යුතු)", "Balanced / සමබරයි")))', 'C10': '=IF(H21="","", IF(ISNUMBER(J20), J20+H21, H21))'}
+R22: ['2026-02-10 00:00:00', 'BOC - HNB', '40000', 'RMB', '25000', '51.9', '1297500']
+    Formulas: {'C7': '=IF(AND(ISNUMBER(E22),ISNUMBER(F22),E22>0,F22>0), ROUND(E22*F22, 2), "")', 'C9': '=IF(H22="","", IF(H22>0, "Friend Holds Surplus (අපට ලැබිය යුතු)", IF(H22<0, "We Owe Friend (අප දිය යුතු)", "Balanced / සමබරයි")))', 'C10': '=IF(H22="","", IF(ISNUMBER(J21), J21+H22, H22))'}
+R23: ['2026-02-10 00:00:00', None, '10000', 'RMB']
+    Formulas: {'C7': '=IF(AND(ISNUMBER(E23),ISNUMBER(F23),E23>0,F23>0), ROUND(E23*F23, 2), "")', 'C9': '=IF(H23="","", IF(H23>0, "Friend Holds Surplus (අපට ලැබිය යුතු)", IF(H23<0, "We Owe Friend (අප දිය යුතු)", "Balanced / සමබරයි")))', 'C10': '=IF(H23="","", IF(ISNUMBER(J22), J22+H23, H23))'}
+R24: ['2026-03-10 00:00:00', 'BOC-Seylan', '1000000', 'RMB', '19800', '51.9', '1027620']
+    Formulas: {'C7': '=SUM(F24*E24)'}
+R25: ['2026-04-10 00:00:00', 'Boc-Sampath', '3919330', 'RMB', '76000', '51.9', '3944400']
+    Formulas: {'C7': '=IF(AND(ISNUMBER(E25),ISNUMBER(F25),E25>0,F25>0), ROUND(E25*F25, 2), "")', 'C10': '=IF(H25="","", IF(ISNUMBER(J17), J17+H25, H25))'}
+R26: ['2026-04-10 00:00:00', None, '190000']
+R32: ['DUBAI FRIEND ACCOUNT RECONCILIATION', None, '10109330', None, '195800', None, '10162020', '-52690', None, '-52690']
+    Formulas: {'C3': '=SUM(C20:C31)', 'C5': '=SUM(E20:E31)', 'C7': '=SUM(G20:G31)', 'C8': '=C32-G32', 'C10': '=H32'}
+R36: ['Date', 'Description / Bank Reference', 'Cash Given by Us (LKR)\n', 'Foreign\nCurr', 'Foreign Amount\n', 'Applied FX Rate\n', 'LKR Settled to China\n ', 'Difference LKR\n', 'Balance Status\n', 'Running Balance (LKR)\n', 'Settlement Notes / Remarks']
+R37: ['2026-09-05', 'Global Apparel - Commercial Bank USD TT']
+R42: ['DIRECT BANK TRANSFERS TOTAL', None, '0', None, '0', None, '0', '0', None, '0']
+    Formulas: {'C3': '=SUM(C37:C41)', 'C5': '=SUM(E37:E41)', 'C7': '=SUM(G37:G41)', 'C8': '=C42-G42', 'C10': '=H42'}

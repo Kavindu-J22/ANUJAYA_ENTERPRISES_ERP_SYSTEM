@@ -493,4 +493,208 @@ router.get('/system/export-audit', async (req, res) => {
   }
 });
 
+// ================= GLOBAL PATH: CHINA IMPORT & FINANCIAL SETTLEMENTS =================
+router.get('/global/china-shipments', async (req, res) => {
+  try {
+    const shipments = await store.getChinaShipments();
+    res.json(shipments);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/global/china-shipments/:id', async (req, res) => {
+  try {
+    const shipment = await store.getChinaShipment(req.params.id);
+    if (!shipment) return res.status(404).json({ error: "China Shipment not found" });
+    res.json(shipment);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/global/china-shipments', async (req, res) => {
+  try {
+    const created = await store.addChinaShipment(req.body);
+    res.status(201).json(created);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+router.put('/global/china-shipments/:id', async (req, res) => {
+  try {
+    const updated = await store.updateChinaShipment(req.params.id, req.body);
+    if (!updated) return res.status(404).json({ error: "Shipment not found" });
+    res.json(updated);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+router.delete('/global/china-shipments/:id', async (req, res) => {
+  try {
+    const result = await store.deleteChinaShipment(req.params.id);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Inventory Goods Receipt & Stock Intake
+router.post('/global/china-shipments/:id/goods-receipt', async (req, res) => {
+  try {
+    const updated = await store.receiveChinaShipmentStock(req.params.id, req.body);
+    res.json(updated);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Record Partner Payment Receipt (Global Inflow)
+router.post('/global/china-shipments/:id/partner-receipts', async (req, res) => {
+  try {
+    const shipment = await store.getChinaShipment(req.params.id);
+    if (!shipment) return res.status(404).json({ error: "Shipment not found" });
+
+    const receipt = {
+      id: `PR-${Date.now().toString().slice(-6)}`,
+      receiptId: req.body.receiptId || `GLB-${String((shipment.partnerReceipts || []).length + 1).padStart(3, '0')}`,
+      date: req.body.date || new Date().toISOString().slice(0, 10),
+      partnerName: req.body.partnerName || "Global Apparel Solutions",
+      paymentMethod: req.body.paymentMethod || "Bank Transfer",
+      reference: req.body.reference || "",
+      amountLkr: Number(req.body.amountLkr) || 0,
+      allocationStatus: req.body.allocationStatus || "Allocated",
+      notes: req.body.notes || "",
+      status: req.body.status || "Confirmed"
+    };
+
+    const newAuditLog = {
+      id: `LOG-${Date.now().toString().slice(-6)}`,
+      timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19),
+      action: "Partner Receipt Recorded",
+      user: req.body.recordedBy || "Admin",
+      details: `Received LKR ${receipt.amountLkr.toLocaleString()} from ${receipt.partnerName} (${receipt.receiptId})`
+    };
+
+    const updated = await store.updateChinaShipment(req.params.id, {
+      partnerReceipts: [...(shipment.partnerReceipts || []), receipt],
+      auditLogs: [...(shipment.auditLogs || []), newAuditLog]
+    });
+    res.json(updated);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Record Supplier Settlement to China (Outflow)
+router.post('/global/china-shipments/:id/supplier-payments', async (req, res) => {
+  try {
+    const shipment = await store.getChinaShipment(req.params.id);
+    if (!shipment) return res.status(404).json({ error: "Shipment not found" });
+
+    const foreignAmount = Number(req.body.foreignAmount) || 0;
+    const appliedFxRate = Number(req.body.appliedFxRate) || 0;
+    const settledLkr = Number(req.body.settledLkr) || (foreignAmount * appliedFxRate);
+
+    const payment = {
+      id: `SP-${Date.now().toString().slice(-6)}`,
+      trxId: req.body.trxId || `TRX-${String((shipment.supplierPayments || []).length + 1).padStart(3, '0')}`,
+      paymentDate: req.body.paymentDate || new Date().toISOString().slice(0, 10),
+      channel: req.body.channel || "Intermediary Remittance",
+      intermediaryId: req.body.intermediaryId || "",
+      intermediaryName: req.body.intermediaryName || "",
+      currency: req.body.currency || "RMB",
+      foreignAmount: foreignAmount,
+      appliedFxRate: appliedFxRate,
+      settledLkr: settledLkr,
+      sourceOfFunds: req.body.sourceOfFunds || "Joint Partnership",
+      reference: req.body.reference || "",
+      status: req.body.status || "Confirmed",
+      isNeedsReview: !!req.body.isNeedsReview,
+      reviewNote: req.body.reviewNote || "",
+      notes: req.body.notes || ""
+    };
+
+    const newAuditLog = {
+      id: `LOG-${Date.now().toString().slice(-6)}`,
+      timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19),
+      action: "Supplier Settlement Recorded",
+      user: req.body.recordedBy || "Admin",
+      details: `Settled ${payment.foreignAmount} ${payment.currency} (LKR ${payment.settledLkr.toLocaleString()}) via ${payment.intermediaryName || payment.channel}`
+    };
+
+    const updated = await store.updateChinaShipment(req.params.id, {
+      supplierPayments: [...(shipment.supplierPayments || []), payment],
+      auditLogs: [...(shipment.auditLogs || []), newAuditLog]
+    });
+    res.json(updated);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Record Cash Given to Intermediary (Advance)
+router.post('/global/china-shipments/:id/intermediary-advances', async (req, res) => {
+  try {
+    const shipment = await store.getChinaShipment(req.params.id);
+    if (!shipment) return res.status(404).json({ error: "Shipment not found" });
+
+    const advance = {
+      id: `ADV-${Date.now().toString().slice(-6)}`,
+      intermediaryId: req.body.intermediaryId || "",
+      intermediaryName: req.body.intermediaryName || "",
+      date: req.body.date || new Date().toISOString().slice(0, 10),
+      description: req.body.description || "Cash advance for foreign supplier remittance",
+      bankReference: req.body.bankReference || "",
+      amountLkr: Number(req.body.amountLkr) || 0,
+      notes: req.body.notes || ""
+    };
+
+    const newAuditLog = {
+      id: `LOG-${Date.now().toString().slice(-6)}`,
+      timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19),
+      action: "Intermediary Cash Advance",
+      user: req.body.recordedBy || "Admin",
+      details: `Handed over LKR ${advance.amountLkr.toLocaleString()} to ${advance.intermediaryName} (Ref: ${advance.bankReference})`
+    };
+
+    const updated = await store.updateChinaShipment(req.params.id, {
+      intermediaryAdvances: [...(shipment.intermediaryAdvances || []), advance],
+      auditLogs: [...(shipment.auditLogs || []), newAuditLog]
+    });
+    res.json(updated);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Record Customs / Clearing Expense
+router.post('/global/china-shipments/:id/customs-expenses', async (req, res) => {
+  try {
+    const shipment = await store.getChinaShipment(req.params.id);
+    if (!shipment) return res.status(404).json({ error: "Shipment not found" });
+
+    const expense = {
+      id: `CE-${Date.now().toString().slice(-6)}`,
+      category: req.body.category || "Customs Duty & CESS",
+      description: req.body.description || "",
+      estimatedLkr: Number(req.body.estimatedLkr) || 0,
+      actualLkr: Number(req.body.actualLkr) || 0,
+      paymentDate: req.body.paymentDate || new Date().toISOString().slice(0, 10),
+      paidBy: req.body.paidBy || "Our Company",
+      reference: req.body.reference || "",
+      status: req.body.status || "Paid"
+    };
+
+    const updated = await store.updateChinaShipment(req.params.id, {
+      customsExpenses: [...(shipment.customsExpenses || []), expense]
+    });
+    res.json(updated);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
 module.exports = router;
