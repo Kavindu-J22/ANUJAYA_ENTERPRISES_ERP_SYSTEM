@@ -1,4 +1,11 @@
-const API_BASE = '/api';
+// Production Backend URL (Render)
+const PRODUCTION_BACKEND_URL = 'https://anujaya-enterprises-erp-system.onrender.com';
+
+// Resolves backend URL from environment variables with fallback to Render in production
+const RAW_BACKEND_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? '' : PRODUCTION_BACKEND_URL);
+export const BACKEND_URL = RAW_BACKEND_URL ? RAW_BACKEND_URL.replace(/\/+$/, '') : '';
+export const API_BASE = BACKEND_URL ? `${BACKEND_URL}/api` : '/api';
+
 
 // Normalises ALL backend responses into { success: bool, data: any }
 // so App.jsx can safely do `if (res.success) setState(res.data)`.

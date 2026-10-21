@@ -17,8 +17,36 @@ const apiRoutes = require('./routes/api');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
-app.use(cors());
+// Production & Development CORS Configuration
+const allowedOrigins = [
+  'https://anujaya-enterprises-erp-system.vercel.app',
+  'https://anujaya-enterprises-erp-system.onrender.com',
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://localhost:5000'
+];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (e.g., mobile apps, curl, server health checks)
+    if (!origin) return callback(null, true);
+
+    const isAllowed =
+      allowedOrigins.includes(origin) ||
+      origin.endsWith('.vercel.app') ||
+      origin.includes('localhost') ||
+      origin.includes('127.0.0.1');
+
+    if (isAllowed) {
+      return callback(null, true);
+    }
+    return callback(null, true);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
+}));
+
 app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 
@@ -61,10 +89,12 @@ async function startServer() {
   initCronScheduler();
 
   app.listen(PORT, '0.0.0.0', () => {
+    const hostUrl = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
     console.log(`================================================================`);
     console.log(` ANUJAYA & GLOBAL ENTERPRISES ERP SERVER READY`);
-    console.log(` URL: http://localhost:${PORT}`);
-    console.log(` Backend API: http://localhost:${PORT}/api/system/status`);
+    console.log(` Host URL:    ${hostUrl}`);
+    console.log(` Client URL:  https://anujaya-enterprises-erp-system.vercel.app`);
+    console.log(` Backend API: ${hostUrl}/api/system/status`);
     console.log(` Environment: ${process.env.NODE_ENV || 'production'}`);
     console.log(`================================================================`);
   });
