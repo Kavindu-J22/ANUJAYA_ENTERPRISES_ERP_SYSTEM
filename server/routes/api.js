@@ -13,17 +13,19 @@ router.post('/auth/login', (req, res) => {
   const { path, role, pin } = req.body; // path: 'global' or 'local'
   
   if (path === 'global') {
+    // ADMIN PIN: 9900 only. PARTNER PIN: 1234 only. No cross-acceptance.
     if (role === 'ADMIN' && pin === '9900') {
       return res.json({ success: true, user: { role: 'ADMIN', title: 'Consortium Admin', path: 'global' } });
     }
     if (role === 'PARTNER' && pin === '1234') {
       return res.json({ success: true, user: { role: 'PARTNER', title: 'Consortium Partner (Global Enterprises)', path: 'global' } });
     }
-    return res.status(401).json({ success: false, message: 'Invalid Access PIN for Consortium role.' });
+    return res.status(401).json({ success: false, message: 'Invalid Access PIN for selected role.' });
   }
 
   if (path === 'local') {
-    if (pin === '9900' || pin === '1234') {
+    // Local path is ADMIN-only. Only the admin PIN (9900) is accepted.
+    if (pin === '9900') {
       return res.json({ success: true, user: { role: 'ADMIN', title: 'Kosgama Yard Administrator', path: 'local' } });
     }
     return res.status(401).json({ success: false, message: 'Invalid PIN for Local Yard System.' });
@@ -695,6 +697,110 @@ router.post('/global/china-shipments/:id/customs-expenses', async (req, res) => 
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
+});
+
+// ─── Partner Receipt: Delete by record id ───────────────────────────────────
+router.delete('/global/china-shipments/:id/partner-receipts/:recordId', async (req, res) => {
+  try {
+    const shipment = await store.getChinaShipment(req.params.id);
+    if (!shipment) return res.status(404).json({ error: 'Shipment not found' });
+    const updated = await store.updateChinaShipment(req.params.id, {
+      partnerReceipts: (shipment.partnerReceipts || []).filter(r => r.id !== req.params.recordId)
+    });
+    res.json(updated);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ─── Partner Receipt: Edit by record id ─────────────────────────────────────
+router.put('/global/china-shipments/:id/partner-receipts/:recordId', async (req, res) => {
+  try {
+    const shipment = await store.getChinaShipment(req.params.id);
+    if (!shipment) return res.status(404).json({ error: 'Shipment not found' });
+    const updated = await store.updateChinaShipment(req.params.id, {
+      partnerReceipts: (shipment.partnerReceipts || []).map(r =>
+        r.id === req.params.recordId ? { ...r, ...req.body } : r
+      )
+    });
+    res.json(updated);
+  } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+// ─── Supplier Payment: Delete by record id ───────────────────────────────────
+router.delete('/global/china-shipments/:id/supplier-payments/:recordId', async (req, res) => {
+  try {
+    const shipment = await store.getChinaShipment(req.params.id);
+    if (!shipment) return res.status(404).json({ error: 'Shipment not found' });
+    const updated = await store.updateChinaShipment(req.params.id, {
+      supplierPayments: (shipment.supplierPayments || []).filter(p => p.id !== req.params.recordId)
+    });
+    res.json(updated);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ─── Supplier Payment: Edit by record id ────────────────────────────────────
+router.put('/global/china-shipments/:id/supplier-payments/:recordId', async (req, res) => {
+  try {
+    const shipment = await store.getChinaShipment(req.params.id);
+    if (!shipment) return res.status(404).json({ error: 'Shipment not found' });
+    const updated = await store.updateChinaShipment(req.params.id, {
+      supplierPayments: (shipment.supplierPayments || []).map(p =>
+        p.id === req.params.recordId ? { ...p, ...req.body } : p
+      )
+    });
+    res.json(updated);
+  } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+// ─── Intermediary Advance: Delete by record id ───────────────────────────────
+router.delete('/global/china-shipments/:id/intermediary-advances/:recordId', async (req, res) => {
+  try {
+    const shipment = await store.getChinaShipment(req.params.id);
+    if (!shipment) return res.status(404).json({ error: 'Shipment not found' });
+    const updated = await store.updateChinaShipment(req.params.id, {
+      intermediaryAdvances: (shipment.intermediaryAdvances || []).filter(a => a.id !== req.params.recordId)
+    });
+    res.json(updated);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ─── Intermediary Advance: Edit by record id ─────────────────────────────────
+router.put('/global/china-shipments/:id/intermediary-advances/:recordId', async (req, res) => {
+  try {
+    const shipment = await store.getChinaShipment(req.params.id);
+    if (!shipment) return res.status(404).json({ error: 'Shipment not found' });
+    const updated = await store.updateChinaShipment(req.params.id, {
+      intermediaryAdvances: (shipment.intermediaryAdvances || []).map(a =>
+        a.id === req.params.recordId ? { ...a, ...req.body } : a
+      )
+    });
+    res.json(updated);
+  } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+// ─── Customs Expense: Delete by record id ────────────────────────────────────
+router.delete('/global/china-shipments/:id/customs-expenses/:recordId', async (req, res) => {
+  try {
+    const shipment = await store.getChinaShipment(req.params.id);
+    if (!shipment) return res.status(404).json({ error: 'Shipment not found' });
+    const updated = await store.updateChinaShipment(req.params.id, {
+      customsExpenses: (shipment.customsExpenses || []).filter(e => e.id !== req.params.recordId)
+    });
+    res.json(updated);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ─── Customs Expense: Edit by record id ──────────────────────────────────────
+router.put('/global/china-shipments/:id/customs-expenses/:recordId', async (req, res) => {
+  try {
+    const shipment = await store.getChinaShipment(req.params.id);
+    if (!shipment) return res.status(404).json({ error: 'Shipment not found' });
+    const updated = await store.updateChinaShipment(req.params.id, {
+      customsExpenses: (shipment.customsExpenses || []).map(e =>
+        e.id === req.params.recordId ? { ...e, ...req.body } : e
+      )
+    });
+    res.json(updated);
+  } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
 module.exports = router;

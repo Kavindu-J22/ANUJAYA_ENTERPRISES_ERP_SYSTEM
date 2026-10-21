@@ -39,15 +39,19 @@ export function ChinaImportModule({ currentUser, addToast, onRefreshGlobalMachin
   const [shipments, setShipments] = useState([]);
   const [selectedShipmentId, setSelectedShipmentId] = useState('');
   const [loading, setLoading] = useState(true);
-  const [activeSubTab, setActiveSubTab] = useState('dashboard'); // dashboard, shipment_items, partner_funding, supplier_payments, intermediaries, customs_charges, inventory_intake, review
+  const [activeSubTab, setActiveSubTab] = useState('dashboard');
 
   // Modal Open States
   const [isNewShipmentModalOpen, setIsNewShipmentModalOpen] = useState(false);
   const [isPartnerReceiptModalOpen, setIsPartnerReceiptModalOpen] = useState(false);
+  const [editingPartnerReceipt, setEditingPartnerReceipt] = useState(null);
   const [isSupplierPaymentModalOpen, setIsSupplierPaymentModalOpen] = useState(false);
+  const [editingSupplierPayment, setEditingSupplierPayment] = useState(null);
   const [isIntermediaryAdvanceModalOpen, setIsIntermediaryAdvanceModalOpen] = useState(false);
+  const [editingIntermediaryAdvance, setEditingIntermediaryAdvance] = useState(null);
   const [targetIntermediaryId, setTargetIntermediaryId] = useState('');
   const [isCustomsExpenseModalOpen, setIsCustomsExpenseModalOpen] = useState(false);
+  const [editingCustomsExpense, setEditingCustomsExpense] = useState(null);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
 
   // Fetch all shipments on load
@@ -193,6 +197,121 @@ export function ChinaImportModule({ currentUser, addToast, onRefreshGlobalMachin
     } catch (err) {
       if (addToast) addToast("Failed to update flag: " + err.message, "error");
     }
+  };
+
+  // ─── Sub-record delete handlers ─────────────────────────────────────────────
+  const handleDeletePartnerReceipt = async (recordId) => {
+    if (!activeShipment || !window.confirm('Delete this partner receipt record?')) return;
+    try {
+      const res = await api.deletePartnerReceipt(activeShipment.id, recordId);
+      if (res.success !== false) {
+        setShipments(prev => prev.map(s => s.id === activeShipment.id ? res.data : s));
+        if (addToast) addToast('Partner receipt deleted.', 'success');
+      } else throw new Error(res.error);
+    } catch (err) { if (addToast) addToast('Delete failed: ' + err.message, 'error'); }
+  };
+
+  const handleDeleteSupplierPayment = async (recordId) => {
+    if (!activeShipment || !window.confirm('Delete this supplier payment record?')) return;
+    try {
+      const res = await api.deleteSupplierPayment(activeShipment.id, recordId);
+      if (res.success !== false) {
+        setShipments(prev => prev.map(s => s.id === activeShipment.id ? res.data : s));
+        if (addToast) addToast('Supplier payment deleted.', 'success');
+      } else throw new Error(res.error);
+    } catch (err) { if (addToast) addToast('Delete failed: ' + err.message, 'error'); }
+  };
+
+  const handleDeleteIntermediaryAdvance = async (recordId) => {
+    if (!activeShipment || !window.confirm('Delete this cash advance record?')) return;
+    try {
+      const res = await api.deleteIntermediaryAdvance(activeShipment.id, recordId);
+      if (res.success !== false) {
+        setShipments(prev => prev.map(s => s.id === activeShipment.id ? res.data : s));
+        if (addToast) addToast('Cash advance record deleted.', 'success');
+      } else throw new Error(res.error);
+    } catch (err) { if (addToast) addToast('Delete failed: ' + err.message, 'error'); }
+  };
+
+  const handleDeleteCustomsExpense = async (recordId) => {
+    if (!activeShipment || !window.confirm('Delete this customs expense record?')) return;
+    try {
+      const res = await api.deleteCustomsExpense(activeShipment.id, recordId);
+      if (res.success !== false) {
+        setShipments(prev => prev.map(s => s.id === activeShipment.id ? res.data : s));
+        if (addToast) addToast('Customs expense deleted.', 'success');
+      } else throw new Error(res.error);
+    } catch (err) { if (addToast) addToast('Delete failed: ' + err.message, 'error'); }
+  };
+
+  // ─── Sub-record edit handlers (open modal pre-filled) ───────────────────────
+  const handleEditPartnerReceipt = (record) => {
+    setEditingPartnerReceipt(record);
+    setIsPartnerReceiptModalOpen(true);
+  };
+
+  const handleSaveEditedPartnerReceipt = async (formData) => {
+    if (!activeShipment || !editingPartnerReceipt) return;
+    try {
+      const res = await api.updatePartnerReceipt(activeShipment.id, editingPartnerReceipt.id, formData);
+      if (res.success !== false) {
+        setShipments(prev => prev.map(s => s.id === activeShipment.id ? res.data : s));
+        if (addToast) addToast('Partner receipt updated!', 'success');
+        setEditingPartnerReceipt(null);
+      } else throw new Error(res.error);
+    } catch (err) { if (addToast) addToast('Update failed: ' + err.message, 'error'); }
+  };
+
+  const handleEditSupplierPayment = (record) => {
+    setEditingSupplierPayment(record);
+    setIsSupplierPaymentModalOpen(true);
+  };
+
+  const handleSaveEditedSupplierPayment = async (formData) => {
+    if (!activeShipment || !editingSupplierPayment) return;
+    try {
+      const res = await api.updateSupplierPayment(activeShipment.id, editingSupplierPayment.id, formData);
+      if (res.success !== false) {
+        setShipments(prev => prev.map(s => s.id === activeShipment.id ? res.data : s));
+        if (addToast) addToast('Supplier payment updated!', 'success');
+        setEditingSupplierPayment(null);
+      } else throw new Error(res.error);
+    } catch (err) { if (addToast) addToast('Update failed: ' + err.message, 'error'); }
+  };
+
+  const handleEditIntermediaryAdvance = (record) => {
+    setEditingIntermediaryAdvance(record);
+    setTargetIntermediaryId(record.intermediaryId || '');
+    setIsIntermediaryAdvanceModalOpen(true);
+  };
+
+  const handleSaveEditedIntermediaryAdvance = async (formData) => {
+    if (!activeShipment || !editingIntermediaryAdvance) return;
+    try {
+      const res = await api.updateIntermediaryAdvance(activeShipment.id, editingIntermediaryAdvance.id, formData);
+      if (res.success !== false) {
+        setShipments(prev => prev.map(s => s.id === activeShipment.id ? res.data : s));
+        if (addToast) addToast('Cash advance updated!', 'success');
+        setEditingIntermediaryAdvance(null);
+      } else throw new Error(res.error);
+    } catch (err) { if (addToast) addToast('Update failed: ' + err.message, 'error'); }
+  };
+
+  const handleEditCustomsExpense = (record) => {
+    setEditingCustomsExpense(record);
+    setIsCustomsExpenseModalOpen(true);
+  };
+
+  const handleSaveEditedCustomsExpense = async (formData) => {
+    if (!activeShipment || !editingCustomsExpense) return;
+    try {
+      const res = await api.updateCustomsExpense(activeShipment.id, editingCustomsExpense.id, formData);
+      if (res.success !== false) {
+        setShipments(prev => prev.map(s => s.id === activeShipment.id ? res.data : s));
+        if (addToast) addToast('Customs expense updated!', 'success');
+        setEditingCustomsExpense(null);
+      } else throw new Error(res.error);
+    } catch (err) { if (addToast) addToast('Update failed: ' + err.message, 'error'); }
   };
 
   if (loading && shipments.length === 0) {
@@ -402,14 +521,18 @@ export function ChinaImportModule({ currentUser, addToast, onRefreshGlobalMachin
           {activeSubTab === 'partner_funding' && (
             <ChinaPartnerFundingTab
               shipment={activeShipment}
-              onOpenPartnerReceiptModal={() => setIsPartnerReceiptModalOpen(true)}
+              onOpenPartnerReceiptModal={() => { setEditingPartnerReceipt(null); setIsPartnerReceiptModalOpen(true); }}
+              onEditPartnerReceipt={handleEditPartnerReceipt}
+              onDeletePartnerReceipt={handleDeletePartnerReceipt}
             />
           )}
 
           {activeSubTab === 'supplier_payments' && (
             <ChinaSupplierPaymentsTab
               shipment={activeShipment}
-              onOpenSupplierPaymentModal={() => setIsSupplierPaymentModalOpen(true)}
+              onOpenSupplierPaymentModal={() => { setEditingSupplierPayment(null); setIsSupplierPaymentModalOpen(true); }}
+              onEditSupplierPayment={handleEditSupplierPayment}
+              onDeleteSupplierPayment={handleDeleteSupplierPayment}
             />
           )}
 
@@ -417,17 +540,22 @@ export function ChinaImportModule({ currentUser, addToast, onRefreshGlobalMachin
             <ChinaIntermediariesTab
               shipment={activeShipment}
               onOpenIntermediaryAdvanceModal={(id) => {
+                setEditingIntermediaryAdvance(null);
                 setTargetIntermediaryId(id || '');
                 setIsIntermediaryAdvanceModalOpen(true);
               }}
-              onOpenSupplierPaymentModal={() => setIsSupplierPaymentModalOpen(true)}
+              onOpenSupplierPaymentModal={() => { setEditingSupplierPayment(null); setIsSupplierPaymentModalOpen(true); }}
+              onEditIntermediaryAdvance={handleEditIntermediaryAdvance}
+              onDeleteIntermediaryAdvance={handleDeleteIntermediaryAdvance}
             />
           )}
 
           {activeSubTab === 'customs_charges' && (
             <ChinaCustomsExpensesTab
               shipment={activeShipment}
-              onOpenCustomsExpenseModal={() => setIsCustomsExpenseModalOpen(true)}
+              onOpenCustomsExpenseModal={() => { setEditingCustomsExpense(null); setIsCustomsExpenseModalOpen(true); }}
+              onEditCustomsExpense={handleEditCustomsExpense}
+              onDeleteCustomsExpense={handleDeleteCustomsExpense}
             />
           )}
 
@@ -461,30 +589,34 @@ export function ChinaImportModule({ currentUser, addToast, onRefreshGlobalMachin
       <RecordPartnerReceiptModal
         shipment={activeShipment}
         isOpen={isPartnerReceiptModalOpen}
-        onClose={() => setIsPartnerReceiptModalOpen(false)}
-        onSave={handleSavePartnerReceipt}
+        editingRecord={editingPartnerReceipt}
+        onClose={() => { setIsPartnerReceiptModalOpen(false); setEditingPartnerReceipt(null); }}
+        onSave={editingPartnerReceipt ? handleSaveEditedPartnerReceipt : handleSavePartnerReceipt}
       />
 
       <RecordSupplierPaymentModal
         shipment={activeShipment}
         isOpen={isSupplierPaymentModalOpen}
-        onClose={() => setIsSupplierPaymentModalOpen(false)}
-        onSave={handleSaveSupplierPayment}
+        editingRecord={editingSupplierPayment}
+        onClose={() => { setIsSupplierPaymentModalOpen(false); setEditingSupplierPayment(null); }}
+        onSave={editingSupplierPayment ? handleSaveEditedSupplierPayment : handleSaveSupplierPayment}
       />
 
       <RecordIntermediaryAdvanceModal
         shipment={activeShipment}
         defaultIntermediaryId={targetIntermediaryId}
         isOpen={isIntermediaryAdvanceModalOpen}
-        onClose={() => setIsIntermediaryAdvanceModalOpen(false)}
-        onSave={handleSaveIntermediaryAdvance}
+        editingRecord={editingIntermediaryAdvance}
+        onClose={() => { setIsIntermediaryAdvanceModalOpen(false); setEditingIntermediaryAdvance(null); }}
+        onSave={editingIntermediaryAdvance ? handleSaveEditedIntermediaryAdvance : handleSaveIntermediaryAdvance}
       />
 
       <RecordCustomsExpenseModal
         shipment={activeShipment}
         isOpen={isCustomsExpenseModalOpen}
-        onClose={() => setIsCustomsExpenseModalOpen(false)}
-        onSave={handleSaveCustomsExpense}
+        editingRecord={editingCustomsExpense}
+        onClose={() => { setIsCustomsExpenseModalOpen(false); setEditingCustomsExpense(null); }}
+        onSave={editingCustomsExpense ? handleSaveEditedCustomsExpense : handleSaveCustomsExpense}
       />
 
       <ChinaPrintableReportModal

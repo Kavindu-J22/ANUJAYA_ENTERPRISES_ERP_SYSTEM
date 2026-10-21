@@ -31,7 +31,8 @@ export function LoginModal({ currentPath, onLoginSuccess }) {
     }
 
     if (role === 'ADMIN') {
-      if (pin === '9900' || pin === '1234') {
+      // ADMIN PIN: 9900 only — must NOT accept partner PIN
+      if (pin === '9900') {
         setLoading(true);
         setTimeout(() => {
           onLoginSuccess({ 
@@ -45,7 +46,8 @@ export function LoginModal({ currentPath, onLoginSuccess }) {
         setPin('');
       }
     } else {
-      if (pin === '1234' || pin === '9900') {
+      // PARTNER PIN: 1234 only — must NOT accept admin PIN
+      if (pin === '1234') {
         setLoading(true);
         setTimeout(() => {
           onLoginSuccess({ 

@@ -85,6 +85,16 @@ export const api = {
   async addIntermediaryAdvance(id, data) { return req(`${API_BASE}/global/china-shipments/${id}/intermediary-advances`, { method: 'POST', headers: J, body: JSON.stringify(data) }); },
   async addCustomsExpense(id, data) { return req(`${API_BASE}/global/china-shipments/${id}/customs-expenses`, { method: 'POST', headers: J, body: JSON.stringify(data) }); },
 
+  // China: Sub-record Edit & Delete
+  async deletePartnerReceipt(shipId, recordId) { return req(`${API_BASE}/global/china-shipments/${shipId}/partner-receipts/${recordId}`, { method: 'DELETE' }); },
+  async updatePartnerReceipt(shipId, recordId, data) { return req(`${API_BASE}/global/china-shipments/${shipId}/partner-receipts/${recordId}`, { method: 'PUT', headers: J, body: JSON.stringify(data) }); },
+  async deleteSupplierPayment(shipId, recordId) { return req(`${API_BASE}/global/china-shipments/${shipId}/supplier-payments/${recordId}`, { method: 'DELETE' }); },
+  async updateSupplierPayment(shipId, recordId, data) { return req(`${API_BASE}/global/china-shipments/${shipId}/supplier-payments/${recordId}`, { method: 'PUT', headers: J, body: JSON.stringify(data) }); },
+  async deleteIntermediaryAdvance(shipId, recordId) { return req(`${API_BASE}/global/china-shipments/${shipId}/intermediary-advances/${recordId}`, { method: 'DELETE' }); },
+  async updateIntermediaryAdvance(shipId, recordId, data) { return req(`${API_BASE}/global/china-shipments/${shipId}/intermediary-advances/${recordId}`, { method: 'PUT', headers: J, body: JSON.stringify(data) }); },
+  async deleteCustomsExpense(shipId, recordId) { return req(`${API_BASE}/global/china-shipments/${shipId}/customs-expenses/${recordId}`, { method: 'DELETE' }); },
+  async updateCustomsExpense(shipId, recordId, data) { return req(`${API_BASE}/global/china-shipments/${shipId}/customs-expenses/${recordId}`, { method: 'PUT', headers: J, body: JSON.stringify(data) }); },
+
   // Local: Machines
   async getLocalMachines() { return ensureArray(await req(`${API_BASE}/local/machines`)); },
   async addLocalMachine(data) { return req(`${API_BASE}/local/machines`, { method: 'POST', headers: J, body: JSON.stringify(data) }); },

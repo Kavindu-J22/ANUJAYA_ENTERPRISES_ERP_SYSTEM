@@ -1,17 +1,29 @@
 import React, { useState } from 'react';
 import { X, DollarSign, Calendar, FileText, CheckCircle2 } from 'lucide-react';
 
-export function RecordPartnerReceiptModal({ shipment, isOpen, onClose, onSave }) {
-  const [formData, setFormData] = useState({
-    receiptId: `GLB-${String(((shipment?.partnerReceipts || []).length || 0) + 1).padStart(3, '0')}`,
-    date: new Date().toISOString().slice(0, 10),
-    partnerName: "Global Apparel Solutions",
-    paymentMethod: "Bank Transfer",
-    reference: "",
-    amountLkr: "",
-    allocationStatus: "Allocated",
-    notes: ""
-  });
+export function RecordPartnerReceiptModal({ shipment, isOpen, onClose, onSave, editingRecord }) {
+  const isEditing = !!editingRecord;
+  const [formData, setFormData] = useState(
+    isEditing ? {
+      receiptId: editingRecord.receiptId || '',
+      date: editingRecord.date || new Date().toISOString().slice(0, 10),
+      partnerName: editingRecord.partnerName || 'Global Apparel Solutions',
+      paymentMethod: editingRecord.paymentMethod || 'Bank Transfer',
+      reference: editingRecord.reference || '',
+      amountLkr: String(editingRecord.amountLkr || ''),
+      allocationStatus: editingRecord.allocationStatus || 'Allocated',
+      notes: editingRecord.notes || ''
+    } : {
+      receiptId: `GLB-${String(((shipment?.partnerReceipts || []).length || 0) + 1).padStart(3, '0')}`,
+      date: new Date().toISOString().slice(0, 10),
+      partnerName: "Global Apparel Solutions",
+      paymentMethod: "Bank Transfer",
+      reference: "",
+      amountLkr: "",
+      allocationStatus: "Allocated",
+      notes: ""
+    }
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -46,7 +58,7 @@ export function RecordPartnerReceiptModal({ shipment, isOpen, onClose, onSave })
           <div>
             <h3 className="font-bold text-white text-lg flex items-center gap-2">
               <DollarSign className="w-5 h-5 text-emerald-400" />
-              <span>Record Inward Partner Funding</span>
+              <span>{isEditing ? 'Edit Partner Receipt' : 'Record Inward Partner Funding'}</span>
             </h3>
             <p className="text-xs text-slate-400 font-mono mt-0.5">
               Shipment {shipment?.shipmentNo} • Global Inflow Log
@@ -165,7 +177,7 @@ export function RecordPartnerReceiptModal({ shipment, isOpen, onClose, onSave })
               className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold transition flex items-center gap-2 shadow-lg shadow-emerald-950/40"
             >
               <CheckCircle2 className="w-4 h-4" />
-              <span>{loading ? "Recording..." : "Record Inward Receipt"}</span>
+              <span>{loading ? (isEditing ? "Updating..." : "Recording...") : (isEditing ? "Update Receipt" : "Record Inward Receipt")}</span>
             </button>
           </div>
         </form>

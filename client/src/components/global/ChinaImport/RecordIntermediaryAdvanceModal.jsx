@@ -1,24 +1,35 @@
 import React, { useState } from 'react';
 import { X, HandCoins, Building2, CheckCircle2 } from 'lucide-react';
 
-export function RecordIntermediaryAdvanceModal({ shipment, isOpen, onClose, onSave, defaultIntermediaryId = "" }) {
+export function RecordIntermediaryAdvanceModal({ shipment, isOpen, onClose, onSave, defaultIntermediaryId = "", editingRecord }) {
+  const isEditing = !!editingRecord;
   const intermediaries = shipment?.intermediaries || [
     { id: "INT-01", name: "Ashen", country: "China / Sri Lanka" },
     { id: "INT-02", name: "Friend 2 (Korea / Dubai)", country: "Korea / Dubai Route" },
     { id: "INT-03", name: "Direct Bank TT (Sri Lanka)", country: "Sri Lanka to China" }
   ];
 
-  const initialIntermediary = intermediaries.find(i => i.id === defaultIntermediaryId) || intermediaries[0];
+  const initialIntermediary = intermediaries.find(i => i.id === (editingRecord?.intermediaryId || defaultIntermediaryId)) || intermediaries[0];
 
-  const [formData, setFormData] = useState({
-    intermediaryId: initialIntermediary?.id || "INT-01",
-    intermediaryName: initialIntermediary?.name || "Ashen",
-    date: new Date().toISOString().slice(0, 10),
-    description: "Advance for foreign supplier remittance",
-    bankReference: "BOC - Commercial Bank",
-    amountLkr: "",
-    notes: ""
-  });
+  const [formData, setFormData] = useState(
+    isEditing ? {
+      intermediaryId: editingRecord.intermediaryId || initialIntermediary?.id || 'INT-01',
+      intermediaryName: editingRecord.intermediaryName || initialIntermediary?.name || 'Ashen',
+      date: editingRecord.date || new Date().toISOString().slice(0, 10),
+      description: editingRecord.description || '',
+      bankReference: editingRecord.bankReference || '',
+      amountLkr: String(editingRecord.amountLkr || ''),
+      notes: editingRecord.notes || ''
+    } : {
+      intermediaryId: initialIntermediary?.id || "INT-01",
+      intermediaryName: initialIntermediary?.name || "Ashen",
+      date: new Date().toISOString().slice(0, 10),
+      description: "Advance for foreign supplier remittance",
+      bankReference: "BOC - Commercial Bank",
+      amountLkr: "",
+      notes: ""
+    }
+  );
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -66,7 +77,7 @@ export function RecordIntermediaryAdvanceModal({ shipment, isOpen, onClose, onSa
           <div>
             <h3 className="font-bold text-white text-lg flex items-center gap-2">
               <HandCoins className="w-5 h-5 text-amber-400" />
-              <span>Record Cash Advance to Intermediary</span>
+              <span>{isEditing ? 'Edit Cash Advance' : 'Record Cash Advance to Intermediary'}</span>
             </h3>
             <p className="text-xs text-slate-400 font-mono mt-0.5">
               Shipment {shipment?.shipmentNo} • Overseas Friend & Agent Ledger
@@ -163,7 +174,7 @@ export function RecordIntermediaryAdvanceModal({ shipment, isOpen, onClose, onSa
               className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-bold transition flex items-center gap-2 shadow-lg shadow-amber-950/40"
             >
               <CheckCircle2 className="w-4 h-4" />
-              <span>{loading ? "Recording..." : "Record Advance"}</span>
+              <span>{loading ? (isEditing ? 'Updating...' : 'Recording...') : (isEditing ? 'Update Advance' : 'Record Advance')}</span>
             </button>
           </div>
         </form>

@@ -1,17 +1,29 @@
 import React, { useState } from 'react';
 import { X, ShieldAlert, CheckCircle2 } from 'lucide-react';
 
-export function RecordCustomsExpenseModal({ shipment, isOpen, onClose, onSave }) {
-  const [formData, setFormData] = useState({
-    category: "Customs Duty & CESS",
-    description: "",
-    estimatedLkr: "",
-    actualLkr: "",
-    paymentDate: new Date().toISOString().slice(0, 10),
-    paidBy: "Our Company",
-    reference: "",
-    status: "Paid"
-  });
+export function RecordCustomsExpenseModal({ shipment, isOpen, onClose, onSave, editingRecord }) {
+  const isEditing = !!editingRecord;
+  const [formData, setFormData] = useState(
+    isEditing ? {
+      category: editingRecord.category || 'Customs Duty & CESS',
+      description: editingRecord.description || '',
+      estimatedLkr: String(editingRecord.estimatedLkr || ''),
+      actualLkr: String(editingRecord.actualLkr || ''),
+      paymentDate: editingRecord.paymentDate || new Date().toISOString().slice(0, 10),
+      paidBy: editingRecord.paidBy || 'Our Company',
+      reference: editingRecord.reference || '',
+      status: editingRecord.status || 'Paid'
+    } : {
+      category: "Customs Duty & CESS",
+      description: "",
+      estimatedLkr: "",
+      actualLkr: "",
+      paymentDate: new Date().toISOString().slice(0, 10),
+      paidBy: "Our Company",
+      reference: "",
+      status: "Paid"
+    }
+  );
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -49,7 +61,7 @@ export function RecordCustomsExpenseModal({ shipment, isOpen, onClose, onSave })
           <div>
             <h3 className="font-bold text-white text-lg flex items-center gap-2">
               <ShieldAlert className="w-5 h-5 text-purple-400" />
-              <span>Record Customs & Clearing Expense</span>
+              <span>{isEditing ? 'Edit Customs Expense' : 'Record Customs & Clearing Expense'}</span>
             </h3>
             <p className="text-xs text-slate-400 font-mono mt-0.5">
               Shipment {shipment?.shipmentNo} • Import Landed Cost Entry
@@ -160,7 +172,7 @@ export function RecordCustomsExpenseModal({ shipment, isOpen, onClose, onSave })
               className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold transition flex items-center gap-2 shadow-lg shadow-purple-950/40"
             >
               <CheckCircle2 className="w-4 h-4" />
-              <span>{loading ? "Recording..." : "Record Expense"}</span>
+              <span>{loading ? (isEditing ? 'Updating...' : 'Recording...') : (isEditing ? 'Update Expense' : 'Record Expense')}</span>
             </button>
           </div>
         </form>

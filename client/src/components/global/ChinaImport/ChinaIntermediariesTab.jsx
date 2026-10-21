@@ -11,14 +11,18 @@ import {
   ArrowRight,
   TrendingDown,
   TrendingUp,
-  FileText
+  FileText,
+  Pencil,
+  Trash2
 } from 'lucide-react';
 import { formatLKR } from '../../../utils/formatters';
 
 export function ChinaIntermediariesTab({ 
   shipment, 
   onOpenIntermediaryAdvanceModal, 
-  onOpenSupplierPaymentModal 
+  onOpenSupplierPaymentModal,
+  onEditIntermediaryAdvance,
+  onDeleteIntermediaryAdvance
 }) {
   if (!shipment) return null;
 
@@ -47,6 +51,7 @@ export function ChinaIntermediariesTab({
   const unifiedLedger = [
     ...relevantAdvances.map(a => ({
       type: 'ADVANCE',
+      rawRecord: a,
       date: a.date,
       description: a.description || 'Cash Handover Advance',
       reference: a.bankReference || 'Bank Transfer',
@@ -59,6 +64,7 @@ export function ChinaIntermediariesTab({
     })),
     ...relevantPayments.map(p => ({
       type: 'SETTLEMENT',
+      rawRecord: p,
       date: p.paymentDate,
       description: `China Supplier Settlement (${p.trxId})`,
       reference: p.reference || 'Supplier Remittance Slip',
@@ -71,7 +77,7 @@ export function ChinaIntermediariesTab({
     }))
   ].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
 
-  // Calculate running balance: Balance = Cumulative Cash Given - Cumulative Settled LKR
+  // Calculate running balance
   let runningBalance = 0;
   const ledgerWithRunningBalance = unifiedLedger.map(entry => {
     if (entry.type === 'ADVANCE') {
@@ -254,12 +260,13 @@ export function ChinaIntermediariesTab({
                     <th className="py-2.5 px-3 text-right">FX Rate</th>
                     <th className="py-2.5 px-3 text-right">LKR Settled to China</th>
                     <th className="py-2.5 px-4 text-right">Running Balance (LKR)</th>
+                    <th className="py-2.5 px-3 text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-carbon-800 text-slate-300">
                   {ledgerWithRunningBalance.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="py-6 text-center text-slate-500">
+                      <td colSpan={9} className="py-6 text-center text-slate-500">
                         No transactions recorded for this intermediary yet.
                       </td>
                     </tr>
@@ -300,6 +307,29 @@ export function ChinaIntermediariesTab({
                             isNegative ? 'text-rose-400' : 'text-sky-400'
                           }`}>
                             {formatLKR(item.runningBalanceLkr)}
+                          </td>
+                          <td className="py-2.5 px-3 text-center">
+                            {/* Only Cash Advances are individually editable/deletable here */}
+                            {isAdvance ? (
+                              <div className="flex items-center justify-center gap-1">
+                                <button
+                                  onClick={() => onEditIntermediaryAdvance && onEditIntermediaryAdvance(item.rawRecord)}
+                                  title="Edit Advance"
+                                  className="p-1.5 rounded-lg bg-sky-950/80 border border-sky-800/60 text-sky-400 hover:bg-sky-900 hover:text-sky-300 transition"
+                                >
+                                  <Pencil className="w-3 h-3" />
+                                </button>
+                                <button
+                                  onClick={() => onDeleteIntermediaryAdvance && onDeleteIntermediaryAdvance(item.rawRecord.id)}
+                                  title="Delete Advance"
+                                  className="p-1.5 rounded-lg bg-rose-950/80 border border-rose-800/60 text-rose-400 hover:bg-rose-900 hover:text-rose-300 transition"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                              </div>
+                            ) : (
+                              <span className="text-slate-600 text-[10px]">via Payments</span>
+                            )}
                           </td>
                         </tr>
                       );

@@ -2,24 +2,43 @@ import React, { useState, useEffect } from 'react';
 import { X, Send, Calculator, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { formatLKR } from '../../../utils/formatters';
 
-export function RecordSupplierPaymentModal({ shipment, isOpen, onClose, onSave }) {
-  const [formData, setFormData] = useState({
-    trxId: `TRX-${String(((shipment?.supplierPayments || []).length || 0) + 1).padStart(3, '0')}`,
-    paymentDate: new Date().toISOString().slice(0, 10),
-    channel: "Intermediary Remittance",
-    intermediaryId: "INT-02",
-    intermediaryName: "Friend 2 (Korea / Dubai)",
-    currency: "RMB",
-    foreignAmount: "",
-    appliedFxRate: "51.90",
-    settledLkr: "",
-    sourceOfFunds: "Joint Partnership",
-    reference: "",
-    status: "Confirmed",
-    isNeedsReview: false,
-    reviewNote: "",
-    notes: ""
-  });
+export function RecordSupplierPaymentModal({ shipment, isOpen, onClose, onSave, editingRecord }) {
+  const isEditing = !!editingRecord;
+  const [formData, setFormData] = useState(
+    isEditing ? {
+      trxId: editingRecord.trxId || '',
+      paymentDate: editingRecord.paymentDate || new Date().toISOString().slice(0, 10),
+      channel: editingRecord.channel || 'Intermediary Remittance',
+      intermediaryId: editingRecord.intermediaryId || 'INT-02',
+      intermediaryName: editingRecord.intermediaryName || '',
+      currency: editingRecord.currency || 'RMB',
+      foreignAmount: String(editingRecord.foreignAmount || ''),
+      appliedFxRate: String(editingRecord.appliedFxRate || ''),
+      settledLkr: String(editingRecord.settledLkr || ''),
+      sourceOfFunds: editingRecord.sourceOfFunds || 'Joint Partnership',
+      reference: editingRecord.reference || '',
+      status: editingRecord.status || 'Confirmed',
+      isNeedsReview: !!editingRecord.isNeedsReview,
+      reviewNote: editingRecord.reviewNote || '',
+      notes: editingRecord.notes || ''
+    } : {
+      trxId: `TRX-${String(((shipment?.supplierPayments || []).length || 0) + 1).padStart(3, '0')}`,
+      paymentDate: new Date().toISOString().slice(0, 10),
+      channel: "Intermediary Remittance",
+      intermediaryId: "INT-02",
+      intermediaryName: "Friend 2 (Korea / Dubai)",
+      currency: "RMB",
+      foreignAmount: "",
+      appliedFxRate: "51.90",
+      settledLkr: "",
+      sourceOfFunds: "Joint Partnership",
+      reference: "",
+      status: "Confirmed",
+      isNeedsReview: false,
+      reviewNote: "",
+      notes: ""
+    }
+  );
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -89,7 +108,7 @@ export function RecordSupplierPaymentModal({ shipment, isOpen, onClose, onSave }
           <div>
             <h3 className="font-bold text-white text-lg flex items-center gap-2">
               <Send className="w-5 h-5 text-indigo-400" />
-              <span>Record China Outflow Settlement</span>
+              <span>{isEditing ? 'Edit China Outflow Settlement' : 'Record China Outflow Settlement'}</span>
             </h3>
             <p className="text-xs text-slate-400 font-mono mt-0.5">
               Shipment {shipment?.shipmentNo} • Outward Supplier Settlement Log
@@ -300,7 +319,7 @@ export function RecordSupplierPaymentModal({ shipment, isOpen, onClose, onSave }
               className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-sky-600 hover:from-indigo-500 hover:to-sky-500 text-white font-bold transition flex items-center gap-2 shadow-lg shadow-indigo-950/40"
             >
               <CheckCircle2 className="w-4 h-4" />
-              <span>{loading ? "Recording..." : "Record China Outflow"}</span>
+              <span>{loading ? (isEditing ? 'Updating...' : 'Recording...') : (isEditing ? 'Update Payment' : 'Record China Outflow')}</span>
             </button>
           </div>
         </form>

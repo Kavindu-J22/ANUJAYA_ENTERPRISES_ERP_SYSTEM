@@ -9,11 +9,13 @@ import {
   Boxes,
   Layers,
   Calculator,
-  ArrowRight
+  ArrowRight,
+  Pencil,
+  Trash2
 } from 'lucide-react';
 import { formatLKR, formatUSD } from '../../../utils/formatters';
 
-export function ChinaCustomsExpensesTab({ shipment, onOpenCustomsExpenseModal }) {
+export function ChinaCustomsExpensesTab({ shipment, onOpenCustomsExpenseModal, onEditCustomsExpense, onDeleteCustomsExpense }) {
   if (!shipment) return null;
 
   const expenses = shipment.customsExpenses || [];
@@ -119,28 +121,55 @@ export function ChinaCustomsExpensesTab({ shipment, onOpenCustomsExpenseModal })
                 <th className="py-3 px-3 text-right">Estimated</th>
                 <th className="py-3 px-3 text-right">Actual Paid (LKR)</th>
                 <th className="py-3 px-3 text-center">Status</th>
+                <th className="py-3 px-3 text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-carbon-800 text-slate-300">
-              {expenses.map((e, idx) => (
-                <tr key={idx} className="hover:bg-carbon-900/50 transition">
-                  <td className="py-2.5 px-3 font-bold text-sky-400">{e.id}</td>
-                  <td className="py-2.5 px-3 font-bold text-white">
-                    <span className="text-[11px]">{e.category}</span>
-                  </td>
-                  <td className="py-2.5 px-4 text-slate-300">{e.description}</td>
-                  <td className="py-2.5 px-3 text-slate-400">{e.paymentDate || '-'}</td>
-                  <td className="py-2.5 px-3 text-slate-300">{e.paidBy || 'Our Company'}</td>
-                  <td className="py-2.5 px-3 text-slate-400 truncate max-w-xs">{e.reference || '-'}</td>
-                  <td className="py-2.5 px-3 text-right text-slate-400">{formatLKR(e.estimatedLkr)}</td>
-                  <td className="py-2.5 px-3 text-right font-bold text-purple-300">{formatLKR(e.actualLkr)}</td>
-                  <td className="py-2.5 px-3 text-center">
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-950 border border-purple-800 text-purple-300">
-                      {e.status || 'Paid'}
-                    </span>
+              {expenses.length === 0 ? (
+                <tr>
+                  <td colSpan={10} className="py-8 text-center text-slate-500">
+                    No customs expense records yet for this shipment.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                expenses.map((e, idx) => (
+                  <tr key={idx} className="hover:bg-carbon-900/50 transition">
+                    <td className="py-2.5 px-3 font-bold text-sky-400">{e.id}</td>
+                    <td className="py-2.5 px-3 font-bold text-white">
+                      <span className="text-[11px]">{e.category}</span>
+                    </td>
+                    <td className="py-2.5 px-4 text-slate-300">{e.description}</td>
+                    <td className="py-2.5 px-3 text-slate-400">{e.paymentDate || '-'}</td>
+                    <td className="py-2.5 px-3 text-slate-300">{e.paidBy || 'Our Company'}</td>
+                    <td className="py-2.5 px-3 text-slate-400 truncate max-w-xs">{e.reference || '-'}</td>
+                    <td className="py-2.5 px-3 text-right text-slate-400">{formatLKR(e.estimatedLkr)}</td>
+                    <td className="py-2.5 px-3 text-right font-bold text-purple-300">{formatLKR(e.actualLkr)}</td>
+                    <td className="py-2.5 px-3 text-center">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-950 border border-purple-800 text-purple-300">
+                        {e.status || 'Paid'}
+                      </span>
+                    </td>
+                    <td className="py-2.5 px-3 text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        <button
+                          onClick={() => onEditCustomsExpense && onEditCustomsExpense(e)}
+                          title="Edit Expense"
+                          className="p-1.5 rounded-lg bg-sky-950/80 border border-sky-800/60 text-sky-400 hover:bg-sky-900 hover:text-sky-300 transition"
+                        >
+                          <Pencil className="w-3 h-3" />
+                        </button>
+                        <button
+                          onClick={() => onDeleteCustomsExpense && onDeleteCustomsExpense(e.id)}
+                          title="Delete Expense"
+                          className="p-1.5 rounded-lg bg-rose-950/80 border border-rose-800/60 text-rose-400 hover:bg-rose-900 hover:text-rose-300 transition"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

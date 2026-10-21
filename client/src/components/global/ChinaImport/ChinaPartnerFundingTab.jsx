@@ -8,12 +8,13 @@ import {
   CheckCircle2, 
   AlertCircle,
   TrendingUp,
-  Download,
-  Building2
+  Building2,
+  Pencil,
+  Trash2
 } from 'lucide-react';
 import { formatLKR } from '../../../utils/formatters';
 
-export function ChinaPartnerFundingTab({ shipment, onOpenPartnerReceiptModal }) {
+export function ChinaPartnerFundingTab({ shipment, onOpenPartnerReceiptModal, onEditPartnerReceipt, onDeletePartnerReceipt }) {
   if (!shipment) return null;
 
   const receipts = shipment.partnerReceipts || [];
@@ -127,12 +128,13 @@ export function ChinaPartnerFundingTab({ shipment, onOpenPartnerReceiptModal }) 
                 <th className="py-3 px-3 text-right">Amount (LKR)</th>
                 <th className="py-3 px-3 text-center">Status</th>
                 <th className="py-3 px-4">Special Notes</th>
+                <th className="py-3 px-3 text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-carbon-800 text-slate-300">
               {receipts.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-8 text-center text-slate-500">
+                  <td colSpan={9} className="py-8 text-center text-slate-500">
                     No inward funding receipts recorded yet for this shipment.
                   </td>
                 </tr>
@@ -153,6 +155,24 @@ export function ChinaPartnerFundingTab({ shipment, onOpenPartnerReceiptModal }) 
                       </span>
                     </td>
                     <td className="py-3 px-4 text-slate-400 text-[11px] truncate max-w-xs">{r.notes}</td>
+                    <td className="py-3 px-3 text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        <button
+                          onClick={() => onEditPartnerReceipt && onEditPartnerReceipt(r)}
+                          title="Edit Receipt"
+                          className="p-1.5 rounded-lg bg-sky-950/80 border border-sky-800/60 text-sky-400 hover:bg-sky-900 hover:text-sky-300 transition"
+                        >
+                          <Pencil className="w-3 h-3" />
+                        </button>
+                        <button
+                          onClick={() => onDeletePartnerReceipt && onDeletePartnerReceipt(r.id)}
+                          title="Delete Receipt"
+                          className="p-1.5 rounded-lg bg-rose-950/80 border border-rose-800/60 text-rose-400 hover:bg-rose-900 hover:text-rose-300 transition"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))
               )}

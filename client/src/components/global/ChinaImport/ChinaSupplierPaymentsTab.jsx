@@ -9,11 +9,13 @@ import {
   AlertTriangle,
   ArrowUpRight,
   Calculator,
-  Search
+  Search,
+  Pencil,
+  Trash2
 } from 'lucide-react';
 import { formatLKR, formatUSD } from '../../../utils/formatters';
 
-export function ChinaSupplierPaymentsTab({ shipment, onOpenSupplierPaymentModal }) {
+export function ChinaSupplierPaymentsTab({ shipment, onOpenSupplierPaymentModal, onEditSupplierPayment, onDeleteSupplierPayment }) {
   if (!shipment) return null;
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -141,52 +143,79 @@ export function ChinaSupplierPaymentsTab({ shipment, onOpenSupplierPaymentModal 
                 <th className="py-3 px-3">Source of Funds</th>
                 <th className="py-3 px-3 text-center">Status</th>
                 <th className="py-3 px-4">Proof / Reference</th>
+                <th className="py-3 px-3 text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-carbon-800 text-slate-300">
-              {filteredPayments.map((p, idx) => (
-                <tr key={idx} className="hover:bg-carbon-900/50 transition">
-                  <td className="py-2.5 px-3 font-bold text-sky-400">{p.trxId}</td>
-                  <td className="py-2.5 px-3 text-slate-300">{p.paymentDate}</td>
-                  <td className="py-2.5 px-3 text-slate-300">
-                    <span className="text-[11px] font-medium">{p.channel}</span>
-                  </td>
-                  <td className="py-2.5 px-4 font-bold text-white">
-                    {p.intermediaryName || 'Direct TT'}
-                  </td>
-                  <td className="py-2.5 px-3 text-center">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-carbon-800 text-amber-300">
-                      {p.currency}
-                    </span>
-                  </td>
-                  <td className="py-2.5 px-3 text-right font-bold text-white">
-                    {(p.foreignAmount || 0).toLocaleString()}
-                  </td>
-                  <td className="py-2.5 px-3 text-right text-amber-300 font-bold">
-                    {p.appliedFxRate || 0}
-                  </td>
-                  <td className="py-2.5 px-3 text-right font-bold text-emerald-300 text-sm">
-                    {formatLKR(p.settledLkr)}
-                  </td>
-                  <td className="py-2.5 px-3 text-slate-400 text-[11px]">
-                    {p.sourceOfFunds}
-                  </td>
-                  <td className="py-2.5 px-3 text-center">
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950 border border-emerald-800 text-emerald-300">
-                      {p.status || 'Confirmed'}
-                    </span>
-                  </td>
-                  <td className="py-2.5 px-4 text-slate-400 text-[11px] truncate max-w-xs">
-                    {p.isNeedsReview && (
-                      <span className="inline-flex items-center gap-1 text-[10px] text-amber-400 bg-amber-950/80 px-1.5 py-0.5 rounded mr-1">
-                        <AlertTriangle className="w-3 h-3" />
-                        <span>Review</span>
-                      </span>
-                    )}
-                    <span>{p.reference || p.notes}</span>
+              {filteredPayments.length === 0 ? (
+                <tr>
+                  <td colSpan={12} className="py-8 text-center text-slate-500">
+                    No supplier payment records found.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                filteredPayments.map((p, idx) => (
+                  <tr key={idx} className="hover:bg-carbon-900/50 transition">
+                    <td className="py-2.5 px-3 font-bold text-sky-400">{p.trxId}</td>
+                    <td className="py-2.5 px-3 text-slate-300">{p.paymentDate}</td>
+                    <td className="py-2.5 px-3 text-slate-300">
+                      <span className="text-[11px] font-medium">{p.channel}</span>
+                    </td>
+                    <td className="py-2.5 px-4 font-bold text-white">
+                      {p.intermediaryName || 'Direct TT'}
+                    </td>
+                    <td className="py-2.5 px-3 text-center">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-carbon-800 text-amber-300">
+                        {p.currency}
+                      </span>
+                    </td>
+                    <td className="py-2.5 px-3 text-right font-bold text-white">
+                      {(p.foreignAmount || 0).toLocaleString()}
+                    </td>
+                    <td className="py-2.5 px-3 text-right text-amber-300 font-bold">
+                      {p.appliedFxRate || 0}
+                    </td>
+                    <td className="py-2.5 px-3 text-right font-bold text-emerald-300 text-sm">
+                      {formatLKR(p.settledLkr)}
+                    </td>
+                    <td className="py-2.5 px-3 text-slate-400 text-[11px]">
+                      {p.sourceOfFunds}
+                    </td>
+                    <td className="py-2.5 px-3 text-center">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950 border border-emerald-800 text-emerald-300">
+                        {p.status || 'Confirmed'}
+                      </span>
+                    </td>
+                    <td className="py-2.5 px-4 text-slate-400 text-[11px] truncate max-w-xs">
+                      {p.isNeedsReview && (
+                        <span className="inline-flex items-center gap-1 text-[10px] text-amber-400 bg-amber-950/80 px-1.5 py-0.5 rounded mr-1">
+                          <AlertTriangle className="w-3 h-3" />
+                          <span>Review</span>
+                        </span>
+                      )}
+                      <span>{p.reference || p.notes}</span>
+                    </td>
+                    <td className="py-2.5 px-3 text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        <button
+                          onClick={() => onEditSupplierPayment && onEditSupplierPayment(p)}
+                          title="Edit Payment"
+                          className="p-1.5 rounded-lg bg-sky-950/80 border border-sky-800/60 text-sky-400 hover:bg-sky-900 hover:text-sky-300 transition"
+                        >
+                          <Pencil className="w-3 h-3" />
+                        </button>
+                        <button
+                          onClick={() => onDeleteSupplierPayment && onDeleteSupplierPayment(p.id)}
+                          title="Delete Payment"
+                          className="p-1.5 rounded-lg bg-rose-950/80 border border-rose-800/60 text-rose-400 hover:bg-rose-900 hover:text-rose-300 transition"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
