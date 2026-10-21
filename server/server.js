@@ -1,7 +1,15 @@
-require('dotenv').config();
+const path = require('path');
+
+// Load environment variables (supports server/.env, root .env, or cloud container environment)
+try {
+  require('dotenv').config();
+  require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
+} catch (err) {
+  console.log('[ENV] Using container process environment variables');
+}
+
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
 const { connectDB } = require('./config/db');
 const { initCronScheduler } = require('./services/cronJob');
 const apiRoutes = require('./routes/api');
@@ -52,7 +60,7 @@ async function startServer() {
   await connectDB();
   initCronScheduler();
 
-  app.listen(PORT, () => {
+  app.listen(PORT, '0.0.0.0', () => {
     console.log(`================================================================`);
     console.log(` ANUJAYA & GLOBAL ENTERPRISES ERP SERVER READY`);
     console.log(` URL: http://localhost:${PORT}`);
