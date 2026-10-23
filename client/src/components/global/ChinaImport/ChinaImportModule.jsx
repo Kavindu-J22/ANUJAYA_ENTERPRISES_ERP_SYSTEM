@@ -59,10 +59,15 @@ export function ChinaImportModule({ currentUser, addToast, onRefreshGlobalMachin
     setLoading(true);
     try {
       const res = await api.getChinaShipments();
-      if (res.success && res.data.length > 0) {
-        setShipments(res.data);
-        if (!selectedShipmentId || !res.data.find(s => s.id === selectedShipmentId)) {
-          setSelectedShipmentId(res.data[0].id);
+      if (res.success) {
+        const list = Array.isArray(res.data) ? res.data : [];
+        setShipments(list);
+        if (list.length > 0) {
+          if (!selectedShipmentId || !list.find(s => s.id === selectedShipmentId)) {
+            setSelectedShipmentId(list[0].id);
+          }
+        } else {
+          setSelectedShipmentId('');
         }
       }
     } catch (err) {
@@ -363,11 +368,15 @@ export function ChinaImportModule({ currentUser, addToast, onRefreshGlobalMachin
               onChange={(e) => setSelectedShipmentId(e.target.value)}
               className="bg-transparent text-white font-bold focus:outline-none cursor-pointer"
             >
-              {shipments.map(s => (
-                <option key={s.id} value={s.id} className="bg-carbon-900 text-white">
-                  {s.shipmentNo} ({s.status.toUpperCase()})
-                </option>
-              ))}
+              {shipments.length === 0 ? (
+                <option value="" className="bg-carbon-900 text-slate-400">No Shipments Available</option>
+              ) : (
+                shipments.map(s => (
+                  <option key={s.id} value={s.id} className="bg-carbon-900 text-white">
+                    {s.shipmentNo} ({s.status.toUpperCase()})
+                  </option>
+                ))
+              )}
             </select>
           </div>
 
@@ -574,8 +583,23 @@ export function ChinaImportModule({ currentUser, addToast, onRefreshGlobalMachin
           )}
         </div>
       ) : (
-        <div className="p-12 text-center text-slate-500 font-mono">
-          No shipment selected. Click "New Shipment" to initialize one.
+        <div className="p-12 text-center glass-card rounded-3xl border border-carbon-800 space-y-4 max-w-xl mx-auto my-8">
+          <div className="w-16 h-16 rounded-3xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mx-auto text-indigo-400">
+            <Ship className="w-8 h-8" />
+          </div>
+          <div className="space-y-1">
+            <h3 className="font-display font-bold text-white text-lg">No Active Import Shipment Selected</h3>
+            <p className="text-xs text-slate-400 font-mono">
+              Initialize a fresh import shipment with full CIF/FOB costing, supplier settlement routing, and landed expense logs.
+            </p>
+          </div>
+          <button
+            onClick={() => setIsNewShipmentModalOpen(true)}
+            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-sky-600 hover:from-indigo-500 hover:to-sky-500 text-white font-bold text-xs transition inline-flex items-center gap-2 shadow-lg shadow-indigo-950/40"
+          >
+            <PlusCircle className="w-4 h-4" />
+            <span>Create New Import Shipment</span>
+          </button>
         </div>
       )}
 

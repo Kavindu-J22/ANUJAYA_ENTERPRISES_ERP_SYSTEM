@@ -63,10 +63,10 @@ import { LocalRentalPartners } from './components/local/LocalRentalPartners';
 import { LocalReportsAnalytics } from './components/local/LocalReportsAnalytics';
 
 export default function App() {
-  // Navigation & Authentication State
+  // Navigation & Authentication State (sessionStorage enforces login prompt on every new browser session / machine)
   const [currentUser, setCurrentUser] = useState(() => {
     try {
-      const saved = localStorage.getItem('consortium_erp_user');
+      const saved = sessionStorage.getItem('consortium_erp_user');
       return saved ? JSON.parse(saved) : null;
     } catch {
       return null;
@@ -75,11 +75,11 @@ export default function App() {
 
   const [currentPath, setCurrentPath] = useState(() => {
     try {
-      const savedUser = localStorage.getItem('consortium_erp_user');
+      const savedUser = sessionStorage.getItem('consortium_erp_user');
       if (savedUser && JSON.parse(savedUser)?.role === 'PARTNER') {
         return 'global';
       }
-      return localStorage.getItem('consortium_erp_path') || 'global';
+      return sessionStorage.getItem('consortium_erp_path') || 'global';
     } catch {
       return 'global';
     }
@@ -259,7 +259,7 @@ export default function App() {
   useEffect(() => {
     if (currentUser?.role === 'PARTNER' && currentPath !== 'global') {
       setCurrentPath('global');
-      localStorage.setItem('consortium_erp_path', 'global');
+      sessionStorage.setItem('consortium_erp_path', 'global');
     }
   }, [currentUser, currentPath]);
 
@@ -269,7 +269,7 @@ export default function App() {
       return; // Partner is strictly restricted to global path
     }
     setCurrentPath(newPath);
-    localStorage.setItem('consortium_erp_path', newPath);
+    sessionStorage.setItem('consortium_erp_path', newPath);
   };
 
   // Login handler
@@ -277,16 +277,21 @@ export default function App() {
     setCurrentUser(user);
     if (user.role === 'PARTNER') {
       setCurrentPath('global');
-      localStorage.setItem('consortium_erp_path', 'global');
+      sessionStorage.setItem('consortium_erp_path', 'global');
     }
-    localStorage.setItem('consortium_erp_user', JSON.stringify(user));
+    sessionStorage.setItem('consortium_erp_user', JSON.stringify(user));
+    // Clear any lingering localStorage auth so it never persists indefinitely on a machine
+    localStorage.removeItem('consortium_erp_user');
     addToast(`Authenticated as ${user.title} (${user.role})`, "success");
   };
 
   const handleLogout = () => {
     setCurrentUser(null);
+    sessionStorage.removeItem('consortium_erp_user');
+    sessionStorage.removeItem('consortium_erp_path');
     localStorage.removeItem('consortium_erp_user');
-    addToast("Logged out successfully.", "info");
+    localStorage.removeItem('consortium_erp_path');
+    addToast("Session terminated. Navigated to secure login terminal.", "info");
   };
 
   // ================= GLOBAL METRICS CALCULATIONS =================
@@ -584,6 +589,10 @@ export default function App() {
         if (res.success) {
           setGlobalMachines(prev => prev.map(m => m.id === selectedGlobalMachine.id ? res.data : m));
           addToast(`Machinery SKU ${res.data.id || selectedGlobalMachine.id} specs updated!`, "success");
+          setIsGlobalMachineModalOpen(false);
+          setSelectedGlobalMachine(null);
+        } else {
+          addToast(res.error || "Failed to update machinery specs", "error");
         }
       } else {
         const res = await api.addGlobalMachine(machineData);
@@ -596,12 +605,14 @@ export default function App() {
             return [res.data, ...prev];
           });
           addToast(`New machinery SKU ${res.data.id} registered into Global fleet!`, "success");
+          setIsGlobalMachineModalOpen(false);
+          setSelectedGlobalMachine(null);
+        } else {
+          addToast(res.error || "Failed to register global machine", "error");
         }
       }
-      setIsGlobalMachineModalOpen(false);
-      setSelectedGlobalMachine(null);
-    } catch {
-      addToast("Failed to save machine", "error");
+    } catch (err) {
+      addToast("Failed to save machine: " + err.message, "error");
     }
   };
 
@@ -612,6 +623,8 @@ export default function App() {
       if (res.success) {
         setGlobalMachines(prev => prev.filter(m => m.id !== id));
         addToast("Machinery model removed from fleet.", "info");
+      } else {
+        addToast(res.error || "Failed to delete machine", "error");
       }
     } catch {
       addToast("Failed to delete machine", "error");
@@ -626,6 +639,10 @@ export default function App() {
         if (res.success) {
           setGlobalSales(prev => prev.map(s => s.id === selectedGlobalSale.id ? res.data : s));
           addToast("Sale invoice updated successfully!", "success");
+          setIsGlobalSaleModalOpen(false);
+          setSelectedGlobalSale(null);
+        } else {
+          addToast(res.error || "Failed to update sale invoice", "error");
         }
       } else {
         const res = await api.addGlobalSale(saleData);
@@ -645,12 +662,14 @@ export default function App() {
           // Preview generated Official Tax Invoice
           const machine = globalMachines.find(m => m.id === saleData.machineId);
           setGlobalTaxInvoiceData({ sale: res.data, machine });
+          setIsGlobalSaleModalOpen(false);
+          setSelectedGlobalSale(null);
+        } else {
+          addToast(res.error || "Failed to record sale", "error");
         }
       }
-      setIsGlobalSaleModalOpen(false);
-      setSelectedGlobalSale(null);
-    } catch {
-      addToast("Failed to save sale", "error");
+    } catch (err) {
+      addToast("Failed to save sale: " + err.message, "error");
     }
   };
 
@@ -726,16 +745,22 @@ export default function App() {
         if (res.success) {
           setGlobalClients(prev => prev.map(c => c.id === targetId ? res.data : c));
           addToast(`Client profile for ${res.data.name || clientData.name} updated!`, "success");
+          setIsGlobalClientModalOpen(false);
+          setSelectedGlobalClient(null);
+        } else {
+          addToast(res.error || "Failed to update apparel client", "error");
         }
       } else {
         const res = await api.addGlobalClient(clientData);
         if (res.success) {
           setGlobalClients(prev => [res.data, ...prev]);
           addToast(`Apparel client ${res.data.name} (${res.data.code}) registered!`, "success");
+          setIsGlobalClientModalOpen(false);
+          setSelectedGlobalClient(null);
+        } else {
+          addToast(res.error || "Failed to register apparel client", "error");
         }
       }
-      setIsGlobalClientModalOpen(false);
-      setSelectedGlobalClient(null);
     } catch {
       addToast("Failed to save apparel client", "error");
     }
@@ -763,6 +788,8 @@ export default function App() {
         if (res.success) {
           setGlobalDisbursements(prev => prev.map(d => d.id === targetId ? res.data : d));
           addToast(`Capital Draw #${targetId} updated successfully!`, "success");
+          setIsGlobalDisburseModalOpen(false);
+          setSelectedGlobalDisbursement(null);
         } else {
           addToast(res.error || "Failed to update disbursement", "error");
         }
@@ -771,12 +798,12 @@ export default function App() {
         if (res.success) {
           setGlobalDisbursements(prev => [res.data, ...prev]);
           addToast(`Disbursement of LKR ${data.amount} recorded for ${data.partner === 'X' ? 'Anujaya' : 'Global'}!`, "success");
+          setIsGlobalDisburseModalOpen(false);
+          setSelectedGlobalDisbursement(null);
         } else {
           addToast(res.error || "Failed to record disbursement", "error");
         }
       }
-      setIsGlobalDisburseModalOpen(false);
-      setSelectedGlobalDisbursement(null);
     } catch {
       addToast("Failed to process disbursement", "error");
     }
@@ -869,18 +896,24 @@ export default function App() {
         if (res.success) {
           setLocalMachines(prev => prev.map(m => m.id === selectedLocalYardMachine.id ? res.data : m));
           addToast("Yard machinery unit updated successfully!", "success");
+          setIsLocalYardMachineModalOpen(false);
+          setSelectedLocalYardMachine(null);
+        } else {
+          addToast(res.error || "Failed to update yard machine", "error");
         }
       } else {
         const res = await api.addLocalMachine(machineData);
         if (res.success) {
           setLocalMachines(prev => [res.data, ...prev]);
           addToast("New machine registered into Kosgama Yard Fleet!", "success");
+          setIsLocalYardMachineModalOpen(false);
+          setSelectedLocalYardMachine(null);
+        } else {
+          addToast(res.error || "Failed to register yard machine", "error");
         }
       }
-      setIsLocalYardMachineModalOpen(false);
-      setSelectedLocalYardMachine(null);
-    } catch {
-      addToast("Failed to save yard machine", "error");
+    } catch (err) {
+      addToast("Failed to save yard machine: " + err.message, "error");
     }
   };
 
@@ -890,6 +923,8 @@ export default function App() {
       if (res.success) {
         setLocalMachines(prev => prev.filter(m => m.id !== id));
         addToast("Machine removed from yard fleet.", "info");
+      } else {
+        addToast(res.error || "Failed to delete machine", "error");
       }
     } catch {
       addToast("Failed to delete machine", "error");
@@ -904,20 +939,26 @@ export default function App() {
         if (res.success) {
           setLocalCustomers(prev => prev.map(c => c.id === selectedLocalCustomer.id ? res.data : c));
           addToast("Client account & machinery allocations updated!", "success");
+          setIsLocalCustomerModalOpen(false);
+          setSelectedLocalCustomer(null);
+        } else {
+          addToast(res.error || "Failed to update customer", "error");
         }
       } else {
         const res = await api.addLocalCustomer(custData);
         if (res.success) {
           setLocalCustomers(prev => [res.data, ...prev]);
           addToast("New Garment Manufacturer registered!", "success");
+          setIsLocalCustomerModalOpen(false);
+          setSelectedLocalCustomer(null);
+        } else {
+          addToast(res.error || "Failed to register customer", "error");
         }
       }
-      setIsLocalCustomerModalOpen(false);
-      setSelectedLocalCustomer(null);
       // Refresh alerts
       api.getAlertsOverview().then(r => r.success && setAlertsData(r.data));
-    } catch {
-      addToast("Failed to save customer", "error");
+    } catch (err) {
+      addToast("Failed to save customer: " + err.message, "error");
     }
   };
 
@@ -1006,21 +1047,28 @@ export default function App() {
         if (res.success) {
           setLocalPayments(prev => prev.map(p => p.id === selectedLocalPayment.id ? res.data : p));
           addToast("Payment record updated!", "success");
+          setIsLocalPaymentModalOpen(false);
+          setSelectedLocalPayment(null);
+          setPrefilledPaymentCustomer(null);
+        } else {
+          addToast(res.error || "Failed to update payment", "error");
         }
       } else {
         const res = await api.addLocalPayment(payData);
         if (res.success) {
           setLocalPayments(prev => [res.data, ...prev]);
           addToast(`Rent payment of LKR ${payData.amount} recorded!`, "success");
+          setIsLocalPaymentModalOpen(false);
+          setSelectedLocalPayment(null);
+          setPrefilledPaymentCustomer(null);
+        } else {
+          addToast(res.error || "Failed to record payment", "error");
         }
       }
-      setIsLocalPaymentModalOpen(false);
-      setSelectedLocalPayment(null);
-      setPrefilledPaymentCustomer(null);
       // Refresh alerts
       api.getAlertsOverview().then(r => r.success && setAlertsData(r.data));
-    } catch {
-      addToast("Failed to save payment", "error");
+    } catch (err) {
+      addToast("Failed to save payment: " + err.message, "error");
     }
   };
 
@@ -1122,16 +1170,22 @@ export default function App() {
         if (res.success) {
           setLocalPartners(prev => prev.map(p => p.id === selectedLocalPartner.id ? res.data : p));
           addToast("Partner account updated!", "success");
+          setIsLocalPartnerModalOpen(false);
+          setSelectedLocalPartner(null);
+        } else {
+          addToast(res.error || "Failed to update partner", "error");
         }
       } else {
         const res = await api.addLocalPartner(partnerData);
         if (res.success) {
           setLocalPartners(prev => [res.data, ...prev]);
           addToast("New sourcing partner registered!", "success");
+          setIsLocalPartnerModalOpen(false);
+          setSelectedLocalPartner(null);
+        } else {
+          addToast(res.error || "Failed to register partner", "error");
         }
       }
-      setIsLocalPartnerModalOpen(false);
-      setSelectedLocalPartner(null);
     } catch {
       addToast("Failed to save partner", "error");
     }
@@ -1246,18 +1300,24 @@ export default function App() {
         if (res.success) {
           setLocalExpenses(prev => prev.map(e => e.id === selectedLocalExpense.id ? res.data : e));
           addToast("Expense record updated!", "success");
+          setIsLocalExpenseModalOpen(false);
+          setSelectedLocalExpense(null);
+        } else {
+          addToast(res.error || "Failed to update expense", "error");
         }
       } else {
         const res = await api.addLocalExpense(expData);
         if (res.success) {
           setLocalExpenses(prev => [res.data, ...prev]);
           addToast("Yard expense recorded!", "success");
+          setIsLocalExpenseModalOpen(false);
+          setSelectedLocalExpense(null);
+        } else {
+          addToast(res.error || "Failed to record expense", "error");
         }
       }
-      setIsLocalExpenseModalOpen(false);
-      setSelectedLocalExpense(null);
-    } catch {
-      addToast("Failed to save expense", "error");
+    } catch (err) {
+      addToast("Failed to save expense: " + err.message, "error");
     }
   };
 

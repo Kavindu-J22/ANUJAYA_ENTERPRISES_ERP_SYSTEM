@@ -13,6 +13,7 @@ import {
   AlertTriangle 
 } from 'lucide-react';
 import { CompanyLogo } from './BrandAssets';
+import { api } from '../../services/api';
 
 export function LoginModal({ currentPath, onLoginSuccess }) {
   const [role, setRole] = useState('ADMIN');
@@ -21,45 +22,70 @@ export function LoginModal({ currentPath, onLoginSuccess }) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     if (e) e.preventDefault();
     setError('');
 
-    if (!pin.trim()) {
+    const cleanPin = pin.trim();
+    if (!cleanPin) {
       setError('Please enter your security access PIN.');
       return;
     }
 
-    if (role === 'ADMIN') {
-      // ADMIN PIN: 9900 only — must NOT accept partner PIN
-      if (pin === '9900') {
-        setLoading(true);
-        setTimeout(() => {
+    setLoading(true);
+    try {
+      // 1. Authenticate with production backend server
+      const res = await api.login(currentPath || 'global', role, cleanPin);
+      if (res && res.success && res.user) {
+        onLoginSuccess(res.user);
+        return;
+      }
+
+      if (res && res.message) {
+        setError(res.message);
+        setPin('');
+        return;
+      }
+
+      // 2. Strict PIN enforcement fallback
+      if (role === 'ADMIN') {
+        if (cleanPin === '9900') {
           onLoginSuccess({ 
             role: 'ADMIN', 
-            title: 'System Administrator', 
-            path: currentPath || 'local' 
+            title: currentPath === 'local' ? 'Kosgama Yard Administrator' : 'Consortium Admin', 
+            path: currentPath || 'global' 
           });
-        }, 300);
+          return;
+        } else {
+          setError('Invalid Administrator Access PIN (9900 required).');
+          setPin('');
+          return;
+        }
       } else {
-        setError('Invalid Administrator Access PIN. Please verify credentials.');
-        setPin('');
-      }
-    } else {
-      // PARTNER PIN: 1234 only — must NOT accept admin PIN
-      if (pin === '1234') {
-        setLoading(true);
-        setTimeout(() => {
+        if (cleanPin === '1234') {
           onLoginSuccess({ 
             role: 'PARTNER', 
-            title: 'Global Enterprises Partner', 
+            title: 'Consortium Partner (Global Enterprises)', 
             path: 'global' 
           });
-        }, 300);
+          return;
+        } else {
+          setError('Invalid Partner Access PIN (1234 required).');
+          setPin('');
+          return;
+        }
+      }
+    } catch {
+      if (role === 'ADMIN' && cleanPin === '9900') {
+        onLoginSuccess({ role: 'ADMIN', title: 'System Administrator', path: currentPath || 'global' });
+      } else if (role === 'PARTNER' && cleanPin === '1234') {
+        onLoginSuccess({ role: 'PARTNER', title: 'Global Enterprises Partner', path: 'global' });
       } else {
-        setError('Invalid Partner Access PIN. Please verify credentials.');
+        setError('Authentication failed. Please verify credentials.');
         setPin('');
       }
+    } finally {
+      setLoading(false);
     }
   };
 
