@@ -37,6 +37,7 @@ router.post('/auth/login', (req, res) => {
 // ================= SYSTEM / DB STATUS =================
 router.get('/system/status', (req, res) => {
   res.json({
+    version: '2.1.0-mongo-exclusive',
     timestamp: new Date().toISOString(),
     db: getDbStatus()
   });
