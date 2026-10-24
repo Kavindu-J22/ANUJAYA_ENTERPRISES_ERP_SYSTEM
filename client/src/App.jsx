@@ -1191,13 +1191,21 @@ export default function App() {
     }
   };
 
-  const handleDeleteLocalPartner = async (partner) => {
-    if (!window.confirm(`Delete partner ${partner.name}?`)) return;
+  const handleDeleteLocalPartner = async (partnerOrId) => {
+    const partnerId = typeof partnerOrId === 'object' && partnerOrId !== null
+      ? (partnerOrId.id || partnerOrId._id)
+      : partnerOrId;
+    const partnerObj = typeof partnerOrId === 'object' && partnerOrId !== null
+      ? partnerOrId
+      : localPartners.find(p => p.id === partnerId || p._id === partnerId);
+    if (partnerObj && partnerObj.name && !window.confirm(`Delete partner ${partnerObj.name}?`)) return;
     try {
-      const res = await api.deleteLocalPartner(partner.id);
+      const res = await api.deleteLocalPartner(partnerId);
       if (res.success) {
-        setLocalPartners(prev => prev.filter(p => p.id !== partner.id));
+        setLocalPartners(prev => prev.filter(p => p.id !== partnerId && p._id !== partnerId));
         addToast("Partner deleted.", "info");
+      } else {
+        addToast(res.error || "Failed to delete partner", "error");
       }
     } catch {
       addToast("Failed to delete partner", "error");
@@ -1984,11 +1992,14 @@ export default function App() {
                       addToast('Failed to save renting partner: ' + (err.message || ''), 'error');
                     }
                   }}
-                  onDeletePartner={async (partner) => {
+                  onDeletePartner={async (partnerOrId) => {
                     try {
-                      const res = await api.deleteLocalPartner(partner.id);
+                      const partnerId = typeof partnerOrId === 'object' && partnerOrId !== null
+                        ? (partnerOrId.id || partnerOrId._id)
+                        : partnerOrId;
+                      const res = await api.deleteLocalPartner(partnerId);
                       if (res.success) {
-                        setLocalPartners(prev => prev.filter(p => p.id !== partner.id));
+                        setLocalPartners(prev => prev.filter(p => p.id !== partnerId && p._id !== partnerId));
                         addToast('Renting partner deleted.', 'info');
                       } else throw new Error(res.error);
                     } catch (err) {

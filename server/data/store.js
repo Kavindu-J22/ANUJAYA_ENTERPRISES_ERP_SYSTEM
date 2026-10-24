@@ -5,11 +5,6 @@ const mongoose = require('mongoose');
 const {
   GLOBAL_MACHINES_BASELINE,
   GLOBAL_CLIENTS_BASELINE,
-  LOCAL_MACHINES_BASELINE,
-  LOCAL_CUSTOMERS_BASELINE,
-  LOCAL_PARTNERS_BASELINE,
-  LOCAL_EXPENSES_BASELINE,
-  LOCAL_PAYMENTS_BASELINE
 } = require('./seeds');
 
 const GlobalMachine = require('../models/GlobalMachine');
@@ -26,27 +21,54 @@ const LocalExpense = require('../models/LocalExpense');
 const LocalConfig = require('../models/LocalConfig');
 const AlertLog = require('../models/AlertLog');
 const ChinaShipment = require('../models/ChinaShipment');
-const { getHistoricalChinaShipmentSeed, calculateShipmentFinancialSummary } = require('../services/chinaImportService');
+const { calculateShipmentFinancialSummary } = require('../services/chinaImportService');
 
 const STORE_FILE = path.join(__dirname, 'persistent-store.json');
 
-// Initialize local persistent fallback structure
-function getInitialStore() {
+// ─────────────────────────────────────────────────────────────
+// IMPORTANT DESIGN NOTE:
+// When MongoDB Atlas is CONNECTED (isDbActive() === true) every
+// operation goes DIRECTLY to MongoDB. The local persistent-store
+// is NEVER read or written. This prevents "ghost" data from a
+// stale JSON file overriding Atlas, and prevents deleted records
+// from reappearing.
+//
+// The local store is a pure emergency fallback used ONLY when
+// MongoDB is unreachable (e.g. network outage). In production
+// on Render, MongoDB Atlas is always connected.
+// ─────────────────────────────────────────────────────────────
+
+function isDbActive() {
+  return mongoose.connection && mongoose.connection.readyState === 1;
+}
+
+function toIdQuery(id) {
+  if (!id) return { id };
+  const strId = String(id);
+  if (mongoose.Types.ObjectId.isValid(strId)) {
+    return { $or: [{ id: strId }, { _id: strId }] };
+  }
+  return { id: strId };
+}
+
+// ── Emergency Fallback Local Store (only used when MongoDB is DOWN) ──
+
+function getEmptyFallbackStore() {
   return {
     globalMachines: JSON.parse(JSON.stringify(GLOBAL_MACHINES_BASELINE)),
     globalClients: JSON.parse(JSON.stringify(GLOBAL_CLIENTS_BASELINE)),
     globalSales: [],
     globalDisbursements: [],
     globalConfig: { usdRate: 330.00, lang: 'en' },
-    chinaShipments: [getHistoricalChinaShipmentSeed()],
-    localMachines: JSON.parse(JSON.stringify(LOCAL_MACHINES_BASELINE)),
-    localCustomers: JSON.parse(JSON.stringify(LOCAL_CUSTOMERS_BASELINE)),
-    localPayments: JSON.parse(JSON.stringify(LOCAL_PAYMENTS_BASELINE)),
-    localPartners: JSON.parse(JSON.stringify(LOCAL_PARTNERS_BASELINE)),
-    localExpenses: JSON.parse(JSON.stringify(LOCAL_EXPENSES_BASELINE)),
+    chinaShipments: [],
+    localMachines: [],
+    localCustomers: [],
+    localPayments: [],
+    localPartners: [],
+    localExpenses: [],
     localConfig: {
-      activeMonth: "August 2026",
-      allMonths: ["August 2026", "September 2026", "October 2026", "November 2026"],
+      activeMonth: "2026-10",
+      allMonths: ["2026-10"],
       company: {
         name: "ANUJAYA ENTERPRISES",
         regNo: "PV/WP/78412",
@@ -75,90 +97,53 @@ function getInitialStore() {
   };
 }
 
-let inMemoryStore = null;
+let inMemoryFallback = null;
 
-function loadLocalStore() {
-  if (inMemoryStore) return inMemoryStore;
+function loadFallbackStore() {
+  if (inMemoryFallback) return inMemoryFallback;
   try {
     if (fs.existsSync(STORE_FILE)) {
       const raw = fs.readFileSync(STORE_FILE, 'utf-8');
-      inMemoryStore = JSON.parse(raw);
-      if (!inMemoryStore.globalClients) {
-        inMemoryStore.globalClients = JSON.parse(JSON.stringify(GLOBAL_CLIENTS_BASELINE));
-        saveLocalStore();
+      const parsed = JSON.parse(raw);
+      // Only use the fallback store if it has the right shape; otherwise reset
+      if (parsed && typeof parsed === 'object') {
+        inMemoryFallback = parsed;
+        // Ensure required keys exist
+        if (!inMemoryFallback.localConfig) inMemoryFallback.localConfig = getEmptyFallbackStore().localConfig;
+        if (!inMemoryFallback.globalConfig) inMemoryFallback.globalConfig = { usdRate: 330.00, lang: 'en' };
+        return inMemoryFallback;
       }
-      if (!inMemoryStore.chinaShipments) {
-        inMemoryStore.chinaShipments = [getHistoricalChinaShipmentSeed()];
-        saveLocalStore();
-      }
-    } else {
-      inMemoryStore = getInitialStore();
-      saveLocalStore();
     }
   } catch (err) {
-    console.error("Store read error, initializing default:", err.message);
-    inMemoryStore = getInitialStore();
-    saveLocalStore();
+    console.warn('[FallbackStore] Read error:', err.message);
   }
-  return inMemoryStore;
+  inMemoryFallback = getEmptyFallbackStore();
+  saveFallbackStore();
+  return inMemoryFallback;
 }
 
-function saveLocalStore() {
+function saveFallbackStore() {
   try {
-    fs.writeFileSync(STORE_FILE, JSON.stringify(inMemoryStore, null, 2), 'utf-8');
+    fs.writeFileSync(STORE_FILE, JSON.stringify(inMemoryFallback, null, 2), 'utf-8');
   } catch (err) {
-    console.error("Store save error:", err.message);
+    console.warn('[FallbackStore] Write error:', err.message);
   }
 }
 
-function isDbActive() {
-  return mongoose.connection && mongoose.connection.readyState === 1;
-}
-
-// Seed MongoDB if connected and empty
+// Seed MongoDB only if a collection is completely empty (first-ever startup)
 async function seedMongoIfEmpty() {
   if (!isDbActive()) return;
   try {
     const gCount = await GlobalMachine.countDocuments();
     if (gCount === 0) {
-      console.log("Seeding MongoDB with Global Machines...");
+      console.log('[Seed] Seeding GlobalMachines baseline...');
       await GlobalMachine.insertMany(GLOBAL_MACHINES_BASELINE);
     }
 
     const gcCount = await GlobalClient.countDocuments();
     if (gcCount === 0) {
-      console.log("Seeding MongoDB with Global Clients...");
+      console.log('[Seed] Seeding GlobalClients baseline...');
       await GlobalClient.insertMany(GLOBAL_CLIENTS_BASELINE);
-    }
-
-    const lmCount = await LocalMachine.countDocuments();
-    if (lmCount === 0) {
-      console.log("Seeding MongoDB with Local Yard Machinery Master...");
-      await LocalMachine.insertMany(LOCAL_MACHINES_BASELINE);
-    }
-
-    const cCount = await LocalCustomer.countDocuments();
-    if (cCount === 0) {
-      console.log("Seeding MongoDB with Local Customers...");
-      await LocalCustomer.insertMany(LOCAL_CUSTOMERS_BASELINE);
-    }
-
-    const pCount = await LocalPartner.countDocuments();
-    if (pCount === 0) {
-      console.log("Seeding MongoDB with Local Partners...");
-      await LocalPartner.insertMany(LOCAL_PARTNERS_BASELINE);
-    }
-
-    const eCount = await LocalExpense.countDocuments();
-    if (eCount === 0) {
-      console.log("Seeding MongoDB with Local Expenses...");
-      await LocalExpense.insertMany(LOCAL_EXPENSES_BASELINE);
-    }
-
-    const payCount = await LocalPayment.countDocuments();
-    if (payCount === 0) {
-      console.log("Seeding MongoDB with Local Payments...");
-      await LocalPayment.insertMany(LOCAL_PAYMENTS_BASELINE);
     }
 
     const cfgCount = await GlobalConfig.countDocuments();
@@ -168,102 +153,81 @@ async function seedMongoIfEmpty() {
 
     const lcfgCount = await LocalConfig.countDocuments();
     if (lcfgCount === 0) {
-      await LocalConfig.create(getInitialStore().localConfig);
+      await LocalConfig.create(getEmptyFallbackStore().localConfig);
     }
 
-    const csCount = await ChinaShipment.countDocuments();
-    if (csCount === 0) {
-      console.log("Seeding MongoDB with verified China Import Historical Shipment 2025(SLLK)823...");
-      await ChinaShipment.create(getHistoricalChinaShipmentSeed());
-    }
-    console.log("MongoDB verification/seeding completed.");
+    // DO NOT seed LocalMachines, LocalCustomers, LocalPayments, LocalPartners,
+    // LocalExpenses, or ChinaShipments — these must be entered by the user.
+    console.log('[Seed] MongoDB verification completed. Fresh system ready.');
   } catch (err) {
-    console.warn("MongoDB seed warning:", err.message);
+    console.warn('[Seed] Warning:', err.message);
   }
 }
 
-// Call seed check whenever Mongoose connects
+// Trigger seed check when Mongoose first connects
 mongoose.connection.on('connected', () => {
   seedMongoIfEmpty();
 });
 
-// ================= GLOBAL REPOSITORY =================
+// ===============================================================
+// STORE METHODS
+// Rule: when isDbActive() === true  →  MongoDB ONLY (no local store)
+//       when isDbActive() === false →  local fallback store ONLY
+// ===============================================================
 const store = {
-  // Global Machines
+
+  // ═══════════════ GLOBAL MACHINES ═══════════════
   async getGlobalMachines() {
     if (isDbActive()) {
-      return await GlobalMachine.find().sort({ id: 1 }).lean();
+      try { return await GlobalMachine.find().sort({ id: 1 }).lean(); }
+      catch (err) { console.warn('[Store] getGlobalMachines DB error:', err.message); throw err; }
     }
-    return loadLocalStore().globalMachines;
+    return loadFallbackStore().globalMachines || [];
   },
 
   async addGlobalMachine(data) {
     if (!data.id) {
-      const s = loadLocalStore();
-      const existingNums = (s.globalMachines || []).map(m => {
+      const machines = await this.getGlobalMachines();
+      const maxNum = machines.reduce((max, m) => {
         const match = String(m.id || '').match(/M-(\d+)/i);
-        return match ? parseInt(match[1], 10) : 0;
-      });
-      const maxNum = existingNums.length > 0 ? Math.max(...existingNums, 0) : 0;
+        return match ? Math.max(max, parseInt(match[1], 10)) : max;
+      }, 0);
       data.id = `M-${String(maxNum + 1).padStart(2, '0')}`;
     }
     if (isDbActive()) {
-      try {
-        const created = await GlobalMachine.create(data);
-        const s = loadLocalStore();
-        s.globalMachines.push(created.toObject());
-        saveLocalStore();
-        return created;
-      } catch (err) {
-        console.warn("Mongo addGlobalMachine failed, using local store:", err.message);
-      }
+      try { return (await GlobalMachine.create(data)).toObject(); }
+      catch (err) { console.warn('[Store] addGlobalMachine DB error:', err.message); throw err; }
     }
-    const s = loadLocalStore();
-    // Prevent duplicate SKU
-    const existingIdx = s.globalMachines.findIndex(x => x.id === data.id);
-    if (existingIdx !== -1) {
-      s.globalMachines[existingIdx] = { ...s.globalMachines[existingIdx], ...data };
-    } else {
-      s.globalMachines.push(data);
-    }
-    saveLocalStore();
+    const s = loadFallbackStore();
+    s.globalMachines = s.globalMachines || [];
+    const idx = s.globalMachines.findIndex(x => x.id === data.id);
+    if (idx !== -1) s.globalMachines[idx] = { ...s.globalMachines[idx], ...data };
+    else s.globalMachines.push(data);
+    saveFallbackStore();
     return data;
   },
 
   async updateGlobalMachine(id, data) {
     if (isDbActive()) {
       try {
-        const updated = await GlobalMachine.findOneAndUpdate({ id }, data, { returnDocument: 'after', new: true }).lean();
-        const s = loadLocalStore();
-        const idx = s.globalMachines.findIndex(x => x.id === id);
-        if (idx !== -1) s.globalMachines[idx] = { ...s.globalMachines[idx], ...data, id };
-        saveLocalStore();
-        if (updated) return updated;
-      } catch (err) {
-        console.warn("Mongo updateGlobalMachine failed, using local store:", err.message);
-      }
+        const updated = await GlobalMachine.findOneAndUpdate(toIdQuery(id), data, { new: true, runValidators: false }).lean();
+        return updated;
+      } catch (err) { console.warn('[Store] updateGlobalMachine DB error:', err.message); throw err; }
     }
-    const s = loadLocalStore();
-    const idx = s.globalMachines.findIndex(x => x.id === id);
-    if (idx !== -1) {
-      s.globalMachines[idx] = { ...s.globalMachines[idx], ...data, id };
-      saveLocalStore();
-      return s.globalMachines[idx];
-    }
+    const s = loadFallbackStore();
+    const idx = (s.globalMachines || []).findIndex(x => x.id === id || String(x._id) === String(id));
+    if (idx !== -1) { s.globalMachines[idx] = { ...s.globalMachines[idx], ...data, id }; saveFallbackStore(); return s.globalMachines[idx]; }
     return null;
   },
 
   async deleteGlobalMachine(id) {
     if (isDbActive()) {
-      try {
-        await GlobalMachine.findOneAndDelete({ id });
-      } catch (err) {
-        console.warn("Mongo deleteGlobalMachine failed:", err.message);
-      }
+      try { await GlobalMachine.findOneAndDelete(toIdQuery(id)); return true; }
+      catch (err) { console.warn('[Store] deleteGlobalMachine DB error:', err.message); throw err; }
     }
-    const s = loadLocalStore();
-    s.globalMachines = s.globalMachines.filter(x => x.id !== id);
-    saveLocalStore();
+    const s = loadFallbackStore();
+    s.globalMachines = (s.globalMachines || []).filter(x => x.id !== id && String(x._id) !== String(id));
+    saveFallbackStore();
     return true;
   },
 
@@ -275,305 +239,217 @@ const store = {
         await GlobalSale.deleteMany({});
         await GlobalDisbursement.deleteMany({});
         await GlobalConfig.findOneAndUpdate({}, { usdRate: 330.00, lang: 'en' }, { upsert: true });
-      } catch (err) {
-        console.warn("Mongo resetGlobalBaseline failed:", err.message);
-      }
+        return true;
+      } catch (err) { console.warn('[Store] resetGlobalBaseline DB error:', err.message); throw err; }
     }
-    const s = loadLocalStore();
+    const s = loadFallbackStore();
     s.globalMachines = JSON.parse(JSON.stringify(GLOBAL_MACHINES_BASELINE));
     s.globalClients = JSON.parse(JSON.stringify(GLOBAL_CLIENTS_BASELINE));
     s.globalSales = [];
     s.globalDisbursements = [];
     s.globalConfig = { usdRate: 330.00, lang: 'en' };
-    saveLocalStore();
+    saveFallbackStore();
     return true;
   },
 
-  // Global Clients (Apparel Manufacturing Clients)
+  // ═══════════════ GLOBAL CLIENTS ═══════════════
   async getGlobalClients() {
     if (isDbActive()) {
-      try {
-        return await GlobalClient.find().sort({ code: 1 }).lean();
-      } catch (err) {
-        console.warn("Mongo getGlobalClients failed:", err.message);
-      }
+      try { return await GlobalClient.find().sort({ code: 1 }).lean(); }
+      catch (err) { console.warn('[Store] getGlobalClients DB error:', err.message); throw err; }
     }
-    return loadLocalStore().globalClients || [];
+    return loadFallbackStore().globalClients || [];
   },
 
   async addGlobalClient(data) {
-    if (!data.id) {
-      data.id = `gc_${Date.now()}`;
-    }
+    if (!data.id) data.id = `gc_${Date.now()}`;
     if (!data.code) {
-      const s = loadLocalStore();
-      const existingNums = (s.globalClients || []).map(c => {
+      const clients = await this.getGlobalClients();
+      const maxNum = clients.reduce((max, c) => {
         const match = String(c.code || '').match(/GC-(\d+)/i);
-        return match ? parseInt(match[1], 10) : 0;
-      });
-      const maxNum = existingNums.length > 0 ? Math.max(...existingNums, 0) : 0;
+        return match ? Math.max(max, parseInt(match[1], 10)) : max;
+      }, 0);
       data.code = `GC-${String(maxNum + 1).padStart(2, '0')}`;
     }
     if (isDbActive()) {
-      try {
-        const created = await GlobalClient.create(data);
-        const s = loadLocalStore();
-        s.globalClients = s.globalClients || [];
-        s.globalClients.push(created.toObject());
-        saveLocalStore();
-        return created;
-      } catch (err) {
-        console.warn("Mongo addGlobalClient failed:", err.message);
-      }
+      try { return (await GlobalClient.create(data)).toObject(); }
+      catch (err) { console.warn('[Store] addGlobalClient DB error:', err.message); throw err; }
     }
-    const s = loadLocalStore();
+    const s = loadFallbackStore();
     s.globalClients = s.globalClients || [];
-    const idx = s.globalClients.findIndex(x => x.id === data.id);
-    if (idx !== -1) {
-      s.globalClients[idx] = { ...s.globalClients[idx], ...data };
-    } else {
-      s.globalClients.push(data);
-    }
-    saveLocalStore();
+    s.globalClients.push(data);
+    saveFallbackStore();
     return data;
   },
 
   async updateGlobalClient(id, data) {
     if (isDbActive()) {
       try {
-        const updated = await GlobalClient.findOneAndUpdate({ id }, data, { returnDocument: 'after', new: true }).lean();
-        const s = loadLocalStore();
-        s.globalClients = s.globalClients || [];
-        const idx = s.globalClients.findIndex(x => x.id === id);
-        if (idx !== -1) s.globalClients[idx] = { ...s.globalClients[idx], ...data, id };
-        saveLocalStore();
-        if (updated) return updated;
-      } catch (err) {
-        console.warn("Mongo updateGlobalClient failed:", err.message);
-      }
+        const updated = await GlobalClient.findOneAndUpdate(toIdQuery(id), data, { new: true, runValidators: false }).lean();
+        return updated;
+      } catch (err) { console.warn('[Store] updateGlobalClient DB error:', err.message); throw err; }
     }
-    const s = loadLocalStore();
+    const s = loadFallbackStore();
     s.globalClients = s.globalClients || [];
-    const idx = s.globalClients.findIndex(x => x.id === id);
-    if (idx !== -1) {
-      s.globalClients[idx] = { ...s.globalClients[idx], ...data, id };
-      saveLocalStore();
-      return s.globalClients[idx];
-    }
+    const idx = s.globalClients.findIndex(x => x.id === id || String(x._id) === String(id));
+    if (idx !== -1) { s.globalClients[idx] = { ...s.globalClients[idx], ...data, id }; saveFallbackStore(); return s.globalClients[idx]; }
     return null;
   },
 
   async deleteGlobalClient(id) {
     if (isDbActive()) {
-      try {
-        await GlobalClient.findOneAndDelete({ id });
-      } catch (err) {
-        console.warn("Mongo deleteGlobalClient failed:", err.message);
-      }
+      try { await GlobalClient.findOneAndDelete(toIdQuery(id)); return true; }
+      catch (err) { console.warn('[Store] deleteGlobalClient DB error:', err.message); throw err; }
     }
-    const s = loadLocalStore();
-    s.globalClients = (s.globalClients || []).filter(x => x.id !== id);
-    saveLocalStore();
+    const s = loadFallbackStore();
+    s.globalClients = (s.globalClients || []).filter(x => x.id !== id && String(x._id) !== String(id));
+    saveFallbackStore();
     return true;
   },
 
-  // Global Sales
+  // ═══════════════ GLOBAL SALES ═══════════════
   async getGlobalSales() {
     if (isDbActive()) {
-      try {
-        return await GlobalSale.find().sort({ createdAt: -1 }).lean();
-      } catch (err) {
-        console.warn("Mongo getGlobalSales failed, falling back:", err.message);
-      }
+      try { return await GlobalSale.find().sort({ createdAt: -1 }).lean(); }
+      catch (err) { console.warn('[Store] getGlobalSales DB error:', err.message); throw err; }
     }
-    return loadLocalStore().globalSales;
+    return loadFallbackStore().globalSales || [];
   },
 
   async addGlobalSale(sale) {
-    if (!sale.id) {
-      sale.id = `INV-${Math.floor(100000 + Math.random() * 900000)}`;
-    }
+    if (!sale.id) sale.id = `INV-${Math.floor(100000 + Math.random() * 900000)}`;
     if (isDbActive()) {
-      try {
-        const created = await GlobalSale.create(sale);
-        const s = loadLocalStore();
-        s.globalSales.unshift(created.toObject());
-        saveLocalStore();
-        return created;
-      } catch (err) {
-        console.warn("Mongo addGlobalSale failed, using local store:", err.message);
-      }
+      try { return (await GlobalSale.create(sale)).toObject(); }
+      catch (err) { console.warn('[Store] addGlobalSale DB error:', err.message); throw err; }
     }
-    const s = loadLocalStore();
+    const s = loadFallbackStore();
+    s.globalSales = s.globalSales || [];
     s.globalSales.unshift(sale);
-    saveLocalStore();
+    saveFallbackStore();
     return sale;
   },
 
   async updateGlobalSale(id, data) {
     if (isDbActive()) {
       try {
-        const updated = await GlobalSale.findOneAndUpdate({ id }, data, { returnDocument: 'after', new: true }).lean();
-        const s = loadLocalStore();
-        const idx = s.globalSales.findIndex(x => x.id === id);
-        if (idx !== -1) s.globalSales[idx] = { ...s.globalSales[idx], ...data, id };
-        saveLocalStore();
-        if (updated) return updated;
-      } catch (err) {
-        console.warn("Mongo updateGlobalSale failed, using local store:", err.message);
-      }
+        const updated = await GlobalSale.findOneAndUpdate(toIdQuery(id), data, { new: true, runValidators: false }).lean();
+        return updated;
+      } catch (err) { console.warn('[Store] updateGlobalSale DB error:', err.message); throw err; }
     }
-    const s = loadLocalStore();
-    const idx = s.globalSales.findIndex(x => x.id === id);
-    if (idx !== -1) {
-      s.globalSales[idx] = { ...s.globalSales[idx], ...data, id };
-      saveLocalStore();
-      return s.globalSales[idx];
-    }
+    const s = loadFallbackStore();
+    const idx = (s.globalSales || []).findIndex(x => x.id === id || String(x._id) === String(id));
+    if (idx !== -1) { s.globalSales[idx] = { ...s.globalSales[idx], ...data, id }; saveFallbackStore(); return s.globalSales[idx]; }
     return null;
   },
 
   async deleteGlobalSale(id) {
     if (isDbActive()) {
-      try {
-        await GlobalSale.findOneAndDelete({ id });
-      } catch (err) {
-        console.warn("Mongo deleteGlobalSale failed, using local store:", err.message);
-      }
+      try { await GlobalSale.findOneAndDelete(toIdQuery(id)); return true; }
+      catch (err) { console.warn('[Store] deleteGlobalSale DB error:', err.message); throw err; }
     }
-    const s = loadLocalStore();
-    s.globalSales = s.globalSales.filter(x => x.id !== id);
-    saveLocalStore();
+    const s = loadFallbackStore();
+    s.globalSales = (s.globalSales || []).filter(x => x.id !== id && String(x._id) !== String(id));
+    saveFallbackStore();
     return true;
   },
 
-  // Global Disbursements
+  // ═══════════════ GLOBAL DISBURSEMENTS ═══════════════
   async getGlobalDisbursements() {
     if (isDbActive()) {
-      return await GlobalDisbursement.find().sort({ createdAt: -1 }).lean();
+      try { return await GlobalDisbursement.find().sort({ createdAt: -1 }).lean(); }
+      catch (err) { console.warn('[Store] getGlobalDisbursements DB error:', err.message); throw err; }
     }
-    return loadLocalStore().globalDisbursements;
+    return loadFallbackStore().globalDisbursements || [];
   },
 
   async addGlobalDisbursement(disb) {
     if (!disb.id) disb.id = `DIS-${Date.now()}`;
     if (isDbActive()) {
-      try {
-        const created = await GlobalDisbursement.create(disb);
-        const s = loadLocalStore();
-        s.globalDisbursements.unshift(created.toObject ? created.toObject() : created);
-        saveLocalStore();
-        return created;
-      } catch (err) {
-        console.warn("Mongo addGlobalDisbursement failed, using local store:", err.message);
-      }
+      try { return (await GlobalDisbursement.create(disb)).toObject(); }
+      catch (err) { console.warn('[Store] addGlobalDisbursement DB error:', err.message); throw err; }
     }
-    const s = loadLocalStore();
+    const s = loadFallbackStore();
+    s.globalDisbursements = s.globalDisbursements || [];
     s.globalDisbursements.unshift(disb);
-    saveLocalStore();
+    saveFallbackStore();
     return disb;
   },
 
   async updateGlobalDisbursement(id, data) {
     if (isDbActive()) {
       try {
-        const updated = await GlobalDisbursement.findOneAndUpdate({ id }, data, { returnDocument: 'after', new: true }).lean();
-        const s = loadLocalStore();
-        const idx = s.globalDisbursements.findIndex(x => x.id === id);
-        if (idx !== -1) s.globalDisbursements[idx] = { ...s.globalDisbursements[idx], ...data, id };
-        saveLocalStore();
-        if (updated) return updated;
-      } catch (err) {
-        console.warn("Mongo updateGlobalDisbursement failed, using local store:", err.message);
-      }
+        const updated = await GlobalDisbursement.findOneAndUpdate(toIdQuery(id), data, { new: true, runValidators: false }).lean();
+        return updated;
+      } catch (err) { console.warn('[Store] updateGlobalDisbursement DB error:', err.message); throw err; }
     }
-    const s = loadLocalStore();
-    const idx = s.globalDisbursements.findIndex(x => x.id === id);
-    if (idx !== -1) {
-      s.globalDisbursements[idx] = { ...s.globalDisbursements[idx], ...data, id };
-      saveLocalStore();
-      return s.globalDisbursements[idx];
-    }
+    const s = loadFallbackStore();
+    const idx = (s.globalDisbursements || []).findIndex(x => x.id === id || String(x._id) === String(id));
+    if (idx !== -1) { s.globalDisbursements[idx] = { ...s.globalDisbursements[idx], ...data, id }; saveFallbackStore(); return s.globalDisbursements[idx]; }
     return null;
   },
 
   async deleteGlobalDisbursement(id) {
     if (isDbActive()) {
-      try {
-        await GlobalDisbursement.findOneAndDelete({ id });
-      } catch (err) {
-        console.warn("Mongo deleteGlobalDisbursement failed, using local store:", err.message);
-      }
+      try { await GlobalDisbursement.findOneAndDelete(toIdQuery(id)); return true; }
+      catch (err) { console.warn('[Store] deleteGlobalDisbursement DB error:', err.message); throw err; }
     }
-    const s = loadLocalStore();
-    s.globalDisbursements = s.globalDisbursements.filter(x => x.id !== id);
-    saveLocalStore();
+    const s = loadFallbackStore();
+    s.globalDisbursements = (s.globalDisbursements || []).filter(x => x.id !== id && String(x._id) !== String(id));
+    saveFallbackStore();
     return true;
   },
 
-  // Global Config
+  // ═══════════════ GLOBAL CONFIG ═══════════════
   async getGlobalConfig() {
     if (isDbActive()) {
-      let cfg = await GlobalConfig.findOne().lean();
-      if (!cfg) {
-        cfg = await GlobalConfig.create({ usdRate: 330.00, lang: 'en' });
-      }
-      return cfg;
+      try {
+        let cfg = await GlobalConfig.findOne().lean();
+        if (!cfg) cfg = (await GlobalConfig.create({ usdRate: 330.00, lang: 'en' })).toObject();
+        return cfg;
+      } catch (err) { console.warn('[Store] getGlobalConfig DB error:', err.message); }
     }
-    return loadLocalStore().globalConfig;
+    return loadFallbackStore().globalConfig || { usdRate: 330.00, lang: 'en' };
   },
 
   async updateGlobalConfig(data) {
     if (isDbActive()) {
-      const updated = await GlobalConfig.findOneAndUpdate({}, data, { new: true, upsert: true }).lean();
-      const s = loadLocalStore();
-      s.globalConfig = { ...s.globalConfig, ...data };
-      saveLocalStore();
-      return updated;
+      try {
+        return await GlobalConfig.findOneAndUpdate({}, data, { new: true, upsert: true, runValidators: false }).lean();
+      } catch (err) { console.warn('[Store] updateGlobalConfig DB error:', err.message); throw err; }
     }
-    const s = loadLocalStore();
+    const s = loadFallbackStore();
     s.globalConfig = { ...s.globalConfig, ...data };
-    saveLocalStore();
+    saveFallbackStore();
     return s.globalConfig;
   },
 
-  // ================= LOCAL RENTAL WAREHOUSE =================
+  // ═══════════════ LOCAL MACHINES ═══════════════
   async getLocalMachines() {
     if (isDbActive()) {
-      return await LocalMachine.find().sort({ id: 1 }).lean();
+      try { return await LocalMachine.find().sort({ id: 1 }).lean(); }
+      catch (err) { console.warn('[Store] getLocalMachines DB error:', err.message); throw err; }
     }
-    return loadLocalStore().localMachines;
+    return loadFallbackStore().localMachines || [];
   },
 
   async addLocalMachine(data) {
     if (!data.id) {
-      const s = loadLocalStore();
-      const existingNums = (s.localMachines || []).map(m => {
+      const machines = await this.getLocalMachines();
+      const maxNum = machines.reduce((max, m) => {
         const match = String(m.id || '').match(/LYM-(\d+)/i);
-        return match ? parseInt(match[1], 10) : 0;
-      });
-      const maxNum = existingNums.length > 0 ? Math.max(...existingNums, 0) : 0;
+        return match ? Math.max(max, parseInt(match[1], 10)) : max;
+      }, 0);
       data.id = `LYM-${String(maxNum + 1).padStart(2, '0')}`;
     }
-    if (!data.machineCode) {
-      data.machineCode = `YRD-${Date.now().toString().slice(-4)}`;
-    }
+    if (!data.machineCode) data.machineCode = `YRD-${Date.now().toString().slice(-4)}`;
     if (isDbActive()) {
-      try {
-        const created = await LocalMachine.create(data);
-        const s = loadLocalStore();
-        s.localMachines = s.localMachines || [];
-        s.localMachines.unshift(created.toObject ? created.toObject() : created);
-        saveLocalStore();
-        return created;
-      } catch (err) {
-        console.warn("Mongo addLocalMachine failed, saving to local store:", err.message);
-      }
+      try { return (await LocalMachine.create(data)).toObject(); }
+      catch (err) { console.warn('[Store] addLocalMachine DB error:', err.message); throw err; }
     }
-    const s = loadLocalStore();
+    const s = loadFallbackStore();
     s.localMachines = s.localMachines || [];
     s.localMachines.unshift(data);
-    saveLocalStore();
+    saveFallbackStore();
     return data;
   },
 
@@ -581,145 +457,100 @@ const store = {
     if (isDbActive()) {
       try {
         const updated = await LocalMachine.findOneAndUpdate(
-          { id }, { $set: data }, { returnDocument: 'after', runValidators: false, new: true }
+          toIdQuery(id), { $set: data }, { new: true, runValidators: false }
         ).lean();
-        const s = loadLocalStore();
-        const idx = (s.localMachines || []).findIndex(x => x.id === id);
-        if (idx !== -1) s.localMachines[idx] = { ...s.localMachines[idx], ...data, id };
-        saveLocalStore();
-        if (updated) return updated;
-      } catch (err) {
-        console.warn("Mongo updateLocalMachine failed:", err.message);
-      }
+        return updated;
+      } catch (err) { console.warn('[Store] updateLocalMachine DB error:', err.message); throw err; }
     }
-    const s = loadLocalStore();
-    const idx = (s.localMachines || []).findIndex(x => x.id === id);
-    if (idx !== -1) {
-      s.localMachines[idx] = { ...s.localMachines[idx], ...data, id };
-      saveLocalStore();
-      return s.localMachines[idx];
-    }
+    const s = loadFallbackStore();
+    const idx = (s.localMachines || []).findIndex(x => x.id === id || String(x._id) === String(id));
+    if (idx !== -1) { s.localMachines[idx] = { ...s.localMachines[idx], ...data, id }; saveFallbackStore(); return s.localMachines[idx]; }
     return data;
   },
 
   async deleteLocalMachine(id) {
     if (isDbActive()) {
-      try {
-        await LocalMachine.findOneAndDelete({ id });
-      } catch (err) {
-        console.warn("Mongo deleteLocalMachine failed:", err.message);
-      }
+      try { await LocalMachine.findOneAndDelete(toIdQuery(id)); return true; }
+      catch (err) { console.warn('[Store] deleteLocalMachine DB error:', err.message); throw err; }
     }
-    const s = loadLocalStore();
-    s.localMachines = (s.localMachines || []).filter(x => x.id !== id);
-    saveLocalStore();
+    const s = loadFallbackStore();
+    s.localMachines = (s.localMachines || []).filter(x => x.id !== id && String(x._id) !== String(id));
+    saveFallbackStore();
     return true;
   },
 
-  // ================= LOCAL CUSTOMERS =================
+  // ═══════════════ LOCAL CUSTOMERS ═══════════════
   async getLocalCustomers() {
     if (isDbActive()) {
-      return await LocalCustomer.find().sort({ createdAt: 1 }).lean();
+      try { return await LocalCustomer.find().sort({ createdAt: 1 }).lean(); }
+      catch (err) { console.warn('[Store] getLocalCustomers DB error:', err.message); throw err; }
     }
-    return loadLocalStore().localCustomers;
+    return loadFallbackStore().localCustomers || [];
   },
 
   async addLocalCustomer(cust) {
-    if (!cust.id) cust.id = "c_" + Date.now();
+    if (!cust.id) cust.id = 'c_' + Date.now();
     if (!cust.code) {
-      const s = loadLocalStore();
-      const count = (s.localCustomers || []).length + 1;
-      cust.code = `CUST-${String(count).padStart(3, '0')}`;
+      const customers = await this.getLocalCustomers();
+      cust.code = `CUST-${String(customers.length + 1).padStart(3, '0')}`;
     }
     if (!Array.isArray(cust.rentals)) cust.rentals = [];
-
     if (isDbActive()) {
-      try {
-        const created = await LocalCustomer.create(cust);
-        const s = loadLocalStore();
-        s.localCustomers = s.localCustomers || [];
-        s.localCustomers.unshift(created.toObject ? created.toObject() : created);
-        saveLocalStore();
-        return created;
-      } catch (err) {
-        console.warn("Mongo addLocalCustomer failed, saving to local store:", err.message);
-      }
+      try { return (await LocalCustomer.create(cust)).toObject(); }
+      catch (err) { console.warn('[Store] addLocalCustomer DB error:', err.message); throw err; }
     }
-    const s = loadLocalStore();
+    const s = loadFallbackStore();
     s.localCustomers = s.localCustomers || [];
     s.localCustomers.unshift(cust);
-    saveLocalStore();
+    saveFallbackStore();
     return cust;
   },
 
   async updateLocalCustomer(id, data) {
     if (isDbActive()) {
       try {
-        // Use explicit $set so Mongoose correctly persists embedded arrays (rentals, etc.)
         const updated = await LocalCustomer.findOneAndUpdate(
-          { id },
-          { $set: data },
-          { returnDocument: 'after', runValidators: false, new: true }
+          toIdQuery(id), { $set: data }, { new: true, runValidators: false }
         ).lean();
-        const s = loadLocalStore();
-        const idx = (s.localCustomers || []).findIndex(x => x.id === id);
-        if (idx !== -1) s.localCustomers[idx] = { ...s.localCustomers[idx], ...data, id };
-        saveLocalStore();
-        if (updated) return updated;
-      } catch (err) {
-        console.warn("Mongo updateLocalCustomer failed:", err.message);
-      }
+        return updated;
+      } catch (err) { console.warn('[Store] updateLocalCustomer DB error:', err.message); throw err; }
     }
-    const s = loadLocalStore();
-    const idx = (s.localCustomers || []).findIndex(x => x.id === id);
-    if (idx !== -1) {
-      s.localCustomers[idx] = { ...s.localCustomers[idx], ...data, id };
-      saveLocalStore();
-      return s.localCustomers[idx];
-    }
+    const s = loadFallbackStore();
+    const idx = (s.localCustomers || []).findIndex(x => x.id === id || String(x._id) === String(id));
+    if (idx !== -1) { s.localCustomers[idx] = { ...s.localCustomers[idx], ...data, id }; saveFallbackStore(); return s.localCustomers[idx]; }
     return data;
   },
 
   async deleteLocalCustomer(id) {
     if (isDbActive()) {
-      try {
-        await LocalCustomer.findOneAndDelete({ id });
-      } catch (err) {
-        console.warn("Mongo deleteLocalCustomer failed:", err.message);
-      }
+      try { await LocalCustomer.findOneAndDelete(toIdQuery(id)); return true; }
+      catch (err) { console.warn('[Store] deleteLocalCustomer DB error:', err.message); throw err; }
     }
-    const s = loadLocalStore();
-    s.localCustomers = (s.localCustomers || []).filter(x => x.id !== id);
-    saveLocalStore();
+    const s = loadFallbackStore();
+    s.localCustomers = (s.localCustomers || []).filter(x => x.id !== id && String(x._id) !== String(id));
+    saveFallbackStore();
     return true;
   },
 
-  // ================= LOCAL PAYMENTS =================
+  // ═══════════════ LOCAL PAYMENTS ═══════════════
   async getLocalPayments() {
     if (isDbActive()) {
-      return await LocalPayment.find().sort({ createdAt: -1 }).lean();
+      try { return await LocalPayment.find().sort({ createdAt: -1 }).lean(); }
+      catch (err) { console.warn('[Store] getLocalPayments DB error:', err.message); throw err; }
     }
-    return loadLocalStore().localPayments;
+    return loadFallbackStore().localPayments || [];
   },
 
   async addLocalPayment(pay) {
-    if (!pay.id) pay.id = "pay_" + Date.now();
+    if (!pay.id) pay.id = 'pay_' + Date.now();
     if (isDbActive()) {
-      try {
-        const created = await LocalPayment.create(pay);
-        const s = loadLocalStore();
-        s.localPayments = s.localPayments || [];
-        s.localPayments.unshift(created.toObject ? created.toObject() : created);
-        saveLocalStore();
-        return created;
-      } catch (err) {
-        console.warn("Mongo addLocalPayment failed, saving to local store:", err.message);
-      }
+      try { return (await LocalPayment.create(pay)).toObject(); }
+      catch (err) { console.warn('[Store] addLocalPayment DB error:', err.message); throw err; }
     }
-    const s = loadLocalStore();
+    const s = loadFallbackStore();
     s.localPayments = s.localPayments || [];
     s.localPayments.unshift(pay);
-    saveLocalStore();
+    saveFallbackStore();
     return pay;
   },
 
@@ -727,68 +558,48 @@ const store = {
     if (isDbActive()) {
       try {
         const updated = await LocalPayment.findOneAndUpdate(
-          { id }, { $set: data }, { returnDocument: 'after', runValidators: false, new: true }
+          toIdQuery(id), { $set: data }, { new: true, runValidators: false }
         ).lean();
-        const s = loadLocalStore();
-        const idx = (s.localPayments || []).findIndex(x => x.id === id);
-        if (idx !== -1) s.localPayments[idx] = { ...s.localPayments[idx], ...data, id };
-        saveLocalStore();
-        if (updated) return updated;
-      } catch (err) {
-        console.warn("Mongo updateLocalPayment failed:", err.message);
-      }
+        return updated;
+      } catch (err) { console.warn('[Store] updateLocalPayment DB error:', err.message); throw err; }
     }
-    const s = loadLocalStore();
-    const idx = (s.localPayments || []).findIndex(x => x.id === id);
-    if (idx !== -1) {
-      s.localPayments[idx] = { ...s.localPayments[idx], ...data, id };
-      saveLocalStore();
-      return s.localPayments[idx];
-    }
+    const s = loadFallbackStore();
+    const idx = (s.localPayments || []).findIndex(x => x.id === id || String(x._id) === String(id));
+    if (idx !== -1) { s.localPayments[idx] = { ...s.localPayments[idx], ...data, id }; saveFallbackStore(); return s.localPayments[idx]; }
     return data;
   },
 
   async deleteLocalPayment(id) {
     if (isDbActive()) {
-      try {
-        await LocalPayment.findOneAndDelete({ id });
-      } catch (err) {
-        console.warn("Mongo deleteLocalPayment failed:", err.message);
-      }
+      try { await LocalPayment.findOneAndDelete(toIdQuery(id)); return true; }
+      catch (err) { console.warn('[Store] deleteLocalPayment DB error:', err.message); throw err; }
     }
-    const s = loadLocalStore();
-    s.localPayments = (s.localPayments || []).filter(x => x.id !== id);
-    saveLocalStore();
+    const s = loadFallbackStore();
+    s.localPayments = (s.localPayments || []).filter(x => x.id !== id && String(x._id) !== String(id));
+    saveFallbackStore();
     return true;
   },
 
-  // ================= LOCAL PARTNERS =================
+  // ═══════════════ LOCAL PARTNERS ═══════════════
   async getLocalPartners() {
     if (isDbActive()) {
-      return await LocalPartner.find().sort({ createdAt: 1 }).lean();
+      try { return await LocalPartner.find().sort({ createdAt: 1 }).lean(); }
+      catch (err) { console.warn('[Store] getLocalPartners DB error:', err.message); throw err; }
     }
-    return loadLocalStore().localPartners;
+    return loadFallbackStore().localPartners || [];
   },
 
   async addLocalPartner(partner) {
-    if (!partner.id) partner.id = "part_" + Date.now();
+    if (!partner.id) partner.id = 'part_' + Date.now();
     if (!partner.code) partner.code = `PTR-${Date.now().toString().slice(-4)}`;
     if (isDbActive()) {
-      try {
-        const created = await LocalPartner.create(partner);
-        const s = loadLocalStore();
-        s.localPartners = s.localPartners || [];
-        s.localPartners.unshift(created.toObject ? created.toObject() : created);
-        saveLocalStore();
-        return created;
-      } catch (err) {
-        console.warn("Mongo addLocalPartner failed, saving to local store:", err.message);
-      }
+      try { return (await LocalPartner.create(partner)).toObject(); }
+      catch (err) { console.warn('[Store] addLocalPartner DB error:', err.message); throw err; }
     }
-    const s = loadLocalStore();
+    const s = loadFallbackStore();
     s.localPartners = s.localPartners || [];
     s.localPartners.unshift(partner);
-    saveLocalStore();
+    saveFallbackStore();
     return partner;
   },
 
@@ -796,67 +607,47 @@ const store = {
     if (isDbActive()) {
       try {
         const updated = await LocalPartner.findOneAndUpdate(
-          { id }, { $set: data }, { returnDocument: 'after', runValidators: false, new: true }
+          toIdQuery(id), { $set: data }, { new: true, runValidators: false }
         ).lean();
-        const s = loadLocalStore();
-        const idx = (s.localPartners || []).findIndex(x => x.id === id);
-        if (idx !== -1) s.localPartners[idx] = { ...s.localPartners[idx], ...data, id };
-        saveLocalStore();
-        if (updated) return updated;
-      } catch (err) {
-        console.warn("Mongo updateLocalPartner failed:", err.message);
-      }
+        return updated;
+      } catch (err) { console.warn('[Store] updateLocalPartner DB error:', err.message); throw err; }
     }
-    const s = loadLocalStore();
-    const idx = (s.localPartners || []).findIndex(x => x.id === id);
-    if (idx !== -1) {
-      s.localPartners[idx] = { ...s.localPartners[idx], ...data, id };
-      saveLocalStore();
-      return s.localPartners[idx];
-    }
+    const s = loadFallbackStore();
+    const idx = (s.localPartners || []).findIndex(x => x.id === id || String(x._id) === String(id));
+    if (idx !== -1) { s.localPartners[idx] = { ...s.localPartners[idx], ...data, id }; saveFallbackStore(); return s.localPartners[idx]; }
     return data;
   },
 
   async deleteLocalPartner(id) {
     if (isDbActive()) {
-      try {
-        await LocalPartner.findOneAndDelete({ id });
-      } catch (err) {
-        console.warn("Mongo deleteLocalPartner failed:", err.message);
-      }
+      try { await LocalPartner.findOneAndDelete(toIdQuery(id)); return true; }
+      catch (err) { console.warn('[Store] deleteLocalPartner DB error:', err.message); throw err; }
     }
-    const s = loadLocalStore();
-    s.localPartners = (s.localPartners || []).filter(x => x.id !== id);
-    saveLocalStore();
+    const s = loadFallbackStore();
+    s.localPartners = (s.localPartners || []).filter(x => x.id !== id && String(x._id) !== String(id));
+    saveFallbackStore();
     return true;
   },
 
-  // ================= LOCAL EXPENSES =================
+  // ═══════════════ LOCAL EXPENSES ═══════════════
   async getLocalExpenses() {
     if (isDbActive()) {
-      return await LocalExpense.find().sort({ createdAt: -1 }).lean();
+      try { return await LocalExpense.find().sort({ createdAt: -1 }).lean(); }
+      catch (err) { console.warn('[Store] getLocalExpenses DB error:', err.message); throw err; }
     }
-    return loadLocalStore().localExpenses;
+    return loadFallbackStore().localExpenses || [];
   },
 
   async addLocalExpense(exp) {
-    if (!exp.id) exp.id = "e_" + Date.now();
+    if (!exp.id) exp.id = 'e_' + Date.now();
     if (isDbActive()) {
-      try {
-        const created = await LocalExpense.create(exp);
-        const s = loadLocalStore();
-        s.localExpenses = s.localExpenses || [];
-        s.localExpenses.unshift(created.toObject ? created.toObject() : created);
-        saveLocalStore();
-        return created;
-      } catch (err) {
-        console.warn("Mongo addLocalExpense failed, saving to local store:", err.message);
-      }
+      try { return (await LocalExpense.create(exp)).toObject(); }
+      catch (err) { console.warn('[Store] addLocalExpense DB error:', err.message); throw err; }
     }
-    const s = loadLocalStore();
+    const s = loadFallbackStore();
     s.localExpenses = s.localExpenses || [];
     s.localExpenses.unshift(exp);
-    saveLocalStore();
+    saveFallbackStore();
     return exp;
   },
 
@@ -864,94 +655,76 @@ const store = {
     if (isDbActive()) {
       try {
         const updated = await LocalExpense.findOneAndUpdate(
-          { id }, { $set: data }, { returnDocument: 'after', runValidators: false, new: true }
+          toIdQuery(id), { $set: data }, { new: true, runValidators: false }
         ).lean();
-        const s = loadLocalStore();
-        const idx = (s.localExpenses || []).findIndex(x => x.id === id);
-        if (idx !== -1) s.localExpenses[idx] = { ...s.localExpenses[idx], ...data, id };
-        saveLocalStore();
-        if (updated) return updated;
-      } catch (err) {
-        console.warn("Mongo updateLocalExpense failed:", err.message);
-      }
+        return updated;
+      } catch (err) { console.warn('[Store] updateLocalExpense DB error:', err.message); throw err; }
     }
-    const s = loadLocalStore();
-    const idx = (s.localExpenses || []).findIndex(x => x.id === id);
-    if (idx !== -1) {
-      s.localExpenses[idx] = { ...s.localExpenses[idx], ...data, id };
-      saveLocalStore();
-      return s.localExpenses[idx];
-    }
+    const s = loadFallbackStore();
+    const idx = (s.localExpenses || []).findIndex(x => x.id === id || String(x._id) === String(id));
+    if (idx !== -1) { s.localExpenses[idx] = { ...s.localExpenses[idx], ...data, id }; saveFallbackStore(); return s.localExpenses[idx]; }
     return data;
   },
 
   async deleteLocalExpense(id) {
     if (isDbActive()) {
-      try {
-        await LocalExpense.findOneAndDelete({ id });
-      } catch (err) {
-        console.warn("Mongo deleteLocalExpense failed:", err.message);
-      }
+      try { await LocalExpense.findOneAndDelete(toIdQuery(id)); return true; }
+      catch (err) { console.warn('[Store] deleteLocalExpense DB error:', err.message); throw err; }
     }
-    const s = loadLocalStore();
-    s.localExpenses = (s.localExpenses || []).filter(x => x.id !== id);
-    saveLocalStore();
+    const s = loadFallbackStore();
+    s.localExpenses = (s.localExpenses || []).filter(x => x.id !== id && String(x._id) !== String(id));
+    saveFallbackStore();
     return true;
   },
 
-  // ================= LOCAL CONFIG =================
+  // ═══════════════ LOCAL CONFIG ═══════════════
   async getLocalConfig() {
     if (isDbActive()) {
-      let cfg = await LocalConfig.findOne().lean();
-      if (!cfg) {
-        cfg = await LocalConfig.create(getInitialStore().localConfig);
-      }
-      return cfg;
+      try {
+        let cfg = await LocalConfig.findOne().lean();
+        if (!cfg) cfg = (await LocalConfig.create(getEmptyFallbackStore().localConfig)).toObject();
+        return cfg;
+      } catch (err) { console.warn('[Store] getLocalConfig DB error:', err.message); }
     }
-    return loadLocalStore().localConfig;
+    return loadFallbackStore().localConfig;
   },
 
   async updateLocalConfig(data) {
     if (isDbActive()) {
-      const updated = await LocalConfig.findOneAndUpdate(
-        {}, { $set: data }, { returnDocument: 'after', upsert: true, runValidators: false }
-      ).lean();
-      const s = loadLocalStore();
-      s.localConfig = { ...s.localConfig, ...data };
-      saveLocalStore();
-      return updated;
+      try {
+        return await LocalConfig.findOneAndUpdate(
+          {}, { $set: data }, { new: true, upsert: true, runValidators: false }
+        ).lean();
+      } catch (err) { console.warn('[Store] updateLocalConfig DB error:', err.message); throw err; }
     }
-    const s = loadLocalStore();
+    const s = loadFallbackStore();
     s.localConfig = { ...s.localConfig, ...data };
-    saveLocalStore();
+    saveFallbackStore();
     return s.localConfig;
   },
 
-  // ================= ALERT LOGS =================
+  // ═══════════════ ALERT LOGS ═══════════════
   async getAlertLogs(limit = 50) {
     if (isDbActive()) {
-      return await AlertLog.find().sort({ sentAt: -1 }).limit(limit).lean();
+      try { return await AlertLog.find().sort({ sentAt: -1 }).limit(limit).lean(); }
+      catch (err) { console.warn('[Store] getAlertLogs DB error:', err.message); return []; }
     }
-    return (loadLocalStore().alertLogs || []).slice(0, limit);
+    return (loadFallbackStore().alertLogs || []).slice(0, limit);
   },
 
   async addAlertLog(log) {
     if (isDbActive()) {
-      const created = await AlertLog.create(log);
-      const s = loadLocalStore();
-      if (!s.alertLogs) s.alertLogs = [];
-      s.alertLogs.unshift(created.toObject());
-      saveLocalStore();
-      return created;
+      try { return (await AlertLog.create(log)).toObject(); }
+      catch (err) { console.warn('[Store] addAlertLog DB error:', err.message); }
     }
-    const s = loadLocalStore();
+    const s = loadFallbackStore();
     if (!s.alertLogs) s.alertLogs = [];
     s.alertLogs.unshift(log);
-    saveLocalStore();
+    saveFallbackStore();
     return log;
   },
 
-  // ================= CHINA IMPORT & FINANCIAL SETTLEMENTS =================
+  // ═══════════════ CHINA IMPORT SHIPMENTS ═══════════════
   async getChinaShipments() {
     if (isDbActive()) {
       try {
@@ -960,12 +733,9 @@ const store = {
           ...s,
           financialSummary: calculateShipmentFinancialSummary(s)
         }));
-      } catch (err) {
-        console.warn("Mongo getChinaShipments failed:", err.message);
-      }
+      } catch (err) { console.warn('[Store] getChinaShipments DB error:', err.message); throw err; }
     }
-    const storeData = loadLocalStore();
-    return (storeData.chinaShipments || []).map(s => ({
+    return (loadFallbackStore().chinaShipments || []).map(s => ({
       ...s,
       financialSummary: calculateShipmentFinancialSummary(s)
     }));
@@ -975,104 +745,70 @@ const store = {
     if (isDbActive()) {
       try {
         let item = await ChinaShipment.findOne({ id }).lean();
-        if (!item) {
-          item = await ChinaShipment.findOne({ shipmentNo: id }).lean();
-        }
-        if (item) {
-          item.financialSummary = calculateShipmentFinancialSummary(item);
-        }
+        if (!item) item = await ChinaShipment.findOne({ shipmentNo: id }).lean();
+        if (item) item.financialSummary = calculateShipmentFinancialSummary(item);
         return item;
-      } catch (err) {
-        console.warn("Mongo getChinaShipment failed:", err.message);
-      }
+      } catch (err) { console.warn('[Store] getChinaShipment DB error:', err.message); throw err; }
     }
-    const storeData = loadLocalStore();
+    const storeData = loadFallbackStore();
     const item = (storeData.chinaShipments || []).find(s => s.id === id || s.shipmentNo === id) || null;
-    if (item) {
-      return {
-        ...item,
-        financialSummary: calculateShipmentFinancialSummary(item)
-      };
-    }
+    if (item) return { ...item, financialSummary: calculateShipmentFinancialSummary(item) };
     return null;
   },
 
   async addChinaShipment(data) {
-    if (!data.id) {
-      data.id = `CS-${Date.now().toString().slice(-6)}`;
-    }
+    if (!data.id) data.id = `CS-${Date.now().toString().slice(-6)}`;
     if (isDbActive()) {
       try {
-        const created = await ChinaShipment.create(data);
-        const s = loadLocalStore();
-        if (!s.chinaShipments) s.chinaShipments = [];
-        s.chinaShipments.unshift(created.toObject ? created.toObject() : created);
-        saveLocalStore();
-        const obj = created.toObject ? created.toObject() : created;
-        obj.financialSummary = calculateShipmentFinancialSummary(obj);
-        return obj;
-      } catch (err) {
-        console.warn("Mongo addChinaShipment failed, saving to local store:", err.message);
-      }
+        const created = (await ChinaShipment.create(data)).toObject();
+        created.financialSummary = calculateShipmentFinancialSummary(created);
+        return created;
+      } catch (err) { console.warn('[Store] addChinaShipment DB error:', err.message); throw err; }
     }
-    const s = loadLocalStore();
+    const s = loadFallbackStore();
     if (!s.chinaShipments) s.chinaShipments = [];
     s.chinaShipments.unshift(data);
-    saveLocalStore();
-    return {
-      ...data,
-      financialSummary: calculateShipmentFinancialSummary(data)
-    };
+    saveFallbackStore();
+    return { ...data, financialSummary: calculateShipmentFinancialSummary(data) };
   },
 
   async updateChinaShipment(id, data) {
     if (isDbActive()) {
-      const updated = await ChinaShipment.findOneAndUpdate(
-        { id },
-        { $set: data },
-        { returnDocument: 'after', runValidators: false }
-      ).lean();
-      const s = loadLocalStore();
-      if (!s.chinaShipments) s.chinaShipments = [];
-      const idx = s.chinaShipments.findIndex(item => item.id === id);
-      if (idx !== -1) {
-        s.chinaShipments[idx] = { ...s.chinaShipments[idx], ...data };
-        saveLocalStore();
-      }
-      if (updated) {
-        updated.financialSummary = calculateShipmentFinancialSummary(updated);
-      }
-      return updated;
+      try {
+        const updated = await ChinaShipment.findOneAndUpdate(
+          toIdQuery(id), { $set: data }, { new: true, runValidators: false }
+        ).lean();
+        if (updated) updated.financialSummary = calculateShipmentFinancialSummary(updated);
+        return updated;
+      } catch (err) { console.warn('[Store] updateChinaShipment DB error:', err.message); throw err; }
     }
-    const s = loadLocalStore();
+    const s = loadFallbackStore();
     if (!s.chinaShipments) s.chinaShipments = [];
-    const idx = s.chinaShipments.findIndex(item => item.id === id);
+    const idx = s.chinaShipments.findIndex(item => item.id === id || String(item._id) === String(id));
     if (idx !== -1) {
       s.chinaShipments[idx] = { ...s.chinaShipments[idx], ...data };
-      saveLocalStore();
-      return {
-        ...s.chinaShipments[idx],
-        financialSummary: calculateShipmentFinancialSummary(s.chinaShipments[idx])
-      };
+      saveFallbackStore();
+      return { ...s.chinaShipments[idx], financialSummary: calculateShipmentFinancialSummary(s.chinaShipments[idx]) };
     }
     return null;
   },
 
   async deleteChinaShipment(id) {
     if (isDbActive()) {
-      await ChinaShipment.deleteOne({ id });
+      try { await ChinaShipment.deleteOne(toIdQuery(id)); return { success: true, id }; }
+      catch (err) { console.warn('[Store] deleteChinaShipment DB error:', err.message); throw err; }
     }
-    const s = loadLocalStore();
+    const s = loadFallbackStore();
     if (s.chinaShipments) {
-      s.chinaShipments = s.chinaShipments.filter(item => item.id !== id);
-      saveLocalStore();
+      s.chinaShipments = s.chinaShipments.filter(item => item.id !== id && String(item._id) !== String(id));
+      saveFallbackStore();
     }
     return { success: true, id };
   },
 
   async receiveChinaShipmentStock(shipmentId, receiptPayload) {
     const shipment = await this.getChinaShipment(shipmentId);
-    if (!shipment) throw new Error("Shipment not found");
+    if (!shipment) throw new Error('Shipment not found');
 
     const receivedItems = receiptPayload.items || [];
     const updatedShipmentItems = (shipment.items || []).map(item => {
@@ -1091,7 +827,6 @@ const store = {
     for (const rec of receivedItems) {
       const qtyToAdd = Number(rec.qtyReceived) || 0;
       if (qtyToAdd <= 0) continue;
-
       const targetSku = rec.sku || rec.globalMachineId;
       if (targetSku) {
         const globalMachines = await this.getGlobalMachines();
@@ -1102,10 +837,10 @@ const store = {
         } else {
           await this.addGlobalMachine({
             id: targetSku,
-            brand: rec.brand || "JUKI",
+            brand: rec.brand || 'JUKI',
             model: rec.model,
             name: rec.name || rec.model,
-            unit: rec.unit || "SETS",
+            unit: rec.unit || 'SETS',
             initialStock: qtyToAdd,
             usdPrice: rec.unitFobUsd || 0,
             taxLKR: 5000,
@@ -1119,19 +854,19 @@ const store = {
     const goodsReceipt = {
       id: `GR-${Date.now().toString().slice(-6)}`,
       receiptDate: receiptPayload.receiptDate || new Date().toISOString().slice(0, 10),
-      receivedBy: receiptPayload.receivedBy || "Yard Operations",
-      warehouseLocation: receiptPayload.warehouseLocation || "Kosgama Central Machinery Fleet Yard",
+      receivedBy: receiptPayload.receivedBy || 'Yard Operations',
+      warehouseLocation: receiptPayload.warehouseLocation || 'Kosgama Central Machinery Fleet Yard',
       totalUnitsReceived: receivedItems.reduce((sum, r) => sum + (Number(r.qtyReceived) || 0), 0),
       itemsReceived: receivedItems,
       intakeConfirmed: true,
-      notes: receiptPayload.notes || "Physical stock received and synced to Global Machinery Warehouse"
+      notes: receiptPayload.notes || 'Physical stock received and synced to Global Machinery Warehouse'
     };
 
     const newAuditLog = {
       id: `LOG-${Date.now().toString().slice(-6)}`,
       timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19),
-      action: "Goods Receipt & Stock Intake",
-      user: receiptPayload.receivedBy || "Admin",
+      action: 'Goods Receipt & Stock Intake',
+      user: receiptPayload.receivedBy || 'Admin',
       details: `Received ${goodsReceipt.totalUnitsReceived} units into Global Warehouse`
     };
 

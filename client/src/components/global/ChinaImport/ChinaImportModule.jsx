@@ -13,7 +13,8 @@ import {
   FileSpreadsheet, 
   AlertTriangle,
   RefreshCw,
-  Clock
+  Clock,
+  Trash2
 } from 'lucide-react';
 import { api } from '../../../services/api';
 
@@ -249,6 +250,24 @@ export function ChinaImportModule({ currentUser, addToast, onRefreshGlobalMachin
     } catch (err) { if (addToast) addToast('Delete failed: ' + err.message, 'error'); }
   };
 
+  const handleDeleteActiveShipment = async () => {
+    if (!activeShipment) return;
+    if (!window.confirm(`Are you sure you want to permanently delete Shipment ${activeShipment.shipmentNo || activeShipment.id}? All its linked records will be deleted.`)) return;
+    try {
+      const res = await api.deleteChinaShipment(activeShipment.id);
+      if (res.success !== false) {
+        setShipments(prev => {
+          const next = prev.filter(s => s.id !== activeShipment.id);
+          setSelectedShipmentId(next.length > 0 ? next[0].id : '');
+          return next;
+        });
+        if (addToast) addToast(`Shipment ${activeShipment.shipmentNo || activeShipment.id} deleted.`, 'info');
+      } else throw new Error(res.error);
+    } catch (err) {
+      if (addToast) addToast('Failed to delete shipment: ' + err.message, 'error');
+    }
+  };
+
   // ─── Sub-record edit handlers (open modal pre-filled) ───────────────────────
   const handleEditPartnerReceipt = (record) => {
     setEditingPartnerReceipt(record);
@@ -378,6 +397,15 @@ export function ChinaImportModule({ currentUser, addToast, onRefreshGlobalMachin
                 ))
               )}
             </select>
+            {activeShipment && (
+              <button
+                onClick={handleDeleteActiveShipment}
+                className="p-1 text-slate-500 hover:text-rose-400 hover:bg-rose-950/40 rounded transition ml-1"
+                title={`Delete Shipment ${activeShipment.shipmentNo || activeShipment.id}`}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
 
           <button
