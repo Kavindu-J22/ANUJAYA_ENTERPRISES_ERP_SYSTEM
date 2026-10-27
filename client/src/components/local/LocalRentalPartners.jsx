@@ -30,7 +30,9 @@ import {
   getDateYearMonth, 
   compareYM, 
   isMachineRentedInMonth, 
-  paymentBelongsToYM 
+  paymentBelongsToYM,
+  getRentForMonth,
+  getPartnerRentForMonth
 } from './LocalCustomerDirectory';
 
 export function LocalRentalPartners({
@@ -124,8 +126,8 @@ export function LocalRentalPartners({
       // 2. Cycle-specific calculations for selectedMonth & selectedYear
       // Machines actively deployed during currentYM
       const cycleActiveMachines = sourcedMachines.filter(m => isMachineRentedInMonth(m, currentYM));
-      const cyclePartnerRent = cycleActiveMachines.reduce((sum, m) => sum + (Number(m.partnerRentRate) || 0), 0);
-      const cycleCustomerRent = cycleActiveMachines.reduce((sum, m) => sum + (Number(m.rentRate) || 0), 0);
+      const cyclePartnerRent = cycleActiveMachines.reduce((sum, m) => sum + getPartnerRentForMonth(m, currentYM), 0);
+      const cycleCustomerRent = cycleActiveMachines.reduce((sum, m) => sum + getRentForMonth(m, currentYM), 0);
       const cycleSpread = cycleCustomerRent - cyclePartnerRent;
 
       // Payments made to partner in this cycle
@@ -155,7 +157,7 @@ export function LocalRentalPartners({
       while (curY < currentYM.year || (curY === currentYM.year && curM < currentYM.month)) {
         const pastYM = { year: curY, month: curM };
         const pastRent = sourcedMachines.filter(m => isMachineRentedInMonth(m, pastYM))
-          .reduce((sum, m) => sum + (Number(m.partnerRentRate) || 0), 0);
+          .reduce((sum, m) => sum + getPartnerRentForMonth(m, pastYM), 0);
         const pastPaid = (p.payments || []).filter(pay => paymentBelongsToYM(pay, pastYM))
           .reduce((sum, pay) => sum + (Number(pay.amount) || 0), 0);
 
@@ -183,7 +185,7 @@ export function LocalRentalPartners({
       while (rCurY < realNow.year || (rCurY === realNow.year && rCurM <= realNow.month)) {
         const ym = { year: rCurY, month: rCurM };
         const rent = sourcedMachines.filter(m => isMachineRentedInMonth(m, ym))
-          .reduce((sum, m) => sum + (Number(m.partnerRentRate) || 0), 0);
+          .reduce((sum, m) => sum + getPartnerRentForMonth(m, ym), 0);
         allAccruedRentUpToNow += rent;
         rCurM++;
         if (rCurM > 11) {

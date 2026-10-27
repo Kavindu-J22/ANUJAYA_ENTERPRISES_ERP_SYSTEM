@@ -111,6 +111,51 @@ export function isMachineRentedInMonth(rental, ym) {
   return rental.status === 'Active';
 }
 
+/**
+ * Calculate the effective rent for a given rental in a specific month,
+ * accounting for prorated first-month billing when isProratedFirstMonth is true.
+ * For the start month: proratedRent = rentRate × (remainingDays / totalDaysInMonth)
+ * For all other months: full rentRate.
+ */
+export function getRentForMonth(rental, ym) {
+  const fullRate = Number(rental.rentRate) || 0;
+  if (!rental.isProratedFirstMonth) return fullRate;
+
+  // Check if this month is the start month of the rental
+  const startDate = rental.startDate ? new Date(rental.startDate) : null;
+  if (!startDate || isNaN(startDate.getTime())) return fullRate;
+
+  const startYM = { year: startDate.getFullYear(), month: startDate.getMonth() };
+  if (startYM.year !== ym.year || startYM.month !== ym.month) return fullRate;
+
+  // This IS the start month — prorate
+  const dayOfMonth = startDate.getDate(); // e.g. 15 means started on 15th
+  const daysInMonth = new Date(ym.year, ym.month + 1, 0).getDate(); // e.g. 31 for October
+  const remainingDays = daysInMonth - dayOfMonth + 1; // including start day
+  const proratedRate = Math.round((fullRate * remainingDays) / daysInMonth);
+  return proratedRate;
+}
+
+/**
+ * Same proration logic but for partner rent cost.
+ */
+export function getPartnerRentForMonth(rental, ym) {
+  const fullRate = Number(rental.partnerRentRate) || 0;
+  if (!rental.isProratedFirstMonth) return fullRate;
+
+  const startDate = rental.startDate ? new Date(rental.startDate) : null;
+  if (!startDate || isNaN(startDate.getTime())) return fullRate;
+
+  const startYM = { year: startDate.getFullYear(), month: startDate.getMonth() };
+  if (startYM.year !== ym.year || startYM.month !== ym.month) return fullRate;
+
+  const dayOfMonth = startDate.getDate();
+  const daysInMonth = new Date(ym.year, ym.month + 1, 0).getDate();
+  const remainingDays = daysInMonth - dayOfMonth + 1;
+  const proratedRate = Math.round((fullRate * remainingDays) / daysInMonth);
+  return proratedRate;
+}
+
 export function calculateCustomerArrearsBreakdown(customer, payments, activeMonth) {
   const activeYM = getYearMonth(activeMonth);
   
@@ -146,7 +191,7 @@ export function calculateCustomerArrearsBreakdown(customer, payments, activeMont
 
     const monthRentals = (customer.rentals || []).filter(r => isMachineRentedInMonth(r, ym));
 
-    const monthRent = monthRentals.reduce((sum, r) => sum + (Number(r.rentRate) || 0), 0);
+    const monthRent = monthRentals.reduce((sum, r) => sum + getRentForMonth(r, ym), 0);
     const monthPaid = (payments || []).filter(p => p.customerId === customer.id && paymentBelongsToYM(p, ym))
       .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
 
@@ -697,8 +742,9 @@ export function LocalCustomerDirectory({
       const arrears = arrearsData.netPreviousArrears;
 
       // Current Month Rent: all machines actively rented during currentYM (includes machines returned during or after this month)
+      // Uses getRentForMonth to apply prorated billing for the start month when isProratedFirstMonth is set
       const monthlyRent = c.isArchived ? 0 : (c.rentals || []).filter(r => isMachineRentedInMonth(r, currentYM))
-        .reduce((sum, r) => sum + (Number(r.rentRate) || 0), 0);
+        .reduce((sum, r) => sum + getRentForMonth(r, currentYM), 0);
 
       const paid = (payments || []).filter(p => p.customerId === c.id && paymentBelongsToYM(p, currentYM))
         .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
@@ -713,7 +759,7 @@ export function LocalCustomerDirectory({
 
       const realArrearsData = calculateCustomerArrearsBreakdown(c, payments, realNowMonthStr);
       const realNowRent = c.isArchived ? 0 : (c.rentals || []).filter(r => isMachineRentedInMonth(r, realNow))
-        .reduce((sum, r) => sum + (Number(r.rentRate) || 0), 0);
+        .reduce((sum, r) => sum + getRentForMonth(r, realNow), 0);
       const totalAllTimeCharges = Number(realArrearsData.carriedBase || 0) + Number(realArrearsData.totalPreviousRent || 0) + realNowRent;
       const allTimeBalanceDue = totalAllTimeCharges - allTimePaid;
 

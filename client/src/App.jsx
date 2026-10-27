@@ -1973,12 +1973,18 @@ export default function App() {
                   activeMonth={localConfig.activeMonth || 'October 2026'}
                   onSwitchMonth={handleSwitchLocalMonth}
                   onPrintDoc={(docData) => setLocalDocModalData(docData)}
-                  onSavePartner={async (partnerData) => {
+                  onSavePartner={async (partnerData, mode) => {
                     try {
-                      if (partnerData.id) {
+                      // mode is 'EDIT' or 'ADD' — passed by LocalRentalPartners.
+                      // We CANNOT rely on partnerData.id because the modal always
+                      // generates an id for new partners (e.g. "part_1234567890").
+                      const isEdit = mode === 'EDIT';
+                      if (isEdit && partnerData.id) {
                         const res = await api.updateLocalPartner(partnerData.id, partnerData);
                         if (res.success) {
-                          setLocalPartners(prev => prev.map(p => p.id === partnerData.id ? res.data : p));
+                          setLocalPartners(prev => prev.map(p =>
+                            (p.id === partnerData.id || p._id === partnerData.id) ? res.data : p
+                          ));
                           addToast('Renting partner updated.', 'success');
                         } else throw new Error(res.error);
                       } else {
