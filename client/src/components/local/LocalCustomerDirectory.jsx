@@ -121,17 +121,22 @@ export function getRentForMonth(rental, ym) {
   const fullRate = Number(rental.rentRate) || 0;
   if (!rental.isProratedFirstMonth) return fullRate;
 
-  // Check if this month is the start month of the rental
-  const startDate = rental.startDate ? new Date(rental.startDate) : null;
-  if (!startDate || isNaN(startDate.getTime())) return fullRate;
+  // Parse startDate string directly to avoid timezone issues (e.g. "2026-10-15")
+  if (!rental.startDate) return fullRate;
+  const parts = String(rental.startDate).split('-');
+  if (parts.length < 3) return fullRate;
+  const sYear = parseInt(parts[0], 10);
+  const sMonth = parseInt(parts[1], 10) - 1; // 0-indexed
+  const sDay = parseInt(parts[2], 10);
+  if (isNaN(sYear) || isNaN(sMonth) || isNaN(sDay)) return fullRate;
 
-  const startYM = { year: startDate.getFullYear(), month: startDate.getMonth() };
-  if (startYM.year !== ym.year || startYM.month !== ym.month) return fullRate;
+  // Only prorate in the start month
+  if (sYear !== ym.year || sMonth !== ym.month) return fullRate;
 
   // This IS the start month — prorate
-  const dayOfMonth = startDate.getDate(); // e.g. 15 means started on 15th
   const daysInMonth = new Date(ym.year, ym.month + 1, 0).getDate(); // e.g. 31 for October
-  const remainingDays = daysInMonth - dayOfMonth + 1; // including start day
+  const remainingDays = daysInMonth - sDay + 1; // including start day
+  if (remainingDays >= daysInMonth) return fullRate; // started on 1st = full month
   const proratedRate = Math.round((fullRate * remainingDays) / daysInMonth);
   return proratedRate;
 }
@@ -143,15 +148,19 @@ export function getPartnerRentForMonth(rental, ym) {
   const fullRate = Number(rental.partnerRentRate) || 0;
   if (!rental.isProratedFirstMonth) return fullRate;
 
-  const startDate = rental.startDate ? new Date(rental.startDate) : null;
-  if (!startDate || isNaN(startDate.getTime())) return fullRate;
+  if (!rental.startDate) return fullRate;
+  const parts = String(rental.startDate).split('-');
+  if (parts.length < 3) return fullRate;
+  const sYear = parseInt(parts[0], 10);
+  const sMonth = parseInt(parts[1], 10) - 1;
+  const sDay = parseInt(parts[2], 10);
+  if (isNaN(sYear) || isNaN(sMonth) || isNaN(sDay)) return fullRate;
 
-  const startYM = { year: startDate.getFullYear(), month: startDate.getMonth() };
-  if (startYM.year !== ym.year || startYM.month !== ym.month) return fullRate;
+  if (sYear !== ym.year || sMonth !== ym.month) return fullRate;
 
-  const dayOfMonth = startDate.getDate();
   const daysInMonth = new Date(ym.year, ym.month + 1, 0).getDate();
-  const remainingDays = daysInMonth - dayOfMonth + 1;
+  const remainingDays = daysInMonth - sDay + 1;
+  if (remainingDays >= daysInMonth) return fullRate;
   const proratedRate = Math.round((fullRate * remainingDays) / daysInMonth);
   return proratedRate;
 }
@@ -1077,7 +1086,7 @@ export function LocalCustomerDirectory({
                             <th className="px-3 py-2.5">Machinery Model Description</th>
                             <th className="px-3 py-2.5">Serial Number (SN)</th>
                             <th className="px-3 py-2.5">Start Date</th>
-                            <th className="px-3 py-2.5 text-right">Agreed Monthly Hire</th>
+                            <th className="px-3 py-2.5 text-right">Monthly Hire Charge</th>
                             <th className="px-3 py-2.5 text-center">Delivery Status</th>
                             <th className="px-3 py-2.5 text-center">Cycle Status</th>
                             <th className="px-3 py-2.5 text-right">Actions</th>
@@ -1098,6 +1107,24 @@ export function LocalCustomerDirectory({
                               const currentDeliveryStatus = pendingDeliveryStatus[pendingKey] ?? (r.deliveryStatus || 'Ongoing');
                               const isHandovered = currentDeliveryStatus === 'Handovered';
 
+                              // Compute prorated effective rent for display
+                              const effectiveRent = getRentForMonth(r, currentYM);
+                              const fullRent = Number(r.rentRate) || 0;
+                              const isProrated = r.isProratedFirstMonth && effectiveRent !== fullRent;
+                              const effectivePartnerRent = r.isPartnerMachine ? getPartnerRentForMonth(r, currentYM) : 0;
+                              const fullPartnerRent = Number(r.partnerRentRate) || 0;
+                              const isPartnerProrated = r.isPartnerMachine && r.isProratedFirstMonth && effectivePartnerRent !== fullPartnerRent;
+
+                              // Calculate prorated days info for tooltip/badge
+                              let proratedDaysInfo = '';
+                              if (isProrated && r.startDate) {
+                                const sdParts = String(r.startDate).split('-');
+                                const sdDay = parseInt(sdParts[2], 10) || 1;
+                                const dim = new Date(currentYM.year, currentYM.month + 1, 0).getDate();
+                                const remaining = dim - sdDay + 1;
+                                proratedDaysInfo = `${remaining}/${dim} days`;
+                              }
+
                               return (
                                 <tr 
                                   key={r.machineId} 
@@ -1117,14 +1144,30 @@ export function LocalCustomerDirectory({
                                     <span className="text-[10px] text-slate-400 font-mono block">{r.accessories}</span>
                                     {r.isPartnerMachine && (
                                       <span className="text-[9px] text-amber-400/90 font-mono block mt-0.5">
-                                        Partner Cost: {formatLKR(r.partnerRentRate || 0)}/mo
+                                        Partner Cost: {isPartnerProrated ? (
+                                          <>{formatLKR(effectivePartnerRent)} <span className="text-amber-500/70">(Full: {formatLKR(fullPartnerRent)}/mo)</span></>
+                                        ) : (
+                                          <>{formatLKR(fullPartnerRent)}/mo</>
+                                        )}
                                       </span>
                                     )}
                                   </td>
                                   <td className="px-3 py-2.5 text-slate-300 font-bold">{r.serialNumber || 'Yard Batch'}</td>
                                   <td className="px-3 py-2.5 text-slate-400">{r.startDate || '2026-08-01'}</td>
                                   <td className="px-3 py-2.5 text-right font-bold text-emerald-400">
-                                    {formatLKR(r.rentRate)}
+                                    {isProrated ? (
+                                      <div>
+                                        <div>{formatLKR(effectiveRent)}</div>
+                                        <span className="text-[9px] font-sans text-sky-400 bg-sky-950/60 border border-sky-800/50 px-1.5 py-0.5 rounded-full inline-block mt-0.5">
+                                          Prorated {proratedDaysInfo}
+                                        </span>
+                                        <span className="text-[9px] text-slate-500 block font-normal">
+                                          Full: {formatLKR(fullRent)}/mo
+                                        </span>
+                                      </div>
+                                    ) : (
+                                      formatLKR(r.rentRate)
+                                    )}
                                   </td>
 
                                   {/* Delivery Status Column with optimistic inline toggle */}
